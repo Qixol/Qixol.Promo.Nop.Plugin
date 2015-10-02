@@ -1,0 +1,214 @@
+﻿@model ProductDetailsPromotionModel
+
+<script type="text/javascript">
+
+    $(document).ready(function () {
+        @if(Model.ShowSticker)
+        {
+        <text>
+        var promotionImageDivHtml = $('#promotionImage[data-productid="@Model.Id"]').html();
+        $('.gallery').find('.picture').before(promotionImageDivHtml);
+        </text>
+        }
+        @if(Model.ShowPromotionDetails)
+        {
+        <text>
+        $('#promotionDetails[data-productid="@Model.Id"]').css('visibility', 'visible');
+        //var promotionDetailsDivHtml = $('#promotionDetails[data-productid="@Model.Id"]').html();
+        //$('.add-to-cart').before(promotionDetailsDivHtml);
+        </text>
+        }
+    });
+
+</script>
+
+<style>
+    
+    .promotionImage
+    {
+        display: block;
+        margin-bottom: 60px;
+        position: absolute;
+        z-index: 999;
+    }
+
+    .promotionDetails
+    {
+        margin-bottom: 10px;
+    }
+
+    promotionDetails table {
+        width: 100%;
+        border: 1px solid #ddd; padding: 10px; color: #444;
+    }
+
+    .promotionDetailsTableCell {
+        border: 1px solid #ddd; padding: 10px; color: #444;
+    }
+
+    .promotionDetailsInfo {
+        font-size: 0.8em;
+    }
+
+    .promotionDetailsInfoItemTitle {
+        font-style: italic;
+        margin-left: 4px;
+        margin-right: 4px;
+        margin-bottom: 2px;
+    }
+
+    .promotionDetailsInfoItemTitleHighlight {
+        color: blue;
+    }
+
+    .promotionDetailsInfoItemYouSave {
+        background-color: #f9f9f9;
+        font-size: 16px;
+        color: #e4434b;
+    }
+
+    .promotionDetailsInfoItemYouSaveFrom {
+        color: black;
+        font-size: 0.8em;
+        font-style: italic;
+    }
+</style>
+
+<div id="promotionImage" data-productid="@Model.Id" style="visibility: hidden;">
+    <span class="promotionImage"><img alt="@Model.Id" src="@Model.ImageUrl" /></span>
+</div>
+
+<div id="promotionDetails" data-productid="@Model.Id" style="visibility: hidden;" class="promotionDetails">
+    @if(Model.ShowPromotionDetails)
+    {
+        <table style="margin-bottom: 15px; padding-bottom: 20px; margin-top: 10px;">
+            <thead>
+                <tr>
+                    <td colspan="2" class="promotionDetailsTableCell">@T("Plugins.Misc.QixolPromo.Product.Promos.Title.Offers")</td>
+                    <td class="promotionDetailsTableCell">@T("Plugins.Misc.QixolPromo.Product.Promos.Title.YouSave")</td>                
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var promoDetails in Model.PromotionItems)
+                {
+
+                    var youSaveInfo = "-";
+                    bool showFromText = false;
+                    switch (promoDetails.PromotionTypeName)
+                    {
+                        case Qixol.Nop.Promo.Core.Domain.PromotionTypeName.BuyOneGetOneFree:
+                            youSaveInfo = T("Plugins.Misc.QixolPromo.Product.Promos.Item.GetOneFree").ToString();     //"Get One Free";
+                            break;
+                        case Qixol.Nop.Promo.Core.Domain.PromotionTypeName.BuyOneGetOneReduced:
+                        case Qixol.Nop.Promo.Core.Domain.PromotionTypeName.ProductsReduction:
+                            if (promoDetails.DiscountAmount.HasValue && promoDetails.DiscountAmount.Value > 0)
+                            {
+                                youSaveInfo = promoDetails.DiscountAmountAsCurrency;
+                                showFromText = Model.HasTierPrices;
+                            }
+                            else
+                            {
+                                if (promoDetails.DiscountPercent.HasValue && promoDetails.DiscountPercent.Value > 0)
+                                {
+                                    youSaveInfo = string.Concat(promoDetails.DiscountPercent.Value.ToString("#.##"), "%");
+                                }
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                
+                    <tr>
+                        <td class="promotionDetailsTableCell" style="width: 50px;"><img src="@promoDetails.ImageUrl" style="height: 48px; width: 48px;" /></td>
+                        <td class="promotionDetailsTableCell">
+                            <div style="margin-bottom: 8px;">
+                                @if(string.IsNullOrEmpty(@promoDetails.Description))
+                                {
+                                    <span style="font-weight: bold;">@promoDetails.PromotionTypeName</span><br />                           
+                                }
+                                <span>@promoDetails.Description</span>
+                            </div>
+                            <div class="promotionDetailsInfo">
+                                @* @if (promoDetails.ValidFrom.HasValue)
+                                { 
+                                    <div><span class="promotionDetailsInfoItemTitle">@T("Plugins.Misc.QixolPromo.Product.Promos.Item.ValidAfter")</span><span>@promoDetails.ValidFrom.Value.ToShortTimeString()</span></div>
+                                }*@
+                                @if (promoDetails.ValidTo.HasValue)
+                                { 
+                                    <div>
+                                        <span class="promotionDetailsInfoItemTitle">@T("Plugins.Misc.QixolPromo.Product.Promos.Item.ValidUntil")</span>
+                                        <span>@promoDetails.ValidTo.Value.ToShortTimeString()</span>
+                                    </div>
+                                }
+                                @if (!promoDetails.HasMultipleRequiredQty && promoDetails.RequiredItemQty.HasValue && promoDetails.RequiredItemQty.Value > 1)
+                                { 
+                                    <div>
+                                        <span class="promotionDetailsInfoItemTitle">@T("Plugins.Misc.QixolPromo.Product.Promos.Item.RequiredQty")</span>
+                                        <span>@promoDetails.RequiredItemQty.Value.ToString()</span>
+                                    </div>
+                                }
+                                @if (!promoDetails.HasMultipleRequiredSpend && promoDetails.RequiredItemSpend.HasValue && promoDetails.RequiredItemSpend.Value > 0)
+                                { 
+                                    <div>
+                                        <span class="promotionDetailsInfoItemTitle">@T("Plugins.Misc.QixolPromo.Product.Promos.Item.RequiredSpend.1")</span>
+                                        <span>@promoDetails.RequiredItemSpendAsCurrency</span>
+                                        <span class="promotionDetailsInfoItemTitle">@T("Plugins.Misc.QixolPromo.Product.Promos.Item.RequiredSpend.2")</span>
+                                    </div>
+                                }
+                                @if (promoDetails.RequireAdditionalItems.HasValue && promoDetails.RequireAdditionalItems.Value)
+                                { 
+                                    <div>
+                                        <span class="promotionDetailsInfoItemTitle promotionDetailsInfoItemTitleHighlight">@T("Plugins.Misc.QixolPromo.Product.Promos.Item.RequireAdditionalItems")</span>
+                                    </div>
+                                }
+                                @if (promoDetails.MinimumSpend.HasValue && promoDetails.MinimumSpend.Value > 0)
+                                { 
+                                    <div>
+                                        <span class="promotionDetailsInfoItemTitle">@T("Plugins.Misc.QixolPromo.Product.Promos.Item.MinBasketSpend.1")</span>
+                                        <span>@promoDetails.MinimumSpendAsCurrency</span>
+                                        <span class="promotionDetailsInfoItemTitle">@T("Plugins.Misc.QixolPromo.Product.Promos.Item.MinBasketSpend.2")</span>
+                                    </div>                            
+                                }
+                                @if(!promoDetails.ForAllVariants)
+                                {
+                                    <div>
+                                        <span class="promotionDetailsInfoItemTitle promotionDetailsInfoItemTitleHighlight">@T("Plugins.Misc.QixolPromo.Product.Promos.Item.NotForAllVariants")</span>
+                                    </div>
+                                }
+                                @if (promoDetails.Availibility != null && promoDetails.Availibility.Count > 0)
+                                {
+                                    <div>
+                                        @foreach (var availibility in promoDetails.Availibility)
+	                                    {
+                                            <div>
+                                                <span class="promotionDetailsInfoItemTitle">@T("Plugins.Misc.QixolPromo.Product.Promos.Item.Availibility.From")</span>
+                                                <span>@availibility.Start.ToShortTimeString()</span>
+                                                <span class="promotionDetailsInfoItemTitle">@T("Plugins.Misc.QixolPromo.Product.Promos.Item.Availibility.To")</span>
+                                                <span>@availibility.End.ToShortTimeString()</span>
+                                            </div>		 
+	                                    }
+                                    </div>
+                                }
+                            </div>
+                        </td>
+                        <td class="promotionDetailsTableCell promotionDetailsInfoItemYouSave">
+                            <div>
+                                @if (showFromText)
+                                { 
+                                    <span class="promotionDetailsInfoItemYouSaveFrom" style="font-size: ">@T("Plugins.Misc.QixolPromo.Product.Promos.Item.TieredPricesFrom")</span><br />
+                                }
+                                @youSaveInfo
+                            </div>
+                        </td>
+                    </tr>
+                }
+
+                <tr>
+                    <td colspan="3" class="promotionDetailsTableCell" >
+                        <div class="promotionDetailsInfo promotionDetailsInfoItemTitle">@T("Plugins.Misc.QixolPromo.Product.Promos.Footer")</div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    }
+</div>

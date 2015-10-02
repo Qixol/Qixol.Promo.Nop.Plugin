@@ -1,0 +1,16 @@
+﻿@model PromoConfigureModel
+
+@{
+    Layout = "~/Admin/Views/Shared/_AdminLayout.cshtml";
+    
+    //page title
+    ViewBag.Title = T("Admin.Promotions.Discounts").Text;
+}
+<div class="section-header">
+    <div class="title">
+        <img src="@Url.Content("~/Administration/Content/images/ico-promotions.png")" alt="" />
+        @T("Admin.Promotions.Discounts")
+    </div>
+</div>
+<h1>Something here about using Qixol Promotions to set up the discounts.</h1>
+<p>Please use the <a href="http://admin.qixolpromo.com/" target="_blank">Qixol Promotions administration site</a> to create and maintain promotions</p>

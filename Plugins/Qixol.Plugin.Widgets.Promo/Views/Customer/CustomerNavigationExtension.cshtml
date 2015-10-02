@@ -1,0 +1,15 @@
+﻿<li>
+    <a id="issuedCouponNavigation" href="@Url.Action("issuedcoupons", "customer")" class="inactive">@T("Plugins.Misc.QixolPromo.Account.IssuedCoupons")</a>
+</li>
+
+<script type="text/javascript">
+
+    $(document).ready(function () {
+        var activeEntry = $('.block-account-navigation').find('.active');
+        if (!activeEntry.length) {
+            $('#issuedCouponNavigation').toggleClass('inactive', false);
+            $('#issuedCouponNavigation').toggleClass('active', true);
+        }
+    });
+
+</script>

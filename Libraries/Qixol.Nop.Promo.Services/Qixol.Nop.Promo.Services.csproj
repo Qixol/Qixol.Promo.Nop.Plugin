@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{390EE906-71E4-4738-B383-76D825E3BA1C}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Qixol.Nop.Promo.Services</RootNamespace>
+    <AssemblyName>Qixol.Nop.Promo.Services</AssemblyName>
+    <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    
+    
+    
+    
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Autofac">
+      <HintPath>..\..\packages\Autofac.3.5.2\lib\portable-net4+sl5+netcore45+wpa81+wp8+MonoAndroid1+MonoTouch1\Autofac.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="EntityFramework">
+      <HintPath>..\..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServer">
+      <HintPath>..\..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.SqlServer.dll</HintPath>
+    </Reference>
+    <Reference Include="EntityFramework.SqlServerCompact">
+      <HintPath>..\..\packages\EntityFramework.SqlServerCompact.6.1.3\lib\net45\EntityFramework.SqlServerCompact.dll</HintPath>
+    </Reference>
+    <Reference Include="itextsharp">
+      <HintPath>..\..\packages\iTextSharp.5.5.6\lib\itextsharp.dll</HintPath>
+    </Reference>
+    <Reference Include="Nop.Admin">
+      <HintPath>..\..\Website\bin\Nop.Admin.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Nop.Core">
+      <HintPath>..\..\Website\bin\Nop.Core.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Nop.Data">
+      <HintPath>..\..\Website\bin\Nop.Data.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Nop.Services">
+      <HintPath>..\..\Website\bin\Nop.Services.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Nop.Services.XmlSerializers">
+      <HintPath>..\..\Website\bin\Nop.Services.XmlSerializers.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Nop.Web">
+      <HintPath>..\..\Website\bin\Nop.Web.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Nop.Web.Framework">
+      <HintPath>..\..\Website\bin\Nop.Web.Framework.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Qixol.Promo.Integration.Lib, Version=2.0.1.2, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\Qixol.Promo.Integration.Lib.2.0.1.2\Qixol.Promo.Integration.Lib.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Web.Helpers, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\Microsoft.AspNet.WebPages.3.2.3\lib\net45\System.Web.Helpers.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.Mvc, Version=4.0.0.1, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\Microsoft.AspNet.Mvc.5.2.3\lib\net45\System.Web.Mvc.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.WebPages, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\Microsoft.AspNet.WebPages.3.2.3\lib\net45\System.Web.WebPages.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.WebPages.Deployment, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\Microsoft.AspNet.WebPages.3.2.3\lib\net45\System.Web.WebPages.Deployment.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web.WebPages.Razor, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\Microsoft.AspNet.WebPages.3.2.3\lib\net45\System.Web.WebPages.Razor.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\..\Shared Solution Items\SharedAssemblyInfo.cs">
+      <Link>Properties\SharedAssemblyInfo.cs</Link>
+    </Compile>
+    <Compile Include="AttributeValues\AttributeValueService.cs" />
+    <Compile Include="AttributeValues\IAttributeValueService.cs" />
+    <Compile Include="Catalog\IPromotionsPriceCalculationService.cs" />
+    <Compile Include="Catalog\PriceCalculationService.cs" />
+    <Compile Include="Catalog\PromotionsPriceCalculationService.cs" />
+    <Compile Include="Common\PdfService.cs" />
+    <Compile Include="Coupons\CouponService.cs" />
+    <Compile Include="Coupons\ICouponService.cs" />
+    <Compile Include="Discounts\DiscountService.cs" />
+    <Compile Include="ExportQueue\ExportQueueService.cs" />
+    <Compile Include="ExportQueue\IExportQueueService.cs" />
+    <Compile Include="Localization\LocalizationServiceExtensions.cs" />
+    <Compile Include="Messages\MessageTokenProvider.cs" />
+    <Compile Include="Orders\CheckoutAttributeExtensions.cs" />
+    <Compile Include="Orders\CheckoutAttributeFormatter.cs" />
+    <Compile Include="Orders\IPromoOrderService.cs" />
+    <Compile Include="Orders\OrderProcessingService.cs" />
+    <Compile Include="Orders\OrderTotalCalculationService.cs" />
+    <Compile Include="Orders\PromoOrderExtensions.cs" />
+    <Compile Include="Orders\PromoOrderService.cs" />
+    <Compile Include="Orders\ShoppingCartService.cs" />
+    <Compile Include="ProductAttributeConfig\IProductAttributeConfigService.cs" />
+    <Compile Include="ProductAttributeConfig\ProductAttributeConfigService.cs" />
+    <Compile Include="ProductMapping\IProductMappingService.cs" />
+    <Compile Include="ProductMapping\IProductPromotionMappingService.cs" />
+    <Compile Include="ProductMapping\ProductMappingService.cs" />
+    <Compile Include="ProductMapping\ProductPromotionMappingService.cs" />
+    <Compile Include="Promo\BasketResponseExtensions.cs" />
+    <Compile Include="Promo\IPromotionDetailService.cs" />
+    <Compile Include="Promo\IPromotionPictureService.cs" />
+    <Compile Include="Promo\IPromoService.cs" />
+    <Compile Include="Promo\IPromoUtilities.cs" />
+    <Compile Include="Promo\PromotionDetailService.cs" />
+    <Compile Include="Promo\PromotionPictureService.cs" />
+    <Compile Include="Promo\PromoService.cs" />
+    <Compile Include="Promo\PromoUtilities.cs" />
+    <Compile Include="Promo\SettingsExtensions.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ShoppingCart\ShoppingCartExtensions.cs" />
+    <Compile Include="Banner\IPromoBannerService.cs" />
+    <Compile Include="Banner\PromoBannerService.cs" />
+    <Compile Include="Tax\ITaxServiceExtensions.cs" />
+    <Compile Include="Tax\TaxService.cs" />
+    <Compile Include="Tax\TaxServiceExtensions.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Extensions\Qixol.System.Extensions\Qixol.System.Extensions.csproj">
+      <Project>{ea4f5bba-bdc2-4625-b409-a6bb4f7a624b}</Project>
+      <Name>Qixol.System.Extensions</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Qixol.Nop.Promo.Core\Qixol.Nop.Promo.Core.csproj">
+      <Project>{913636af-4223-4af2-b425-255340ab51f5}</Project>
+      <Name>Qixol.Nop.Promo.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Qixol.Nop.Promo.Data\Qixol.Nop.Promo.Data.csproj">
+      <Project>{ffc52e6c-e015-49a4-902f-18a6ba7cf5ff}</Project>
+      <Name>Qixol.Nop.Promo.Data</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

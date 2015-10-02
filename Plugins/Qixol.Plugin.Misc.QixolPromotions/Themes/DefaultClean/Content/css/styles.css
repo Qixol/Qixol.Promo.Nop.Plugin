@@ -1,0 +1,12 @@
+﻿.promotion-item {
+    color: green;
+    font-weight: bold;
+}
+
+.no-bottom-border td {
+    border-bottom: 0px !important;
+}
+
+.cart-promotion-row td {
+    line-height: 15px !important;
+}

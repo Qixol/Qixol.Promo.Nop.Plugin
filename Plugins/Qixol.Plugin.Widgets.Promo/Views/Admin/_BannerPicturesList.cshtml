@@ -1,0 +1,203 @@
+﻿@model AddPromoBannerPictureModel
+
+<div>
+    <div id="promobannerpictures-grid"></div>
+    @Html.HiddenFor(m => Model.BannerId)
+
+    <script>
+        $(document).ready(function () {
+            $("#promobannerpictures-grid").kendoGrid({
+                dataSource: {
+                    type: "json",
+                    transport: {
+                        read: {
+                            url: "/Admin/PromoBanner/Admin/Banner/List?id=@Model.BannerId",
+                            type: "POST",
+                            dataType: "json"
+                        },
+                        update: {
+                            url: "/Admin/PromoBanner/Admin/Banner/Edit",
+                                    type: "POST",
+                                    dataType: "json"
+                                },
+                        destroy: {
+                            url: "/Admin/PromoBanner/Admin/Banner/Delete",
+                            type: "POST",
+                            dataType: "json"
+                        }
+                    },
+                    schema: {
+                        data: "Data",
+                        total: "Total",
+                        errors: "Errors",
+                        model: {
+                            id: "Id",
+                            fields: {
+                                Comment: { editable: true, type: "string" },
+                                DisplaySequence: { editable: true, type: "number" },
+                                PromoReference: { editable: true, type: "string" },
+                                Url: { editable: true, type: "string" },
+                                PictureUrl: { editable: false, type: "string" }
+                            }
+                        }
+                    },
+                    requestEnd: function(e) {
+                        if(e.type=="destroy") {
+                            this.read();
+                        }
+                    },
+                    error: function(e) {
+                        display_kendoui_grid_error(e);
+                        // Cancel the changes
+                        this.cancelChanges();
+                    },
+                    serverPaging: true,
+                    serverFiltering: true,
+                    serverSorting: true
+                },
+                pageable: {
+                    refresh: true,
+                    numeric: false,
+                    previousNext: false,
+                    info: false
+                },
+                editable: {
+                    confirmation: true,
+                    mode: "inline"
+                },
+                scrollable: false,
+                columns: [{
+                    field: "PictureUrl",
+                    title: "@T("Plugins.Widgets.QixolPromo.BannerPicture.Picture")",
+                    template: '<a href="#=PictureUrl#" target="_blank"><img alt="#=PictureId#" src="#=PictureUrl#" width="80" /><a/>',
+                    width: 100
+                }, {
+                    field: "PromoReference",
+                    title: "@T("Plugins.Widgets.QixolPromo.BannerPicture.PromoRef")",
+                }, {
+                    field: "Comment",
+                    title: "@T("Plugins.Widgets.QixolPromo.BannerPicture.Comment")",
+                }, {
+                    field: "Url",
+                    title: "@T("Plugins.Widgets.QixolPromo.BannerPicture.Url")",
+                }, {
+                    field: "DisplaySequence",
+                    title: "@T("Plugins.Widgets.QixolPromo.BannerPicture.DisplaySequence")",
+                    headerAttributes: { style: "text-align:center" },
+                    attributes: { style: "text-align:center" },
+                    width: 100,
+                    format: "{0:0}"
+                }, {
+                    command: [{
+                        name: "edit",
+                        text: "@T("Admin.Common.Edit")"
+                    }, {
+                        name: "destroy",
+                        text: "@T("Admin.Common.Delete")"
+                    }],
+                    headerAttributes: { style: "text-align:center" },
+                    attributes: { style: "text-align:center" },
+                    width: 200
+                }]
+            });
+        });
+    </script>
+</div>
+<p>
+    <strong>@T("Plugins.Widgets.QixolPromo.BannerPicture.AddNewTitle")</strong>
+</p>
+<script type="text/javascript">
+
+    $(document).ready(function () {
+
+        $('#addPromoBannerPicture').click(function () {
+            var pictureId = $("#@Html.FieldIdFor(model => model.PictureId)").val();
+            var promoRef = $("#@Html.FieldIdFor(model => model.PromoReference)").val();
+            var displaySequence = $("#@Html.FieldIdFor(model => model.DisplaySequence)").val();
+            var comment = $("#@Html.FieldIdFor(model => model.Comment)").val();
+            var url = $("#@Html.FieldIdFor(model => model.Url)").val();
+            var bannerId = $("#@Html.FieldIdFor(model => model.BannerId)").val();
+
+            if (pictureId == 0) {
+                alert('@T("Plugins.Widgets.QixolPromo.BannerPicture.Validation.Msg.1")');
+                return;
+            }
+
+            $('#addPromoBannerPicture').attr('disabled', true);
+            $.ajax({
+                cache:false,
+                type: "POST",
+                url: "/Admin/PromoBanner/Admin/Banner/Add",
+                data: { "bannerId": bannerId, "pictureId": pictureId, "promoRef": promoRef, "displaySequence": displaySequence, "url": url, "comment": comment },
+                success: function (data) {
+                    var grid = $("#promobannerpictures-grid");
+                    grid.data('kendoGrid').dataSource.read();
+
+                    // Reset the inputs back..  Currently doesn't clear the picture though.
+                    $('#addPromoBannerPicture').attr('disabled', false);
+                    $("#@Html.FieldIdFor(model => model.PromoReference)").val("");
+                    $("#@Html.FieldIdFor(model => model.DisplaySequence)").val("0");
+                    $("#@Html.FieldIdFor(model => model.Comment)").val("");
+                    $("#@Html.FieldIdFor(model => model.Url)").val("");
+                },
+                error:function (xhr, ajaxOptions, thrownError){
+                    alert('@T("Plugins.Widgets.QixolPromo.BannerPicture.Failure.Msg")');
+                    $('#addPromoBannerPicture').attr('disabled', false);
+                }  
+            });
+        });
+    });
+</script>        
+<table class="adminContent">
+    <tr>
+        <td class="adminTitle">
+            @Html.NopLabelFor(model => model.PictureId):
+        </td>
+        <td class="adminData">
+            @Html.EditorFor(model => model.PictureId)
+            @Html.ValidationMessageFor(model => model.PictureId)
+        </td>
+    </tr>
+    <tr style="height: 10px;"><td colspan="2"></td></tr>
+    <tr>
+        <td class="adminTitle">
+            @Html.NopLabelFor(model => model.PromoReference):
+        </td>
+        <td class="adminData">
+            @Html.EditorFor(model => model.PromoReference)
+            @Html.ValidationMessageFor(model => model.PromoReference)
+        </td>
+    </tr>
+    <tr>
+        <td class="adminTitle">
+            @Html.NopLabelFor(model => model.DisplaySequence):
+        </td>
+        <td class="adminData">
+            @Html.EditorFor(model => model.DisplaySequence)
+            @Html.ValidationMessageFor(model => model.DisplaySequence)
+        </td>
+    </tr>
+    <tr>
+        <td class="adminTitle">
+            @Html.NopLabelFor(model => model.Comment):
+        </td>
+        <td class="adminData">
+            @Html.EditorFor(model => model.Comment)
+            @Html.ValidationMessageFor(model => model.Comment)
+        </td>
+    </tr>
+    <tr>
+        <td class="adminTitle">
+            @Html.NopLabelFor(model => model.Url):
+        </td>
+        <td class="adminData">
+            @Html.EditorFor(model => model.Url)
+            @Html.ValidationMessageFor(model => model.Url)
+        </td>
+    </tr>
+    <tr>
+        <td colspan="2" align="left" style="padding-top: 20px; padding-bottom: 30px;">
+            <input type="button" id="addPromoBannerPicture" class="k-button" value="@T("Plugins.Widgets.QixolPromo.BannerPicture.AddButton")" />
+        </td>
+    </tr>
+</table>

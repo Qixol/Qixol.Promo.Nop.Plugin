@@ -1,0 +1,124 @@
+﻿@model AddPromoBannerWidgetZoneModel
+
+<div>
+    <div id="promobannerwidgets-grid"></div>
+    @Html.HiddenFor(m => Model.BannerId)
+
+    <script>
+        $(document).ready(function () {
+            $("#promobannerwidgets-grid").kendoGrid({
+                dataSource: {
+                    type: "json",
+                    transport: {
+                        read: {
+                            url: "/Admin/PromoBanner/Admin/Banner/WidgetZoneList?id=@Model.BannerId",
+                            type: "POST",
+                            dataType: "json"
+                        },
+                        destroy: {
+                            url: "/Admin/PromoBanner/Admin/Banner/DeleteWidgetZone",
+                            type: "POST",
+                            dataType: "json"
+                        }
+                    },
+                    schema: {
+                        data: "Data",
+                        total: "Total",
+                        errors: "Errors",
+                        model: {
+                            id: "Id",
+                            fields: {
+                                WidgetZone: { editable: false, type: "string" },
+                            }
+                        }
+                    },
+                    requestEnd: function(e) {
+                        if(e.type=="destroy") {
+                            this.read();
+                        }
+                    },
+                    error: function(e) {
+                        display_kendoui_grid_error(e);
+                        // Cancel the changes
+                        this.cancelChanges();
+                    },
+                    serverPaging: true,
+                    serverFiltering: true,
+                    serverSorting: true
+                },
+                pageable: {
+                    refresh: true,
+                    numeric: false,
+                    previousNext: false,
+                    info: false
+                },
+                editable: {
+                    confirmation: true,
+                    mode: "inline"
+                },
+                scrollable: false,
+                columns: [{
+                    field: "WidgetZone",
+                    title: "@T("Plugins.Widgets.QixolPromo.BannerWidgets.Zone")",
+                }, {
+                    command: [{
+                        name: "destroy",
+                        text: "@T("Admin.Common.Delete")"
+                    }],
+                    headerAttributes: { style: "text-align:center" },
+                    attributes: { style: "text-align:center" },
+                    width: 200
+                }]
+            });
+        });
+    </script>
+</div>
+<p>
+    <strong>@T("Plugins.Widgets.QixolPromo.BannerWidgets.AddNewZone")</strong>
+</p>
+<script type="text/javascript">
+
+    $(document).ready(function () {
+
+        $('#addPromoBannerWidgetZone').click(function () {
+            var widgetZone = $("#@Html.FieldIdFor(model => model.SelectedWidgetZone)").val();
+            var bannerId = $("#@Html.FieldIdFor(model => model.BannerId)").val();
+
+            $('#addPromoBannerWidgetZone').attr('disabled', true);
+            $.ajax({
+                cache:false,
+                type: "POST",
+                url: "/Admin/PromoBanner/Admin/Banner/AddWidgetZone",
+                data: { "bannerId": bannerId, "widgetZone": widgetZone },
+                success: function (data) {
+                    var grid = $("#promobannerwidgets-grid");
+                    grid.data('kendoGrid').dataSource.read();
+
+                    // Reset the inputs back..  Currently doesn't clear the picture though.
+                    $('#addPromoBannerWidgetZone').attr('disabled', false);
+                    $("#@Html.FieldIdFor(model => model.SelectedWidgetZone)").val("@Model.FirstWidgetZone");
+                },
+                error:function (xhr, ajaxOptions, thrownError){
+                    alert('@T("Plugins.Widgets.QixolPromo.BannerWidgets.Failure.Msg")');
+                    $('#addPromoBannerWidgetZone').attr('disabled', false);
+                }  
+            });
+        });
+    });
+</script>        
+<table class="adminContent">
+    <tr>
+        <td class="adminTitle">
+            @Html.NopLabelFor(model => model.SelectedWidgetZone):
+        </td>
+        <td class="adminData">
+            @Html.DropDownListFor(model => model.SelectedWidgetZone, Model.AvailableWidgetZones)
+            @Html.ValidationMessageFor(model => model.SelectedWidgetZone)
+        </td>
+    </tr>
+    <tr>
+        <td colspan="2" align="left" style="padding-top: 20px; padding-bottom: 30px;">
+            <input type="button" id="addPromoBannerWidgetZone" class="k-button" value="@T("Plugins.Widgets.QixolPromo.BannerWidgets.AddNewZoneButton")" />
+        </td>
+    </tr>
+</table>
