@@ -676,7 +676,7 @@ namespace Qixol.Nop.Promo.Services.Orders
                     }
 
                     //discount usage history
-                    // TODO: replace with Promo discount usage history
+                    // TODO: replace with Promo discount usage history?
 
                     //gift card usage history
                     if (!processPaymentRequest.IsRecurringPayment)
@@ -780,8 +780,6 @@ namespace Qixol.Nop.Promo.Services.Orders
                         });
                         _orderService.UpdateOrder(order);
                     }
-
-                    // TODO: Save Promo details
 
                     //send email notifications
                     int orderPlacedStoreOwnerNotificationQueuedEmailId = _workflowMessageService.SendOrderPlacedStoreOwnerNotification(order, _localizationSettings.DefaultAdminLanguageId);

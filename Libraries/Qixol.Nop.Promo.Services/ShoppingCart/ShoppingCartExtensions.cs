@@ -26,6 +26,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Web.Mvc;
 using Qixol.Nop.Promo.Services.Orders;
+using Nop.Core.Domain.Common;
+using Nop.Core.Infrastructure;
 
 namespace Qixol.Nop.Promo.Services.ShoppingCart
 {
@@ -44,22 +46,24 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
 
         public static BasketRequest ToQixolPromosBasketRequest(this IList<ShoppingCartItem> cart)
         {
-            IProductService _productService = DependencyResolver.Current.GetService<IProductService>();
-            IPriceCalculationService _priceCalculationService = DependencyResolver.Current.GetService<IPriceCalculationService>();
-            IWorkContext _workContext = DependencyResolver.Current.GetService<IWorkContext>();
-            IStoreContext _storeContext = DependencyResolver.Current.GetService<IStoreContext>();
-            IGenericAttributeService _genericAttributeService = DependencyResolver.Current.GetService<IGenericAttributeService>();
-            PromoSettings _promoSettings = DependencyResolver.Current.GetService<PromoSettings>();
-            IPromoUtilities _promoUtilities = DependencyResolver.Current.GetService<IPromoUtilities>();
-            IOrderTotalCalculationService _orderTotalCalculationService = DependencyResolver.Current.GetService<IOrderTotalCalculationService>();
-            ICurrencyService _currencyService = DependencyResolver.Current.GetService<ICurrencyService>();
-            IShoppingCartService _shoppingCartService = DependencyResolver.Current.GetService<IShoppingCartService>();
-            IProductMappingService _productMappingService = DependencyResolver.Current.GetService<IProductMappingService>();
-            IAttributeValueService _attributeValueService = DependencyResolver.Current.GetService<IAttributeValueService>();
-            IShippingService _shippingService = DependencyResolver.Current.GetService<IShippingService>();
-            ICheckoutAttributeParser _checkoutAttributeParser = DependencyResolver.Current.GetService<ICheckoutAttributeParser>();
-            ICheckoutAttributeService _checkoutAttributeService = DependencyResolver.Current.GetService<ICheckoutAttributeService>();
-            IGiftCardService _giftCardService = DependencyResolver.Current.GetService<IGiftCardService>();
+            IProductService _productService = EngineContext.Current.Resolve<IProductService>();
+            IPriceCalculationService _priceCalculationService = EngineContext.Current.Resolve<IPriceCalculationService>();
+            IWorkContext _workContext = EngineContext.Current.Resolve<IWorkContext>();
+            IStoreContext _storeContext = EngineContext.Current.Resolve<IStoreContext>();
+            IGenericAttributeService _genericAttributeService = EngineContext.Current.Resolve<IGenericAttributeService>();
+            PromoSettings _promoSettings = EngineContext.Current.Resolve<PromoSettings>();
+            IPromoUtilities _promoUtilities = EngineContext.Current.Resolve<IPromoUtilities>();
+            IOrderTotalCalculationService _orderTotalCalculationService = EngineContext.Current.Resolve<IOrderTotalCalculationService>();
+            ICurrencyService _currencyService = EngineContext.Current.Resolve<ICurrencyService>();
+            IShoppingCartService _shoppingCartService = EngineContext.Current.Resolve<IShoppingCartService>();
+            IProductMappingService _productMappingService = EngineContext.Current.Resolve<IProductMappingService>();
+            IAttributeValueService _attributeValueService = EngineContext.Current.Resolve<IAttributeValueService>();
+            IShippingService _shippingService = EngineContext.Current.Resolve<IShippingService>();
+            ICheckoutAttributeParser _checkoutAttributeParser = EngineContext.Current.Resolve<ICheckoutAttributeParser>();
+            ICheckoutAttributeService _checkoutAttributeService = EngineContext.Current.Resolve<ICheckoutAttributeService>();
+            IGiftCardService _giftCardService = EngineContext.Current.Resolve<IGiftCardService>();
+            ICountryService _countryService = EngineContext.Current.Resolve<ICountryService>();
+            IStateProvinceService _stateProvinceService = EngineContext.Current.Resolve<IStateProvinceService>();
 
             Customer customer = _workContext.CurrentCustomer;
 
@@ -182,7 +186,9 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
 
             #region shipping
 
-            string shippingOptionName = (selectedShippingOption != null ? selectedShippingOption.Name : "NOT-SELECTED");
+            ShippingOption shippingOption = (selectedShippingOption != null ? selectedShippingOption :
+                GetDefaultShippingOption(_shippingService, _workContext, _storeContext, _countryService, _stateProvinceService, _genericAttributeService));
+            string shippingOptionName = (shippingOption != null ? shippingOption.Name : string.Empty);
 
             string shippingIntegrationCode = shippingOptionName;
 
@@ -424,6 +430,45 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
             #endregion
 
             return basketRequest;
+        }
+
+        private static ShippingOption GetDefaultShippingOption(
+            IShippingService shippingService,
+            IWorkContext workContext,
+            IStoreContext storeContext,
+            ICountryService countryService,
+            IStateProvinceService stateProvinceService,
+            IGenericAttributeService genericAttributeService)
+        {
+            // TODO: set these values in the config? - like EstimateShipping but default values are provided?
+            int countryId = 80; // UK
+            int? stateProvinceId = null;
+            string zipPostalCode = "SB2 8BW";
+            Address address = new Address
+            {
+                CountryId = countryId,
+                Country = countryService.GetCountryById(countryId),
+                StateProvinceId = stateProvinceId,
+                StateProvince = stateProvinceId.HasValue ? stateProvinceService.GetStateProvinceById(stateProvinceId.Value) : null,
+                ZipPostalCode = zipPostalCode,
+            };
+
+            if (workContext.CurrentCustomer.ShippingAddress != null)
+            {
+                address = workContext.CurrentCustomer.ShippingAddress;
+            }
+
+            List<ShoppingCartItem> cart = workContext.CurrentCustomer.ShoppingCartItems
+                .Where(sci => sci.ShoppingCartType == ShoppingCartType.ShoppingCart)
+                .LimitPerStore(storeContext.CurrentStore.Id)
+                .ToList();
+
+            GetShippingOptionResponse shippingOptionResponse = shippingService.GetShippingOptions(cart, address);
+
+            ShippingOption selectedShippingOption = shippingOptionResponse.ShippingOptions.FirstOrDefault();
+            genericAttributeService.SaveAttribute(workContext.CurrentCustomer, SystemCustomerAttributeNames.SelectedShippingOption, selectedShippingOption, storeContext.CurrentStore.Id);
+
+            return selectedShippingOption;
         }
 
         #endregion

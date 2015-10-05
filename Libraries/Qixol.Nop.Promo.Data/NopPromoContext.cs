@@ -34,6 +34,7 @@ namespace Qixol.Nop.Promo.Data.Mapping
             modelBuilder.Configurations.Add(new PromoOrderMap());
             modelBuilder.Configurations.Add(new PromoOrderItemMap());
 			modelBuilder.Configurations.Add(new PromoOrderItemPromotionMap());
+            modelBuilder.Configurations.Add(new PromoOrderCouponMap());
 
             base.OnModelCreating(modelBuilder);
         }

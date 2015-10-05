@@ -180,6 +180,7 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <None Include="packages.config" />
     <None Include="Scripts\jquery.nivo.slider.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

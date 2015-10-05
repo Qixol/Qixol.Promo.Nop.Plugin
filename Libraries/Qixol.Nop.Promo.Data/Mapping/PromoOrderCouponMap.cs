@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Qixol.Nop.Promo.Data.Mapping
 {
-    public class PromoOrderCouponMap : EntityTypeConfiguration<PromoOrderItem>
+    public class PromoOrderCouponMap : EntityTypeConfiguration<PromoOrderCoupon>
     {
         public readonly static string TABLENAME = "PromoOrderCoupon";
 
@@ -17,9 +17,9 @@ namespace Qixol.Nop.Promo.Data.Mapping
             this.ToTable(TABLENAME);
             this.HasKey(x => x.Id);
 
-            this.HasRequired(promoOrderItem => promoOrderItem.PromoOrder)
-                .WithMany(o => o.PromoOrderItems)
-                .HasForeignKey(promoOrderItem => promoOrderItem.PromoOrderId);
+            this.HasRequired(promoOrderCoupon => promoOrderCoupon.PromoOrder)
+                .WithMany(o => o.PromoOrderCoupons)
+                .HasForeignKey(promoOrderCoupon => promoOrderCoupon.PromoOrderId);
         }
     }
 }
