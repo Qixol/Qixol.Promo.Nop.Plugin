@@ -158,8 +158,11 @@ namespace Qixol.Plugin.Widgets.Promo
             this.InsertStringResource("Plugins.Widgets.QixolPromo.PromoBanner.AddNewTitle", "Add New Banner");
             this.InsertStringResource("Plugins.Widgets.QixolPromo.PromoBanner.AddButton", "Add Banner");
             this.InsertStringResource("Plugins.Widgets.QixolPromo.PromoBanner.Name", "Name");
+            this.InsertStringResource("Plugins.Widgets.QixolPromo.PromoBanner.Name.Hint", "The name for the banner");
             this.InsertStringResource("Plugins.Widgets.QixolPromo.PromoBanner.Enabled", "Enabled");
+            this.InsertStringResource("Plugins.Widgets.QixolPromo.PromoBanner.Enabled.Hint", "If this is checked then the banner can be displayed. If images within the banner are subject to promotion restrictions then they will only display if the promotion is valid at the point of display.");
             this.InsertStringResource("Plugins.Widgets.QixolPromo.PromoBanner.TransitionType", "Transition Type");
+            this.InsertStringResource("Plugins.Widgets.QixolPromo.PromoBanner.TransitionType.Hint", "The type of transition between images");
             this.InsertStringResource("Plugins.Widgets.QixolPromo.PromoBanner.WidgetZone", "Widget Zone");
             this.InsertStringResource("Plugins.Widgets.QixolPromo.PromoBanner.Validation.Msg.1", "A name must be specified for the new banner.");
             this.InsertStringResource("Plugins.Widgets.QixolPromo.PromoBanner.Failure.Msg", "Failed to add the banner.");
