@@ -267,17 +267,14 @@ namespace Qixol.Nop.Promo.Services.Messages
                         sb.AppendLine(string.Format("<tr style=\"background-color: {0};text-align: center;\">", _templatesSettings.Color2));
                         sb.AppendLine("<td style=\"padding: 0.6em 0.4em;text-align: left;\">");
 
-                        // NOTE:  Not able to check whether the coupon has been issued at this point, because the final basket confirmation has not yet been
-                        // sent to Promo (which is when the coupon issue will be confirmed).  Having to assume that the issue will be confirmed.
                         sb.AppendLine(_localizationService.GetResource("Plugin.Misc.QixolPromo.Coupon.YouReceived"));
                         sb.AppendLine("<br />");
 
-                        // Can't show this - as it will be the 'non-confirmed' text at this point... KW_REVIEW  Can we send the confirmed basket sooner?!
-                        //if (!string.IsNullOrEmpty(issuedCoupon.DisplayText))
-                        //{
-                        //    sb.AppendLine(string.Concat("<i>", _localizationService.GetValidatedResource(issuedCoupon.DisplayText), "</i>"));
-                        //    sb.AppendLine("<br />");
-                        //}
+                        if (!string.IsNullOrEmpty(issuedCoupon.DisplayText))
+                        {
+                            sb.AppendLine(string.Concat("<i>", _localizationService.GetValidatedResource(issuedCoupon.DisplayText), "</i>"));
+                            sb.AppendLine("<br />");
+                        }
 
                         if (!string.IsNullOrEmpty(issuedCoupon.CouponCode))
                             sb.AppendLine(string.Concat(_localizationService.GetResource("Plugin.Misc.QixolPromo.Coupon.Code"), ": ", "<b>", issuedCoupon.CouponCode, "</b>"));                            

@@ -411,7 +411,7 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
 
         private string GetImageUrl(string baseImageName)
         {
-            return string.Format("/Plugins/Widgets.QixolPromo/Themes/{1}/Content/images/{1}.png", _themeContext.WorkingThemeName, baseImageName);
+            return string.Format("/Plugins/Widgets.QixolPromo/Themes/{0}/Content/images/{1}.png", _themeContext.WorkingThemeName, baseImageName);
         }
 
         private TransitionType ToTT(string ttName)
