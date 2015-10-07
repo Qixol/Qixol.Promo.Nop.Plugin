@@ -1,4 +1,6 @@
-﻿using Nop.Services.Localization;
+﻿using Nop.Core;
+using Nop.Core.Infrastructure;
+using Nop.Services.Localization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,15 +21,17 @@ namespace Qixol.Nop.Promo.Services.Localization
         /// <returns></returns>
         public static string GetValidatedResource(this ILocalizationService localizationService, string resourceKey)
         {
+            string validatedResource = resourceKey;
+
             if (string.IsNullOrEmpty(resourceKey))
-                return string.Empty;
+                return validatedResource;
 
+            var workContext = EngineContext.Current.Resolve<IWorkContext>();
 
-            var resourceText = localizationService.GetResource(resourceKey);
-            if (string.IsNullOrEmpty(resourceText) || string.Compare(resourceText, resourceKey, true) == 0)
-                return resourceKey;
+            if (workContext.WorkingLanguage != null)
+                validatedResource = localizationService.GetResource(resourceKey, workContext.WorkingLanguage.Id, logIfNotFound: false,defaultValue: resourceKey, returnEmptyIfNotFound: false);
 
-            return resourceText;
+            return validatedResource;
         }
     }
 }

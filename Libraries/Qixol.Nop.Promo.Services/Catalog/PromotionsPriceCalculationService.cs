@@ -141,6 +141,7 @@ namespace Qixol.Nop.Promo.Services.Catalog
             {
                 appliedDiscount = new global::Nop.Core.Domain.Discounts.Discount()
                 {
+                    // TODO: complete localization mechanism for promo display
                     Name = string.Join(", ", basketResponse.GetLineDiscountNames(shoppingCartItem.Product, _promoSettings, shoppingCartItem.AttributesXml)
                                                            .Select(n => _localizationService.GetValidatedResource(n))),
                     DiscountAmount = discountAmount
