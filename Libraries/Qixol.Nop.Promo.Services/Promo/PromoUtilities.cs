@@ -91,6 +91,25 @@ namespace Qixol.Nop.Promo.Services.Promo
                 _logger.Error("Qixol Promos product update", ex);
             }
 
+            if (importResult == null)
+                _logger.Error("Qixol Promos product update - no import result");
+
+            if (importResult.Summary == null)
+                _logger.Error("Qixol Promos product update - no import summary result");
+
+            if (!importResult.Summary.ProcessedSuccessfully)
+            {
+                StringBuilder messageStringBuilder = new StringBuilder();
+                importResult.Summary.Messages.ForEach(m =>
+                {
+                    messageStringBuilder.Append(m.Code);
+                    messageStringBuilder.Append(": ");
+                    messageStringBuilder.Append(m.Message);
+                    messageStringBuilder.Append(";");
+                });
+                _logger.InsertLog(global::Nop.Core.Domain.Logging.LogLevel.Error, "Qixol Promos product update - Not processed successfully", messageStringBuilder.ToString());
+            }
+
             return importResult;
         }
 
