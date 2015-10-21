@@ -127,21 +127,18 @@ namespace Qixol.Nop.Promo.Services.Catalog
             appliedDiscount = null;
             decimal lineSubTotal = _priceCalculationService.GetUnitPrice(shoppingCartItem, false) * shoppingCartItem.Quantity;
 
-            // TODO: NO - need to use the "base" method to get the item sub-total
             if (!_promoSettings.Enabled)
-                return lineSubTotal;
+                return base.GetSubTotal(shoppingCartItem, includeDiscounts, out discountAmount, out appliedDiscount);
 
             BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
             if(!basketResponse.IsValid())
                 return lineSubTotal;
-
             
             discountAmount = basketResponse.GetLineDiscountAmount(shoppingCartItem.Product, _promoSettings, shoppingCartItem.AttributesXml);
             if (discountAmount != decimal.Zero)
             {
                 appliedDiscount = new global::Nop.Core.Domain.Discounts.Discount()
                 {
-                    // TODO: complete localization mechanism for promo display
                     Name = string.Join(", ", basketResponse.GetLineDiscountNames(shoppingCartItem.Product, _promoSettings, shoppingCartItem.AttributesXml)
                                                            .Select(n => _localizationService.GetValidatedResource(n))),
                     DiscountAmount = discountAmount

@@ -218,6 +218,11 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             this._promoUtilities = promoUtilities;
         }
 
+        internal void PromoParseAndSaveCheckoutAttributes(List<ShoppingCartItem> cart, FormCollection form)
+        {
+            base.ParseAndSaveCheckoutAttributes(cart, form);
+        }
+
         #endregion
 
         #region Utilities
@@ -258,51 +263,65 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             if (_promoSettings.Enabled)
             {
                 var basketResponse = _promoUtilities.GetBasketResponse();
-                if (basketResponse.IsValid() && basketResponse.TotalDiscount != decimal.Zero)
+                if (basketResponse.IsValid())
                 {
-                    cart.Where(sci => !sci.Product.CallForPrice)
-                        .ToList()
-                        .ForEach(sci =>
-                        {
-                            var cartItemModel = model.Items.Where(mi => mi.Id == sci.Id).FirstOrDefault();
-
-                            //sub total
-                            Discount scDiscount;
-                            decimal shoppingCartItemDiscountBase;
-                            decimal taxRate;
-                            decimal tempSubTotal = _promosPriceCalculationService.GetSubTotal(sci, true, out shoppingCartItemDiscountBase, out scDiscount);
-                            decimal shoppingCartItemSubTotalWithDiscountBase = _taxService.GetProductPrice(sci.Product, tempSubTotal, out taxRate);
-                            decimal shoppingCartItemSubTotalWithDiscount = _currencyService.ConvertFromPrimaryStoreCurrency(shoppingCartItemSubTotalWithDiscountBase, _workContext.WorkingCurrency);
-                            cartItemModel.SubTotal = _priceFormatter.FormatPrice(shoppingCartItemSubTotalWithDiscount);
-
-                            //display an applied discount amount
-                            if (scDiscount != null)
+                    if (basketResponse.TotalDiscount != decimal.Zero)
+                    {
+                        cart.Where(sci => !sci.Product.CallForPrice)
+                            .ToList()
+                            .ForEach(sci =>
                             {
-                                shoppingCartItemDiscountBase = _taxService.GetProductPrice(sci.Product, shoppingCartItemDiscountBase, out taxRate);
-                                if (shoppingCartItemDiscountBase > decimal.Zero)
+                                var cartItemModel = model.Items.Where(mi => mi.Id == sci.Id).FirstOrDefault();
+
+                                //sub total
+                                Discount scDiscount;
+                                decimal shoppingCartItemDiscountBase;
+                                decimal taxRate;
+                                decimal tempSubTotal = _promosPriceCalculationService.GetSubTotal(sci, true, out shoppingCartItemDiscountBase, out scDiscount);
+                                decimal shoppingCartItemSubTotalWithDiscountBase = _taxService.GetProductPrice(sci.Product, tempSubTotal, out taxRate);
+                                decimal shoppingCartItemSubTotalWithDiscount = _currencyService.ConvertFromPrimaryStoreCurrency(shoppingCartItemSubTotalWithDiscountBase, _workContext.WorkingCurrency);
+                                cartItemModel.SubTotal = _priceFormatter.FormatPrice(shoppingCartItemSubTotalWithDiscount);
+
+                                //display an applied discount amount
+                                if (scDiscount != null)
                                 {
-                                    decimal shoppingCartItemDiscount = _currencyService.ConvertFromPrimaryStoreCurrency(shoppingCartItemDiscountBase, _workContext.WorkingCurrency);
-                                    cartItemModel.Discount = _priceFormatter.FormatPrice(shoppingCartItemDiscount);
+                                    shoppingCartItemDiscountBase = _taxService.GetProductPrice(sci.Product, shoppingCartItemDiscountBase, out taxRate);
+                                    if (shoppingCartItemDiscountBase > decimal.Zero)
+                                    {
+                                        decimal shoppingCartItemDiscount = _currencyService.ConvertFromPrimaryStoreCurrency(shoppingCartItemDiscountBase, _workContext.WorkingCurrency);
+                                        cartItemModel.Discount = _priceFormatter.FormatPrice(shoppingCartItemDiscount);
+                                    }
                                 }
-                            }
-                        });
+                            });
+                    }
+
+                    model.DiscountBox.Message = string.Empty;
+                    model.DiscountBox.CurrentCode = _workContext.CurrentCustomer.GetAttribute<string>(SystemCustomerAttributeNames.DiscountCouponCode);
+                    if (!string.IsNullOrEmpty(model.DiscountBox.CurrentCode))
+                    {
+                        if (basketResponse.CouponIsValid(model.DiscountBox.CurrentCode))
+                        {
+                            model.DiscountBox.IsApplied = true;
+                            model.DiscountBox.Message = _localizationService.GetResource("ShoppingCart.DiscountCouponCode.Applied");
+                        }
+                        else
+                        {
+                            model.DiscountBox.IsApplied = false;
+                            model.DiscountBox.Message = _localizationService.GetResource("ShoppingCart.DiscountCouponCode.WrongDiscount");
+                        }
+                    }
                 }
             }
         }
 
+        #endregion
+
+        #region Shopping Cart
+
         [ChildActionOnly]
         public ActionResult PromoOrderSummary(bool? prepareAndDisplayOrderReviewData)
         {
-            var cart = _workContext.CurrentCustomer.ShoppingCartItems
-                .Where(sci => sci.ShoppingCartType == ShoppingCartType.ShoppingCart)
-                .LimitPerStore(_storeContext.CurrentStore.Id)
-                .ToList();
-            var model = new ShoppingCartModel();
-            PrepareShoppingCartModel(model, cart,
-                isEditable: false,
-                prepareEstimateShippingIfEnabled: false,
-                prepareAndDisplayOrderReviewData: prepareAndDisplayOrderReviewData.GetValueOrDefault());
-            return PartialView("OrderSummary", model);
+            return base.OrderSummary(prepareAndDisplayOrderReviewData);
         }
 
         #endregion

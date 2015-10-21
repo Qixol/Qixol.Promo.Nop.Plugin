@@ -304,8 +304,10 @@ namespace Qixol.Nop.Promo.Services.Promo
 
         public static List<string> GetLineDiscountNames(this BasketResponse basketResponse, Product product, PromoSettings promoSettings, string attributesXml)
         {
+            List<string> promotionNames = new List<string>();
+
             if (!BasketResponseIsValid(basketResponse))
-                return null;
+                return promotionNames;
 
             List<BasketResponseAppliedPromotion> lineLevelPromotions = basketResponse.LineLevelPromotions(product, promoSettings, attributesXml)
                                                                                      .Where(lp => lp.DiscountAmount != decimal.Zero || lp.PointsIssued != decimal.Zero)
@@ -314,16 +316,19 @@ namespace Qixol.Nop.Promo.Services.Promo
                                                                                      .ToList();
 
             if (lineLevelPromotions == null || lineLevelPromotions.Count == 0)
-                return null;
+                return promotionNames;
 
-            List<string> promotionNames = new List<string>();
             foreach (BasketResponseAppliedPromotion lineLevelPromo in lineLevelPromotions)
             {
                 var appliedPromo = (from p in basketResponse.Summary.AppliedPromotions where p.PromotionId == lineLevelPromo.PromotionId select p).FirstOrDefault();
                 if (appliedPromo != null)
                 {
-                    promotionNames.Add(GetDisplayPromoDetails(promoSettings.ShowPromotionDetailsInBasket, appliedPromo));
-                }                    
+                    if ((!appliedPromo.BasketLevelPromotion && !appliedPromo.DeliveryLevelPromotion) ||
+                        appliedPromo.PromotionType.Equals("FREEPRODUCT", StringComparison.InvariantCultureIgnoreCase)) // always treat FreeProduct as line level
+                    {
+                        promotionNames.Add(GetDisplayPromoDetails(promoSettings.ShowPromotionDetailsInBasket, appliedPromo));
+                    }
+                }
             }
 
             return promotionNames;
@@ -336,8 +341,35 @@ namespace Qixol.Nop.Promo.Services.Promo
 
             decimal totalDiscountsForLines = Decimal.Zero;
             var responseItems = basketResponse.FindBasketResponseItems(product, promoSettings, attributesXml);
-            if (responseItems != null && responseItems.Count > 0)
-                totalDiscountsForLines = responseItems.Sum(l => l.LinePromotionDiscount);
+
+            foreach (var responseItem in responseItems)
+            {
+                if (responseItem.AppliedPromotions.Count > 0)
+                {
+                    foreach (var appliedPromotion in responseItem.AppliedPromotions)
+                    {
+                        if (appliedPromotion.AssociatedLine == responseItem.Id)
+                        {
+                            if (!appliedPromotion.BasketLevelPromotion && !appliedPromotion.DeliveryLevelPromotion)
+                            {
+                                totalDiscountsForLines += appliedPromotion.DiscountAmount;
+                            }
+                            else
+                            {
+                                // check if we have a free product
+                                var summaryAppliedPromotion = (from sap in basketResponse.Summary.AppliedPromotions where sap.PromotionId == appliedPromotion.PromotionId && sap.InstanceId == appliedPromotion.InstanceId select sap).FirstOrDefault();
+                                if (summaryAppliedPromotion != null)
+                                {
+                                    if (summaryAppliedPromotion.PromotionType.Equals("FREEPRODUCT", StringComparison.InvariantCultureIgnoreCase))
+                                    {
+                                        totalDiscountsForLines += appliedPromotion.DiscountAmount; // We only want the amount for this line, not for the promotion which could be applied across multiple lines
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
             return totalDiscountsForLines;
         }
@@ -388,6 +420,26 @@ namespace Qixol.Nop.Promo.Services.Promo
 
             return basketResponseItems;
         }
+        #endregion
+
+        #region Coupon methods
+
+        public static bool CouponIsValid(this BasketResponse basketResponse, string couponCode)
+        {
+            if (!basketResponse.IsValid())
+                return false;
+
+            var basketCoupon = (from c in basketResponse.Coupons where c.CouponCode.Equals(couponCode, StringComparison.InvariantCultureIgnoreCase) select c).FirstOrDefault();
+
+            if (basketCoupon == null)
+                return false;
+
+            if (basketCoupon.Utilized)
+                return true;
+
+            return false;
+        }
+
         #endregion
 
         #endregion

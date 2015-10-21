@@ -6,21 +6,30 @@ namespace Qixol.Plugin.Misc.Promo.ViewEngines
     {
         public PromoViewEngine()
         {
-            PartialViewLocationFormats =
-                new[]
+            /*
+            AreaViewLocationFormats = new[]
                 {
-                    // TODO: Add themes folders (check core solution - uses {1} & {2} parameters?
-                    // also should mean we can remove theme lookup from cshtml
-                    "~/Plugins/Misc.QixolPromo/Views/Order/{0}.cshtml",
-                    "~/Plugins/Misc.QixolPromo/Views/ShoppingCart/{0}.cshtml",
-                    "~/Plugins/Misc.QixolPromo/Views/Customer/{0}.cshtml",
-                    "~/Plugins/Misc.QixolPromo/Views/Shared/{0}.cshtml",
-                    "~/Plugins/Misc.QixolPromo/Views/Admin/{0}.cshtml"
                 };
 
-            ViewLocationFormats =
-                new[]
+            AreaMasterLocationFormats = new[]
                 {
+                };
+
+            AreaPartialViewLocationFormats = new[]
+                {
+                };
+            */
+
+            ViewLocationFormats = new[]
+                {
+                    // themes
+                    "~/Plugins/Misc.QixolPromo/Themes/{2}/Views/Order/{0}.cshtml",
+                    "~/Plugins/Misc.QixolPromo/Themes/{2}//Views/ShoppingCart/{0}.cshtml",
+                    "~/Plugins/Misc.QixolPromo/Themes/{2}//Views/Customer/{0}.cshtml",
+                    "~/Plugins/Misc.QixolPromo/Themes/{2}//Views/Shared/{0}.cshtml",
+                    "~/Plugins/Misc.QixolPromo/Themes/{2}//Views/Admin/{0}.cshtml",
+
+                    // default
                     "~/Plugins/Misc.QixolPromo/Views/Order/{0}.cshtml",
                     "~/Plugins/Misc.QixolPromo/Views/ShoppingCart/{0}.cshtml",
                     "~/Plugins/Misc.QixolPromo/Views/Customer/{0}.cshtml",
@@ -29,20 +38,28 @@ namespace Qixol.Plugin.Misc.Promo.ViewEngines
                 };
 
             /*
-            AreaPartialViewLocationFormats =
-                new[]
+            MasterLocationFormats = new[]
                 {
-                    "~/Plugins/Misc.QixolPromo/Views/Admin/Discount/{0}.cshtml",
-                    "~/Plugins/Misc.QixolPromo/Views/Admin/{0}.cshtml"
-                };
-
-            AreaViewLocationFormats =
-                new[]
-                {
-                    "~/Plugins/Misc.QixolPromo/Views/Admin/Discount/{0}.cshtml",
-                    "~/Plugins/Misc.QixolPromo/Views/Admin/{0}.cshtml"
-                };
+                }
             */
+
+            PartialViewLocationFormats =
+                new[]
+                {
+                    // themes
+                    "~/Plugins/Misc.QixolPromo/Themes/{2}//Views/Order/{0}.cshtml",
+                    "~/Plugins/Misc.QixolPromo/Themes/{2}//Views/ShoppingCart/{0}.cshtml",
+                    "~/Plugins/Misc.QixolPromo/Themes/{2}//Views/Customer/{0}.cshtml",
+                    "~/Plugins/Misc.QixolPromo/Themes/{2}//Views/Shared/{0}.cshtml",
+                    "~/Plugins/Misc.QixolPromo/Themes/{2}//Views/Admin/{0}.cshtml",
+
+                    // default
+                    "~/Plugins/Misc.QixolPromo/Views/Order/{0}.cshtml",
+                    "~/Plugins/Misc.QixolPromo/Views/ShoppingCart/{0}.cshtml",
+                    "~/Plugins/Misc.QixolPromo/Views/Customer/{0}.cshtml",
+                    "~/Plugins/Misc.QixolPromo/Views/Shared/{0}.cshtml",
+                    "~/Plugins/Misc.QixolPromo/Views/Admin/{0}.cshtml"
+                };
         }
     }
 }
