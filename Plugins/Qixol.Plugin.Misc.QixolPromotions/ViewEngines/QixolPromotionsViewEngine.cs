@@ -15,7 +15,6 @@ namespace Qixol.Plugin.Misc.Promo.ViewEngines
                     "~/Plugins/Misc.QixolPromo/Views/ShoppingCart/{0}.cshtml",
                     "~/Plugins/Misc.QixolPromo/Views/Customer/{0}.cshtml",
                     "~/Plugins/Misc.QixolPromo/Views/Shared/{0}.cshtml",
-                    "~/Plugins/Misc.QixolPromo/Views/Admin/Discount/{0}.cshtml",
                     "~/Plugins/Misc.QixolPromo/Views/Admin/{0}.cshtml"
                 };
 
@@ -25,7 +24,7 @@ namespace Qixol.Plugin.Misc.Promo.ViewEngines
                     "~/Plugins/Misc.QixolPromo/Views/Order/{0}.cshtml",
                     "~/Plugins/Misc.QixolPromo/Views/ShoppingCart/{0}.cshtml",
                     "~/Plugins/Misc.QixolPromo/Views/Customer/{0}.cshtml",
-                    "~/Plugins/Misc.QixolPromo/Views/Admin/Discount/{0}.cshtml",
+                    "~/Plugins/Misc.QixolPromo/Views/Shared/{0}.cshtml",
                     "~/Plugins/Misc.QixolPromo/Views/Admin/{0}.cshtml"
                 };
 
