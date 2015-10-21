@@ -79,6 +79,8 @@ namespace Qixol.Nop.Promo.Services.Promo
 
         public ProductImportResponse ImportProductsToPromoService(ProductImportRequest qixolProductImport)
         {
+            _logger.Information("ImportProductToPromoService called");
+
             ProductImportResponse importResult = null;
 
             try
@@ -119,6 +121,8 @@ namespace Qixol.Nop.Promo.Services.Promo
 
         public AttributeValuesImportResponse ImportAttributesToPromoService(AttributeValuesImportRequest qixolAttributeImport)
         {
+            _logger.Information("ImportAttributesToPromoService called");
+
             AttributeValuesImportResponse importResult = null;
             try
             {
@@ -139,6 +143,8 @@ namespace Qixol.Nop.Promo.Services.Promo
 
         public HierarchyValuesImportResponse ImportHierarchyTopromoService(HierarchyValuesImportRequest hierarchyImport)
         {
+            _logger.Information("ImportHierarchyTopromoService called");
+
             HierarchyValuesImportResponse importResult = null;
             try
             {
