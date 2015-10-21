@@ -127,6 +127,10 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
 
             #region build basket items
 
+            // If we no longer have items in the shopping cart, do not return a basket Request so we don't call Promo unnecessarily
+            if (cart.Count < 1)
+                return null;
+
             foreach (var shoppingCartItem in cart)
             {
                 Product product = _productService.GetProductById(shoppingCartItem.ProductId);

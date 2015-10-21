@@ -158,6 +158,10 @@ namespace Qixol.Nop.Promo.Services.Promo
                 .LimitPerStore(_storeContext.CurrentStore.Id)
                 .ToList();
 
+            // If there are no items in the cart, do not process
+            if (cart.Count < 1)
+                return addToCartWarnings;
+
             BasketRequest basketRequest = cart.ToQixolPromosBasketRequest();
 
             if (basketRequest != null)
