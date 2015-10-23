@@ -388,9 +388,10 @@ namespace Qixol.Nop.Promo.Services.Promo
 
                 _genericAttributeService.SaveAttribute<string>(_workContext.CurrentCustomer, PromoCustomerAttributeNames.PromoBasketResponse, serializedBasketResponseData, _storeContext.CurrentStore.Id);
             }
-            catch
+            catch (Exception ex)
             {
-                // TODO: error handling
+                _logger.Error("Failed in SendBasketRequestToPromoService", ex, _workContext.CurrentCustomer);
+                _logger.InsertLog(global::Nop.Core.Domain.Logging.LogLevel.Information, "SendBasketRequestToPromoService", basketRequest.ToXmlString(), _workContext.CurrentCustomer);
             }
 
             return _promoUtilities.GetBasketResponse();

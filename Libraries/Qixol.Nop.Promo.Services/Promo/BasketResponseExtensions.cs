@@ -309,8 +309,12 @@ namespace Qixol.Nop.Promo.Services.Promo
             if (!BasketResponseIsValid(basketResponse))
                 return promotionNames;
 
-            List<BasketResponseAppliedPromotion> lineLevelPromotions = basketResponse.LineLevelPromotions(product, promoSettings, attributesXml)
-                                                                                     .Where(lp => lp.DiscountAmount != decimal.Zero || lp.PointsIssued != decimal.Zero)
+            List<BasketResponseAppliedPromotion> lineLevelPromotions = basketResponse.LineLevelPromotions(product, promoSettings, attributesXml);
+
+            if (lineLevelPromotions == null || lineLevelPromotions.Count == 0)
+                return promotionNames;
+            
+            lineLevelPromotions = lineLevelPromotions.Where(lp => lp.DiscountAmount != decimal.Zero || lp.PointsIssued != decimal.Zero)
                                                                                      .GroupBy(gb => gb.PromotionId)
                                                                                      .Select(s => s.First())
                                                                                      .ToList();

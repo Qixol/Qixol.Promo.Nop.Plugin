@@ -91,13 +91,20 @@ namespace Qixol.Nop.Promo.Services.Promo
             catch (Exception ex)
             {
                 _logger.Error("Qixol Promos product update", ex);
+                return importResult;
             }
 
             if (importResult == null)
+            {
                 _logger.Error("Qixol Promos product update - no import result");
+                return importResult;
+            }
 
             if (importResult.Summary == null)
+            {
                 _logger.Error("Qixol Promos product update - no import summary result");
+                return importResult;
+            }
 
             if (!importResult.Summary.ProcessedSuccessfully)
             {
