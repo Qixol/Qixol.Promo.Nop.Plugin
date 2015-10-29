@@ -100,19 +100,6 @@
                     width: 200
                 }]
             });
-
-            $("#promobannerpictures-grid table").on("keydown", "tr", function (e) {
-                var grid = $("#promobannerpictures-grid").data("kendoGrid");
-                var code = (e.keyCode ? e.keyCode : e.which);
-                if (code == 13) { // "Enter" keycode
-                    setTimeout(function () {
-                        var x = $(e.srcElement).closest("tbody");
-                        x.find('.k-grid-update').focus();
-                        grid.saveRow();
-                    });
-                    return false;
-                }
-            });
         });
     </script>
 </div>
@@ -122,6 +109,18 @@
 <script type="text/javascript">
 
     $(document).ready(function () {
+
+        $("#promobannerpictures-grid table").on("keydown", "tr", function (e) {
+            var grid = $("#promobannerpictures-grid").data("kendoGrid");
+            var code = (e.keyCode ? e.keyCode : e.which);
+            if (code == 13) { // "Enter" keycode
+                setTimeout(function () {
+                    $('.k-grid-update').focus();
+                    grid.saveRow();
+                });
+                return false;
+            }
+        });
 
         $('#addPromoBannerPicture').click(function () {
             var pictureId = $("#@Html.FieldIdFor(model => model.PictureId)").val();

@@ -135,8 +135,7 @@
                         var code = (e.keyCode ? e.keyCode : e.which);
                         if (code == 13) { // "Enter" keycode
                             setTimeout(function () {
-                                var x = $(e.srcElement).closest("tbody");
-                                x.find('.k-grid-update').focus();
+                                $('.k-grid-update').focus();
                                 grid.saveRow();
                             });
                             return false;
