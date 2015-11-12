@@ -161,6 +161,12 @@ namespace Qixol.Nop.Promo.Core.Domain.Promo
             // Reload the XML into the Integration object, so that we can make use of its validation routines.
             // We also use this for the available times.
             var integrationPromo = Qixol.Promo.Integration.Lib.Export.ExportPromotionDetailsItem.RetrieveFromXml(promo.PromoXml);
+            // the Xml only has the TIME for the valid from / to, and then only if the promotion starts/expires on that day.
+            // for completeness, reset these to the full datetime (or min/max if not present)
+            integrationPromo.ValidFrom = promo.ValidFrom.HasValue ? promo.ValidFrom.Value : DateTime.MinValue;
+            integrationPromo.ValidTo = promo.ValidTo.HasValue ? promo.ValidTo.Value : DateTime.MaxValue;
+            if (integrationPromo.ValidTo.CompareTo(DateTime.MinValue) == 0)
+                integrationPromo.ValidTo = DateTime.MaxValue;
 
             List<IGrouping<int, ProductPromotionMapping>> requiredQuantities = null;
             List<IGrouping<decimal, ProductPromotionMapping>> requiredSpend = null;

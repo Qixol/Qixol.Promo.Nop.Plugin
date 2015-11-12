@@ -70,9 +70,9 @@
       <HintPath>..\..\Website\bin\Nop.Web.Framework.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Qixol.Promo.Integration.Lib, Version=2.0.1.2, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Qixol.Promo.Integration.Lib, Version=2.0.1.3, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\packages\Qixol.Promo.Integration.Lib.2.0.1.2\Qixol.Promo.Integration.Lib.dll</HintPath>
+      <HintPath>..\..\packages\Qixol.Promo.Integration.Lib.2.0.1.3\Qixol.Promo.Integration.Lib.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
