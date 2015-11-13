@@ -1,0 +1,18 @@
+/* BULLET NAVIGATION */
+
+.banner-wrapper.theme-custom .nivo-controlNav {
+    display: none;
+}
+
+.banner-wrapper.theme-custom .nivo-controlNav a {
+    display: none;
+}
+
+.banner-wrapper.theme-custom .nivo-controlNav a.active {
+    display: none;
+}
+
+/* Caption styles */
+.banner-wrapper.theme-custom .nivo-caption {
+    font-size: 14px;
+}
