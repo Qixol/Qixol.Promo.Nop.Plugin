@@ -34,7 +34,7 @@ namespace Qixol.Nop.Promo.Services.Banner
 
         public IQueryable<PromoBannerPicture> RetrievePicturesForBanner(int bannerId)
         {
-            return _bannerPictureRepository.Table.Where(sp => sp.PromoBannerId == bannerId);
+            return _bannerPictureRepository.Table.Where(sp => sp.PromoBannerId == bannerId).OrderBy(pic => pic.DisplaySequence);
         }
 
         public void InsertBanner(PromoBanner bannerToInsert)

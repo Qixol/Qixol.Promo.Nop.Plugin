@@ -206,25 +206,25 @@ namespace Qixol.Plugin.Widgets.Promo
             this.InsertStringResource("Plugins.Widgets.QixolPromo.Coupons.ValidTo", "Valid To");
             this.InsertStringResource("Plugins.Widgets.QixolPromo.Coupons.Description", "Description");
 
-            this.InsertStringResource(TransitionTypeName.SLICEDOWN, "Slice Down");
-            this.InsertStringResource(TransitionTypeName.SLICEDOWNLEFT, "Slice Down Left");
-            this.InsertStringResource(TransitionTypeName.SLICEUP, "Slice Up");
-            this.InsertStringResource(TransitionTypeName.SLICEUPLEFT, "Slice Up Left");
-            this.InsertStringResource(TransitionTypeName.SLICEUPDOWN, "Slice Up Down");
-            this.InsertStringResource(TransitionTypeName.SLICEUPDOWNLEFT, "Slice Up Down Left");
-            this.InsertStringResource(TransitionTypeName.FOLD, "Fold");
-            this.InsertStringResource(TransitionTypeName.FADE, "Fade");
-            this.InsertStringResource(TransitionTypeName.RANDOM, "Random");
-            this.InsertStringResource(TransitionTypeName.SLIDEINRIGHT, "Slide In Right");
-            this.InsertStringResource(TransitionTypeName.SLIDEINLEFT, "Slide In Left");
-            this.InsertStringResource(TransitionTypeName.BOXRANDOM, "Box Random");
-            this.InsertStringResource(TransitionTypeName.BOXRAIN, "Box Rain");
-            this.InsertStringResource(TransitionTypeName.BOXRAINREVERSE, "Box Rain Reverse");
-            this.InsertStringResource(TransitionTypeName.BOXRAINGROW, "Box Rain Grow");
-            this.InsertStringResource(TransitionTypeName.BOXRAINGROWREVERSE, "Box Rain Grow Reverse");
+            this.InsertStringResource(NivoTransition.SLICEDOWN.ResourceName, "Slice Down");
+            this.InsertStringResource(NivoTransition.SLICEDOWNLEFT.ResourceName, "Slice Down Left");
+            this.InsertStringResource(NivoTransition.SLICEUP.ResourceName, "Slice Up");
+            this.InsertStringResource(NivoTransition.SLICEUPLEFT.ResourceName, "Slice Up Left");
+            this.InsertStringResource(NivoTransition.SLICEUPDOWN.ResourceName, "Slice Up Down");
+            this.InsertStringResource(NivoTransition.SLICEUPDOWNLEFT.ResourceName, "Slice Up Down Left");
+            this.InsertStringResource(NivoTransition.FOLD.ResourceName, "Fold");
+            this.InsertStringResource(NivoTransition.FADE.ResourceName, "Fade");
+            this.InsertStringResource(NivoTransition.RANDOM.ResourceName, "Random");
+            this.InsertStringResource(NivoTransition.SLIDEINRIGHT.ResourceName, "Slide In Right");
+            this.InsertStringResource(NivoTransition.SLIDEINLEFT.ResourceName, "Slide In Left");
+            this.InsertStringResource(NivoTransition.BOXRANDOM.ResourceName, "Box Random");
+            this.InsertStringResource(NivoTransition.BOXRAIN.ResourceName, "Box Rain");
+            this.InsertStringResource(NivoTransition.BOXRAINREVERSE.ResourceName, "Box Rain Reverse");
+            this.InsertStringResource(NivoTransition.BOXRAINGROW.ResourceName, "Box Rain Grow");
+            this.InsertStringResource(NivoTransition.BOXRAINGROWREVERSE.ResourceName, "Box Rain Grow Reverse");
 
-            this.InsertStringResource(TransitionTypeName.STACKHORIZONTAL, "Stack Horizontal");
-            this.InsertStringResource(TransitionTypeName.STACKVERTICAL, "Stack Vertical");
+            this.InsertStringResource(NivoTransition.STACKHORIZONTAL.ResourceName, "Stack Horizontal");
+            this.InsertStringResource(NivoTransition.STACKVERTICAL.ResourceName, "Stack Vertical");
         }
 
         private void InsertStringResource(string resourceKey, string text)

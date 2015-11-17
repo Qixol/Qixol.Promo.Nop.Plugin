@@ -60,6 +60,8 @@ namespace Qixol.Plugin.Misc.Promo.ViewEngines
                     "~/Plugins/Misc.QixolPromo/Views/Shared/{0}.cshtml",
                     "~/Plugins/Misc.QixolPromo/Views/Admin/{0}.cshtml"
                 };
+
+            FileExtensions = new[] { "cshtml" };
         }
     }
 }

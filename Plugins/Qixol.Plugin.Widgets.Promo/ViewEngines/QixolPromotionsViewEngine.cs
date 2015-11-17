@@ -9,8 +9,12 @@ namespace Qixol.Plugin.Widgets.Promo.ViewEngines
             PartialViewLocationFormats =
                 new[]
                 {
-                    // TODO: Add themes folders (check core solution - uses {1} & {2} parameters?
-                    // also should mean we can remove theme lookup from cshtml
+                    // themes
+                    "~/Plugins/Widgets.QixolPromo/Themes/{2}/Views/Customer/{0}.cshtml",
+                    "~/Plugins/Widgets.QixolPromo/Themes/{2}/Views/Shared/{0}.cshtml",
+                    "~/Plugins/Widgets.QixolPromo/Themes/{2}/Views/Admin/{0}.cshtml",
+
+                    //default
                     "~/Plugins/Widgets.QixolPromo/Views/Customer/{0}.cshtml",
                     "~/Plugins/Widgets.QixolPromo/Views/Shared/{0}.cshtml",
                     "~/Plugins/Widgets.QixolPromo/Views/Admin/{0}.cshtml",
@@ -19,24 +23,26 @@ namespace Qixol.Plugin.Widgets.Promo.ViewEngines
             ViewLocationFormats =
                 new[]
                 {
+                    // themes
+                    "~/Plugins/Widgets.QixolPromo/Themes/{2}/Views/Customer/{0}.cshtml",
+
+                    // default
                     "~/Plugins/Widgets.QixolPromo/Views/Customer/{0}.cshtml",
                 };
 
-            /*
             AreaPartialViewLocationFormats =
                 new[]
                 {
-                    "~/Plugins/Misc.QixolPromo/Views/Admin/Discount/{0}.cshtml",
-                    "~/Plugins/Misc.QixolPromo/Views/Admin/{0}.cshtml"
+                    "~/Plugins/Widgets.QixolPromo/Views/Admin/{0}.cshtml",
+                    "~/Plugins/Widgets.QixolPromo/Views/Shared/{0}.cshtml",
                 };
 
             AreaViewLocationFormats =
                 new[]
                 {
-                    "~/Plugins/Misc.QixolPromo/Views/Admin/Discount/{0}.cshtml",
-                    "~/Plugins/Misc.QixolPromo/Views/Admin/{0}.cshtml"
+                    "~/Plugins/Widgets.QixolPromo/Views/Admin/{0}.cshtml",
+                    "~/Plugins/Widgets.QixolPromo/Views/Shared/{0}.cshtml",
                 };
-            */
         }
     }
 }

@@ -42,7 +42,7 @@
                         }
                     },
                     requestEnd: function(e) {
-                        if(e.type=="destroy") {
+                        if(e.type=="destroy" || e.type=="update") {
                             this.read();
                         }
                     },

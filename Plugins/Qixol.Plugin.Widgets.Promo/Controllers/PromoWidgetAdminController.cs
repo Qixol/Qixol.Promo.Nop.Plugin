@@ -82,25 +82,25 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
             model.AddPictureModel.PromoTypes.Add(new SelectListItem() { Value = PromotionTypeName.IssuePoints, Text = _localizationService.GetResource("Plugins.Misc.QixolPromo.PromoType.ISSUEPOINTS") });
 
             model.AddPromoBannerModel.AvailableTransitionTypes = new List<SelectListItem>();
-            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = TransitionTypeName.SLICEDOWN, Text = _localizationService.GetResource(TransitionTypeName.SLICEDOWN) });
-            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = TransitionTypeName.SLICEDOWNLEFT, Text = _localizationService.GetResource(TransitionTypeName.SLICEDOWNLEFT) });
-            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = TransitionTypeName.SLICEUP, Text = _localizationService.GetResource(TransitionTypeName.SLICEUP) });
-            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = TransitionTypeName.SLICEUPLEFT, Text = _localizationService.GetResource(TransitionTypeName.SLICEUPLEFT) });
-            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = TransitionTypeName.SLICEUPDOWN, Text = _localizationService.GetResource(TransitionTypeName.SLICEUPDOWN) });
-            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = TransitionTypeName.SLICEUPDOWNLEFT, Text = _localizationService.GetResource(TransitionTypeName.SLICEUPDOWNLEFT) });
-            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = TransitionTypeName.FOLD, Text = _localizationService.GetResource(TransitionTypeName.FOLD) });
-            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = TransitionTypeName.FADE, Text = _localizationService.GetResource(TransitionTypeName.FADE) });
-            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = TransitionTypeName.RANDOM, Text = _localizationService.GetResource(TransitionTypeName.RANDOM) });
-            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = TransitionTypeName.SLIDEINRIGHT, Text = _localizationService.GetResource(TransitionTypeName.SLIDEINRIGHT) });
-            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = TransitionTypeName.SLIDEINLEFT, Text = _localizationService.GetResource(TransitionTypeName.SLIDEINLEFT) });
-            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = TransitionTypeName.BOXRANDOM, Text = _localizationService.GetResource(TransitionTypeName.BOXRANDOM) });
-            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = TransitionTypeName.BOXRAIN, Text = _localizationService.GetResource(TransitionTypeName.BOXRAIN) });
-            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = TransitionTypeName.BOXRAINREVERSE, Text = _localizationService.GetResource(TransitionTypeName.BOXRAINREVERSE) });
-            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = TransitionTypeName.BOXRAINGROW, Text = _localizationService.GetResource(TransitionTypeName.BOXRAINGROW) });
-            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = TransitionTypeName.BOXRAINGROWREVERSE, Text = _localizationService.GetResource(TransitionTypeName.BOXRAINGROWREVERSE) });
+            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = NivoTransition.SLICEDOWN.TransitionType, Text = _localizationService.GetResource(NivoTransition.SLICEDOWN.ResourceName) });
+            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = NivoTransition.SLICEDOWNLEFT.TransitionType, Text = _localizationService.GetResource(NivoTransition.SLICEDOWNLEFT.ResourceName) });
+            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = NivoTransition.SLICEUP.TransitionType, Text = _localizationService.GetResource(NivoTransition.SLICEUP.ResourceName) });
+            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = NivoTransition.SLICEUPLEFT.TransitionType, Text = _localizationService.GetResource(NivoTransition.SLICEUPLEFT.ResourceName) });
+            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = NivoTransition.SLICEUPDOWN.TransitionType, Text = _localizationService.GetResource(NivoTransition.SLICEUPDOWN.ResourceName) });
+            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = NivoTransition.SLICEUPDOWNLEFT.TransitionType, Text = _localizationService.GetResource(NivoTransition.SLICEUPDOWNLEFT.ResourceName) });
+            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = NivoTransition.FOLD.TransitionType, Text = _localizationService.GetResource(NivoTransition.FOLD.ResourceName) });
+            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = NivoTransition.FADE.TransitionType, Text = _localizationService.GetResource(NivoTransition.FADE.ResourceName) });
+            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = NivoTransition.RANDOM.TransitionType, Text = _localizationService.GetResource(NivoTransition.RANDOM.ResourceName) });
+            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = NivoTransition.SLIDEINRIGHT.TransitionType, Text = _localizationService.GetResource(NivoTransition.SLIDEINRIGHT.ResourceName) });
+            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = NivoTransition.SLIDEINLEFT.TransitionType, Text = _localizationService.GetResource(NivoTransition.SLIDEINLEFT.ResourceName) });
+            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = NivoTransition.BOXRANDOM.TransitionType, Text = _localizationService.GetResource(NivoTransition.BOXRANDOM.ResourceName) });
+            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = NivoTransition.BOXRAIN.TransitionType, Text = _localizationService.GetResource(NivoTransition.BOXRAIN.ResourceName) });
+            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = NivoTransition.BOXRAINREVERSE.TransitionType, Text = _localizationService.GetResource(NivoTransition.BOXRAINREVERSE.ResourceName) });
+            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = NivoTransition.BOXRAINGROW.TransitionType, Text = _localizationService.GetResource(NivoTransition.BOXRAINGROW.ResourceName) });
+            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = NivoTransition.BOXRAINGROWREVERSE.TransitionType, Text = _localizationService.GetResource(NivoTransition.BOXRAINGROWREVERSE.ResourceName) });
 
-            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = TransitionTypeName.STACKHORIZONTAL, Text = _localizationService.GetResource(TransitionTypeName.STACKHORIZONTAL) });
-            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = TransitionTypeName.STACKVERTICAL, Text = _localizationService.GetResource(TransitionTypeName.STACKVERTICAL) });
+            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = NivoTransition.STACKHORIZONTAL.TransitionType, Text = _localizationService.GetResource(NivoTransition.STACKHORIZONTAL.ResourceName) });
+            model.AddPromoBannerModel.AvailableTransitionTypes.Add(new SelectListItem() { Value = NivoTransition.STACKVERTICAL.TransitionType, Text = _localizationService.GetResource(NivoTransition.STACKVERTICAL.ResourceName) });
 
             var widgetZones = WidgetZonesHelper.GetWidgetZonesForProductPromos();
             model.ProductPagePromoDetailsWidgetZonesList = widgetZones.Select(wz => new SelectListItem() { Text = wz.DisplayName, Value = wz.Name }).OrderBy(ob => ob.Text).ToList();
@@ -142,27 +142,27 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
         [HttpPost]
         public ActionResult TransitionTypes(DataSourceRequest command)
         {
-            List<TransitionType> tts = new List<TransitionType>();
+            List<dynamic> tts = new List<dynamic>();
 
-            tts.Add(ToTT(TransitionTypeName.SLICEDOWN));
-            tts.Add(ToTT(TransitionTypeName.SLICEDOWNLEFT));
-            tts.Add(ToTT(TransitionTypeName.SLICEUP));
-            tts.Add(ToTT(TransitionTypeName.SLICEUPLEFT));
-            tts.Add(ToTT(TransitionTypeName.SLICEUPDOWN));
-            tts.Add(ToTT(TransitionTypeName.SLICEUPDOWNLEFT));
-            tts.Add(ToTT(TransitionTypeName.FOLD));
-            tts.Add(ToTT(TransitionTypeName.FADE));
-            tts.Add(ToTT(TransitionTypeName.RANDOM));
-            tts.Add(ToTT(TransitionTypeName.SLIDEINRIGHT));
-            tts.Add(ToTT(TransitionTypeName.SLIDEINLEFT));
-            tts.Add(ToTT(TransitionTypeName.BOXRANDOM));
-            tts.Add(ToTT(TransitionTypeName.BOXRAIN));
-            tts.Add(ToTT(TransitionTypeName.BOXRAINREVERSE));
-            tts.Add(ToTT(TransitionTypeName.BOXRAINGROW));
-            tts.Add(ToTT(TransitionTypeName.BOXRAINGROWREVERSE));
+            tts.Add(new { TransitionTypeID = NivoTransition.SLICEDOWN.TransitionType, TransitionTypeName = _localizationService.GetResource(NivoTransition.SLICEDOWN.ResourceName) });
+            tts.Add(new { TransitionTypeID = NivoTransition.SLICEDOWNLEFT.TransitionType, TransitionTypeName = _localizationService.GetResource(NivoTransition.SLICEDOWNLEFT.ResourceName) });
+            tts.Add(new { TransitionTypeID = NivoTransition.SLICEUP.TransitionType, TransitionTypeName = _localizationService.GetResource(NivoTransition.SLICEUP.ResourceName) });
+            tts.Add(new { TransitionTypeID = NivoTransition.SLICEUPLEFT.TransitionType, TransitionTypeName = _localizationService.GetResource(NivoTransition.SLICEUPLEFT.ResourceName) });
+            tts.Add(new { TransitionTypeID = NivoTransition.SLICEUPDOWN.TransitionType, TransitionTypeName = _localizationService.GetResource(NivoTransition.SLICEUPDOWN.ResourceName) });
+            tts.Add(new { TransitionTypeID = NivoTransition.SLICEUPDOWNLEFT.TransitionType, TransitionTypeName = _localizationService.GetResource(NivoTransition.SLICEUPDOWNLEFT.ResourceName) });
+            tts.Add(new { TransitionTypeID = NivoTransition.FOLD.TransitionType, TransitionTypeName = _localizationService.GetResource(NivoTransition.FOLD.ResourceName) });
+            tts.Add(new { TransitionTypeID = NivoTransition.FADE.TransitionType, TransitionTypeName = _localizationService.GetResource(NivoTransition.FADE.ResourceName) });
+            tts.Add(new { TransitionTypeID = NivoTransition.RANDOM.TransitionType, TransitionTypeName = _localizationService.GetResource(NivoTransition.RANDOM.ResourceName) });
+            tts.Add(new { TransitionTypeID = NivoTransition.SLIDEINRIGHT.TransitionType, TransitionTypeName = _localizationService.GetResource(NivoTransition.SLIDEINRIGHT.ResourceName) });
+            tts.Add(new { TransitionTypeID = NivoTransition.SLIDEINLEFT.TransitionType, TransitionTypeName = _localizationService.GetResource(NivoTransition.SLIDEINLEFT.ResourceName) });
+            tts.Add(new { TransitionTypeID = NivoTransition.BOXRANDOM.TransitionType, TransitionTypeName = _localizationService.GetResource(NivoTransition.BOXRANDOM.ResourceName) });
+            tts.Add(new { TransitionTypeID = NivoTransition.BOXRAIN.TransitionType, TransitionTypeName = _localizationService.GetResource(NivoTransition.BOXRAIN.ResourceName) });
+            tts.Add(new { TransitionTypeID = NivoTransition.BOXRAINREVERSE.TransitionType, TransitionTypeName = _localizationService.GetResource(NivoTransition.BOXRAINREVERSE.ResourceName) });
+            tts.Add(new { TransitionTypeID = NivoTransition.BOXRAINGROW.TransitionType, TransitionTypeName = _localizationService.GetResource(NivoTransition.BOXRAINGROW.ResourceName) });
+            tts.Add(new { TransitionTypeID = NivoTransition.BOXRAINGROWREVERSE.TransitionType, TransitionTypeName = _localizationService.GetResource(NivoTransition.BOXRAINGROWREVERSE.ResourceName) });
 
-            tts.Add(ToTT(TransitionTypeName.STACKHORIZONTAL));
-            tts.Add(ToTT(TransitionTypeName.STACKVERTICAL));
+            tts.Add(new { TransitionTypeID = NivoTransition.STACKHORIZONTAL.TransitionType, TransitionTypeName = _localizationService.GetResource(NivoTransition.STACKHORIZONTAL.ResourceName) });
+            tts.Add(new { TransitionTypeID = NivoTransition.STACKVERTICAL.TransitionType, TransitionTypeName = _localizationService.GetResource(NivoTransition.STACKVERTICAL.ResourceName) });
 
             return Json(tts);
         }
@@ -187,7 +187,15 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
             {
                 modelItems.ForEach(i =>
                     {
-                        i.TransitionTypeName = _localizationService.GetResource(i.TransitionType);
+                        NivoTransition.Type nivoTransition = NivoTransition.FindByTransitionType(i.TransitionType);
+                        if (nivoTransition == null)
+                        {
+                            i.TransitionTypeName = "UNKNOWN"; // TODO: resource string / throw exception...? - should never happen
+                        }
+                        else
+                        {
+                            i.TransitionTypeName = _localizationService.GetResource(nivoTransition.ResourceName);
+                        }
                     });
             }
 
@@ -414,23 +422,7 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
             return string.Format("/Plugins/Widgets.QixolPromo/Themes/{0}/Content/images/{1}.png", _themeContext.WorkingThemeName, baseImageName);
         }
 
-        private TransitionType ToTT(string ttName)
-        {
-            TransitionType tt = new TransitionType()
-            {
-                TransitionTypeID = ttName,
-                TransitionTypeName = _localizationService.GetResource(ttName) // TODO: language
-            };
-
-            return tt;
-        }
-
         #endregion
     }
 
-    public class TransitionType
-    {
-        public string TransitionTypeName { get; set; }
-        public string TransitionTypeID { get; set; }
-    }
 }

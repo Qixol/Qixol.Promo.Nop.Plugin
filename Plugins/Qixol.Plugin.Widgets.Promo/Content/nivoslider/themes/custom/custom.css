@@ -109,7 +109,7 @@
 @media all and (max-width: 1000px) {
 .theme-custom {
 	max-width: 600px;
-	margin: -20px auto 0px;
+	margin: -20px auto 40px;
 }
 .theme-custom .nivo-directionNav {
 	display: none;
@@ -118,7 +118,7 @@
 
 @media all and (min-width: 1001px) {
 .theme-custom {
-	margin: -30px 0 0px;
+	margin: -30px 0 60px;
 }
 .theme-custom .nivo-directionNav {
 	display: none; /* remove to use directional navigation */
