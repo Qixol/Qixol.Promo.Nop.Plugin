@@ -1,5 +1,12 @@
 ﻿@model AddPromoBannerPictureModel
 
+@using Nop.Core;
+@using Nop.Core.Infrastructure;
+@using Nop.Web.Framework.UI;
+@{
+    var pictureService = EngineContext.Current.Resolve<Nop.Services.Media.IPictureService>();
+}
+
 <div>
     <div id="promobannerpictures-grid"></div>
     @Html.HiddenFor(m => Model.BannerId)
@@ -137,7 +144,7 @@
 
             $('#addPromoBannerPicture').attr('disabled', true);
             $.ajax({
-                cache:false,
+                cache: false,
                 type: "POST",
                 url: "/Admin/PromoBanner/Admin/Banner/Add",
                 data: { "bannerId": bannerId, "pictureId": pictureId, "promoRef": promoRef, "displaySequence": displaySequence, "url": url, "comment": comment },
@@ -145,17 +152,33 @@
                     var grid = $("#promobannerpictures-grid");
                     grid.data('kendoGrid').dataSource.read();
 
-                    // Reset the inputs back..  Currently doesn't clear the picture though.
+                    // Reset the input fields
+                    // picture
+                    var removeButton = $('[id ^=picture][id $=remove]');
+                    if (typeof removeButton != 'undefined') {
+                        var clientId = removeButton.attr('id').replace('picture', '').replace('remove', '');
+                        var imageDivId = 'picture' + clientId + 'image';
+                        $('#picture' + clientId + 'image').html("<img src='@pictureService.GetDefaultPictureUrl(100)'/>");
+                        $("#picture" + clientId + "value input").val(0);
+                        $("#picture" + clientId).find(".qq-upload-list-selector").find("li").hide();
+                        $(removeButton).hide();
+                    }
+
+                    // other fields
                     $('#addPromoBannerPicture').attr('disabled', false);
                     $("#@Html.FieldIdFor(model => model.PromoReference)").val("");
-                    $("#@Html.FieldIdFor(model => model.DisplaySequence)").val("0");
+
+                    var numerictextbox = $("#@Html.FieldIdFor(model => model.DisplaySequence)").data("kendoNumericTextBox");
+                    numerictextbox.value(0);
+
                     $("#@Html.FieldIdFor(model => model.Comment)").val("");
                     $("#@Html.FieldIdFor(model => model.Url)").val("");
+
                 },
-                error:function (xhr, ajaxOptions, thrownError){
+                error: function (xhr, ajaxOptions, thrownError) {
                     alert('@T("Plugins.Widgets.QixolPromo.BannerPicture.Failure.Msg")');
                     $('#addPromoBannerPicture').attr('disabled', false);
-                }  
+                }
             });
         });
     });
