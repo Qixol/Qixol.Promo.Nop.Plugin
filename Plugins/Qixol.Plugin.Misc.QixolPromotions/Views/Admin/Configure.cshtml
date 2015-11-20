@@ -11,7 +11,32 @@
 }
 
 <script type="text/javascript">
+
     $(document).ready(function () {
+
+        @* Set tabs and fields enabled or disabled *@
+        var tabStrip = $("#qixolpromotionsbase-configure").kendoTabStrip().data("kendoTabStrip");
+        @{
+            if (!Model.SynchronizeProducts)
+            {
+                @Html.Raw("tabStrip.enable(tabStrip.tabGroup.children().eq(2), false);");
+                @Html.Raw(string.Format("$('#{0}').prop('disabled', true);", Html.FieldIdFor(model => model.StoreId)));
+                @Html.Raw(string.Format("$('label[for=\"{0}\"]').toggleClass('k-state-disabled', true);", Html.FieldIdFor(model => model.StoreId)));
+            }
+            if (!Model.SynchronizeStores)
+            {
+                @Html.Raw(string.Format("$('#{0}').prop('disabled', !$(this).prop('checked'));", Html.FieldIdFor(model => model.Channel)));
+                @Html.Raw(string.Format("$('label[for=\"{0}\"]').toggleClass('k-state-disabled', !$(this).prop('checked'));", Html.FieldIdFor(model => model.Channel)));
+                @Html.Raw(string.Format("$('#{0}').prop('disabled', !$(this).prop('checked'));", Html.FieldIdFor(model => model.StoreGroup)));
+                @Html.Raw(string.Format("$('label[for=\"{0}\"]').toggleClass('k-state-disabled', !$(this).prop('checked'));", Html.FieldIdFor(model => model.StoreGroup)));
+            }
+            if (!(Model.AllowCustomEndpoint && (Model.SelectedServicesEndPoint == 2)))
+            {
+                @Html.Raw("tabStrip.enable(tabStrip.tabGroup.children().eq(6), false);");
+            }
+        }
+
+        @* functions *@
         $(".generate-feed").click(function (e) {
             showThrobber('@Html.Raw(HttpUtility.JavaScriptStringEncode(T("Admin.System.ScheduleTasks.RunNow.Progress").Text))');
         });
@@ -34,186 +59,31 @@
             select: tabstrip_on_tab_select
         });
 
-
-        var labels = document.getElementsByTagName('LABEL');
-        for (var i = 0; i < labels.length; i++) {
-            if (labels[i].htmlFor != '') {
-                var elem = document.getElementById(labels[i].htmlFor);
-                if (elem)
-                    elem.label = labels[i];			
-            }
-        }
-
-        enableItems('store',@{ if (Model.SynchronizeProducts)
-                               { <text>true</text> }
-                               else
-                               { <text>false</text> } });
-        enableItems('storegroup',@{ if (Model.SynchronizeStores)
-                                    { <text>true</text> }
-                                    else
-                                    { <text>false</text> } });
-        enableItems('channel',@{ if (Model.SynchronizeStores)
-                                 { <text>true</text> }
-                                 else
-                                 { <text>false</text> } });
-
-        enableItems('synconsave',@{ if (Model.CanUpdateSynchronizeAll)
-                                    { <text>true</text> }
-                                    else
-                                    { <text>false</text> } });
-
-        setEnabled(@{ if (Model.Enabled)
-                      { <text>true</text> }
-                      else
-                      { <text>false</text> } });
-        
-    });
-
-    function enableItems(key, enableIt) {
-        //alert(enableIt);
-        var itemName = getNameFromKey(key);
-        $("#" + itemName).prop('disabled', !enableIt);
-        if(enableIt) {
-            document.getElementById(itemName).label.style.color = "black";
-        }
-        else{
-            document.getElementById(itemName).label.style.color = "silver";
-        }
-    }
-
-    function setEnabled(enabled) {
-        enableItems('companykey', enabled);
-
-        if(@{ if (Model.AllowCustomEndpoint)
-              { <text>true</text> }
-              else
-              { <text>false</text> } })
-        {
-            enableItems('importaddress', enabled);
-            enableItems('exportaddress', enabled);
-            enableItems('basketaddress', enabled);
-        }
-
-        if(@{ if(Model.ShowAdvancedIntegrationSettings) { <text>true</text>} else { <text>false</text> }})
-        {
-            enableItems('logmessages', enabled);
-            enableItems('istest', enabled);
-        }
-        enableItems('endpointselection', enabled);
-
-        if(enabled) {
-            document.getElementById('CompanyKeyHelperArea').style.color = "black";
-        } else {
-            document.getElementById('CompanyKeyHelperArea').style.color = "silver";
-        }
-
-        var tabStrip = $("#qixolpromotionsbase-configure").kendoTabStrip().data("kendoTabStrip");
-        if(!enabled){
-            tabStrip.disable(tabStrip.tabGroup.children().eq(1));            
-        }else {
-            tabStrip.enable(tabStrip.tabGroup.children().eq(1));            
-        }
-
-        var productSync = @{ if (Model.SynchronizeProducts)
-                             { <text>true</text> }
-                             else
-                             { <text>false</text> } };
-
-        if(enabled && productSync){
-            tabStrip.enable(tabStrip.tabGroup.children().eq(2));
-        }
-        else{
-            tabStrip.disable(tabStrip.tabGroup.children().eq(2));
-        }
-
-        if(enabled){
-            tabStrip.enable(tabStrip.tabGroup.children().eq(3));
-            tabStrip.enable(tabStrip.tabGroup.children().eq(4));
-            @if (Model.AllowCustomEndpoint)
-            {
-                <text>tabStrip.enable(tabStrip.tabGroup.children().eq(6));</text>
-            }
-        }
-        else {
-            tabStrip.disable(tabStrip.tabGroup.children().eq(3));
-            tabStrip.disable(tabStrip.tabGroup.children().eq(4));
-            @if (Model.AllowCustomEndpoint)
-            {
-                <text>tabStrip.disable(tabStrip.tabGroup.children().eq(6));</text>
-            }
-        }
-
-    @if (Model.AllowCustomEndpoint)
-    {
-        <text> 
-        var selectedEndpoint = @Model.SelectedServicesEndPoint;
-        if(enabled && selectedEndpoint == 2){
-            tabStrip.enable(tabStrip.tabGroup.children().eq(7));
-        }
-        else{
-                tabStrip.disable(tabStrip.tabGroup.children().eq(7));
-        }
-        </text>
-    }
-
-    }
-
-    function endPointChanged(selectedValue)
-    {
         @if (Model.AllowCustomEndpoint)
         {
             <text>
+        $('#@Html.FieldIdFor(model => model.SelectedServicesEndPoint)').change(function () {
             var tabStrip = $("#qixolpromotionsbase-configure").kendoTabStrip().data("kendoTabStrip");
-            if(selectedValue == 2){
-                tabStrip.enable(tabStrip.tabGroup.children().eq(7));
-            }
-            else{
-                tabStrip.disable(tabStrip.tabGroup.children().eq(7));
-            }
-            </text>
+            tabStrip.enable(tabStrip.tabGroup.children().eq(6), ($(this).val() == 2));
+        });
+        </text>
         }
-    }
 
-    function setSynchronizeProducts(synchronize){
-        enableItems('store', synchronize);
+        $('#@Html.FieldIdFor(model => model.SynchronizeProducts)').change(function () {
+            var tabStrip = $("#qixolpromotionsbase-configure").kendoTabStrip().data("kendoTabStrip");
+            tabStrip.enable(tabStrip.tabGroup.children().eq(2), $(this).prop('checked'));
+            $('#@Html.FieldIdFor(model => model.StoreId)').prop('disabled', !$(this).prop('checked'));
+            $('label[for="@Html.FieldIdFor(model => model.StoreId)"]').toggleClass('k-state-disabled', !$(this).prop('checked'));
+        });
 
-        var tabStrip = $("#qixolpromotionsbase-configure").kendoTabStrip().data("kendoTabStrip");
-        if(synchronize){
-            tabStrip.enable(tabStrip.tabGroup.children().eq(2));
-        }
-        else{
-            tabStrip.disable(tabStrip.tabGroup.children().eq(2));
-        }        
-    }
+        $('#@Html.FieldIdFor(model => model.SynchronizeStores)').change(function () {
+            $('#@Html.FieldIdFor(model => model.Channel)').prop('disabled', !$(this).prop('checked'));
+            $('label[for="@Html.FieldIdFor(model => model.Channel)"]').toggleClass('k-state-disabled', !$(this).prop('checked'));
+            $('#@Html.FieldIdFor(model => model.StoreGroup)').prop('disabled', !$(this).prop('checked'));
+            $('label[for="@Html.FieldIdFor(model => model.StoreGroup)"]').toggleClass('k-state-disabled', !$(this).prop('checked'));
+        });
 
-    function getNameFromKey(key) {
-        switch (key) {
-            case "store":
-                return '@Html.IdFor(m => m.StoreId)';
-            case "storegroup":
-                return '@Html.IdFor(m => m.StoreGroup)';
-            case "channel":
-                return '@Html.IdFor(m => m.Channel)';
-            case "companykey":
-                return '@Html.IdFor(m => m.CompanyKey)';
-            case "importaddress":
-                return '@Html.IdFor(m => m.PromoImportServiceEndpointAddress)';
-            case "exportaddress":
-                return '@Html.IdFor(m => m.PromoExportServiceEndpointAddress)';
-            case "basketaddress":
-                return '@Html.IdFor(m => m.BasketRequestServiceEndpointAddress)';
-            case "logmessages":
-                return '@Html.IdFor(m => m.LogMessages)';
-            case "istest":
-                return '@Html.IdFor(m => m.IsTest)';
-            case "endpointselection":
-                return '@Html.IdFor(m => m.SelectedServicesEndPoint)';
-            case "synconsave":
-                return '@Html.IdFor(m => m.SynchronizeAllWhenSaving)';
-            default:
-                return key;
-        }
-    }
+    });
 
 </script>    
 
@@ -314,7 +184,7 @@
                 @Html.NopLabelFor(model => model.SelectedServicesEndPoint):
             </td>
             <td class="adminData">
-                @Html.DropDownListFor(model => model.SelectedServicesEndPoint, Model.ServicesEndpointsList, new { @onchange = "endPointChanged(this.value);" })
+                @Html.DropDownListFor(model => model.SelectedServicesEndPoint, Model.ServicesEndpointsList)
                 @Html.ValidationMessageFor(model => model.SelectedServicesEndPoint)
             </td>
         </tr>
@@ -329,7 +199,7 @@
                 @Html.NopLabelFor(model => model.SynchronizeProducts):
             </td>
             <td class="adminData">
-                @Html.EditorFor(model => model.SynchronizeProducts, new { htmlAttributes = new { onChange = "setSynchronizeProducts(this.checked);" } })
+                @Html.EditorFor(model => model.SynchronizeProducts)
                 @Html.ValidationMessageFor(model => model.SynchronizeProducts)
             </td>
         </tr>

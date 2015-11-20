@@ -82,6 +82,15 @@
 
         $('#addPromoBannerWidgetZone').click(function () {
             var widgetZone = $("#@Html.FieldIdFor(model => model.SelectedWidgetZone)").val();
+            if (widgetZone == 'custom')
+            {
+                widgetZone = $('#@Html.FieldIdFor(model => model.CustomWidgetZone)').val();
+                if (widgetZone.trim() == '')
+                {
+                    alert('@T("Plugins.Widgets.QixolPromo.BannerWidgets.Failure.Msg")');
+                    return false;
+                }
+            }
             var bannerId = $("#@Html.FieldIdFor(model => model.BannerId)").val();
 
             $('#addPromoBannerWidgetZone').attr('disabled', true);
@@ -94,18 +103,40 @@
                     var grid = $("#promobannerwidgets-grid");
                     grid.data('kendoGrid').dataSource.read();
 
-                    // Reset the inputs back..  Currently doesn't clear the picture though.
                     $('#addPromoBannerWidgetZone').attr('disabled', false);
+                    $('#@Html.FieldIdFor(model => model.CustomWidgetZone)').val('');
                     $("#@Html.FieldIdFor(model => model.SelectedWidgetZone)").val("@Model.FirstWidgetZone");
+                    $('#@Html.FieldIdFor(model => model.CustomWidgetZone)').toggleClass('k-state-disabled', true)
+                    $('#@Html.FieldIdFor(model => model.CustomWidgetZone)').prop('disabled', 'disabled');
+                    $('label[for="@Html.FieldIdFor(model => model.CustomWidgetZone)"]').toggleClass('k-state-disabled', true)
                 },
                 error:function (xhr, ajaxOptions, thrownError){
                     alert('@T("Plugins.Widgets.QixolPromo.BannerWidgets.Failure.Msg")');
                     $('#addPromoBannerWidgetZone').attr('disabled', false);
-                }  
+                }
             });
         });
+
+        $('#@Html.FieldIdFor(model => model.SelectedWidgetZone)').change(function () {
+            var customDisabled = true;
+            if ($('#@Html.FieldIdFor(m => m.SelectedWidgetZone) option:selected').val() == 'custom')
+            {
+                customDisabled = false;
+                $('#@Html.FieldIdFor(model => model.CustomWidgetZone)').prop('disabled', '');
+            }
+            else
+            {
+                $('#@Html.FieldIdFor(model => model.CustomWidgetZone)').val('');
+                $('#@Html.FieldIdFor(model => model.CustomWidgetZone)').prop('disabled', 'disabled');
+            }
+            $('#@Html.FieldIdFor(model => model.CustomWidgetZone)').toggleClass('k-state-disabled', customDisabled);
+            $('label[for="@Html.FieldIdFor(model => model.CustomWidgetZone)"]').toggleClass('k-state-disabled', customDisabled);
+        });
+
+        $('label[for="@Html.FieldIdFor(model => model.CustomWidgetZone)"]').toggleClass('k-state-disabled', true);
+
     });
-</script>        
+</script>
 <table class="adminContent">
     <tr>
         <td class="adminTitle">
@@ -114,6 +145,14 @@
         <td class="adminData">
             @Html.DropDownListFor(model => model.SelectedWidgetZone, Model.AvailableWidgetZones)
             @Html.ValidationMessageFor(model => model.SelectedWidgetZone)
+        </td>
+    </tr>
+    <tr>
+        <td class="adminTitle">
+            @Html.NopLabelFor(model => model.CustomWidgetZone):
+        </td>
+        <td class="adminData">
+            @Html.EditorFor(model => model.CustomWidgetZone, new { htmlAttributes = new { @class = "k-state-disabled", disabled = "disabled" } })
         </td>
     </tr>
     <tr>

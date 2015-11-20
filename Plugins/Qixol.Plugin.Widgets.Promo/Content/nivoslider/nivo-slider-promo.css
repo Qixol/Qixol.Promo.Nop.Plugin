@@ -16,3 +16,8 @@
 .banner-wrapper.theme-custom .nivo-caption {
     font-size: 14px;
 }
+
+/* stackhorizontal and stackvertical */
+.stack-wrapper a {
+	font-size: 0px;
+}

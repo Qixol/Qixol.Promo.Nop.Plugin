@@ -26,6 +26,7 @@ using Qixol.Nop.Promo.Services.Promo;
 using Qixol.Nop.Promo.Core.Domain.Promo;
 using Qixol.Nop.Promo.Data.Mapping;
 using Qixol.Plugin.Widgets.Promo.Domain;
+using Qixol.Nop.Promo.Services.Banner;
 
 namespace Qixol.Plugin.Widgets.Promo
 {
@@ -35,6 +36,7 @@ namespace Qixol.Plugin.Widgets.Promo
 
         private readonly WidgetSettings _widgetSettings;
         private readonly ISettingService _settingService;
+        private readonly IPromoBannerService _promoBannerService;
         private List<KeyValuePair<string, string>> _stringsList = new List<KeyValuePair<string, string>>();
 
         #endregion
@@ -42,10 +44,12 @@ namespace Qixol.Plugin.Widgets.Promo
         #region constructor
 
         public PromoWidgets(WidgetSettings widgetSettings,
-                            ISettingService settingService)
+                            ISettingService settingService,
+                            IPromoBannerService promoBannerService)
         {
             this._widgetSettings = widgetSettings;
             this._settingService = settingService;
+            this._promoBannerService = promoBannerService;
         }
 
         #endregion
@@ -115,7 +119,18 @@ namespace Qixol.Plugin.Widgets.Promo
 
         public IList<string> GetWidgetZones()
         {
-            return WidgetZonesHelper.GetAllWidgets().Select(w => w.Name).ToList();
+            List<string> baseWidgetZoneNames = WidgetZonesHelper.GetAllWidgets().Select(w => w.Name).ToList();
+
+            var customWidgetZoneNames = _promoBannerService.RetrieveAllEnabledWidgetZones().Select(cw => cw.WidgetZoneSystemName).ToList();
+            baseWidgetZoneNames.ForEach(wzn =>
+            {
+                customWidgetZoneNames.Remove(wzn);
+            });
+
+            List<string> allWidgetZones = baseWidgetZoneNames;
+            allWidgetZones.AddRange(customWidgetZoneNames);
+
+            return allWidgetZones;
         }
 
         #region Locale Resources
@@ -200,6 +215,8 @@ namespace Qixol.Plugin.Widgets.Promo
             this.InsertStringResource("Plugins.Widgets.QixolPromo.BannerWidgets.Failure.Msg", "Failed to add the widget zone.");
             this.InsertStringResource("Plugins.Widgets.QixolPromo.BannerWidgets.ValidationMsg.Add", "A problem was encountered whilst attempting to add the widget zone.");
             this.InsertStringResource("Plugins.Widgets.QixolPromo.BannerWidgets.ValidationMsg.Delete", "A problem was encountered whilst attempting to delete the widget zone.");
+            this.InsertStringResource("Plugins.Widgets.QixolPromo.BannerWidgets.CustomWidgetZone", "The name of a custom widget zone");
+            this.InsertStringResource("Plugins.Widgets.QixolPromo.BannerWidgets.CustomWidgetZone.Hint", "This enables a banner to be displayed in a custom widget zone.");
 
             this.InsertStringResource("Plugins.Widgets.QixolPromo.Coupons.Code", "Code");
             this.InsertStringResource("Plugins.Widgets.QixolPromo.Coupons.Status", "Status");

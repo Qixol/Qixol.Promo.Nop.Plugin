@@ -54,9 +54,10 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
 
             var widgetZones = WidgetZonesHelper.GetWidgetZonesForBanners();
             model.AddPromoBannerWidgetZoneModel.AvailableWidgetZones = widgetZones.Select(s => new SelectListItem() { Text = s.DisplayName, Value = s.Name }).OrderBy(ob => ob.Text).ToList();
+            model.AddPromoBannerWidgetZoneModel.AvailableWidgetZones.Add(new SelectListItem() { Text = "custom", Value = "custom" });
             model.AddPromoBannerWidgetZoneModel.FirstWidgetZone = widgetZones.FirstOrDefault().Name;
 
-            return View("~/Plugins/Widgets.QixolPromo/Views/Admin/ConfigureBanner.cshtml", model);
+            return View("ConfigureBanner", model);
         }
 
         #endregion
@@ -194,7 +195,7 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
         [HttpPost]
         public ActionResult BannerWidgetZoneAdd(int bannerId, string widgetZone)
         {
-            if (bannerId == 0)
+            if (bannerId == 0 || string.IsNullOrEmpty(widgetZone.Trim()))
             {
                 ModelState.AddModelError(string.Empty, _localizationService.GetResource("Plugins.Widgets.QixolPromo.BannerWidgets.ValidationMsg.Add"));
                 return Json(new DataSourceResult { Errors = ModelState.SerializeErrors() });

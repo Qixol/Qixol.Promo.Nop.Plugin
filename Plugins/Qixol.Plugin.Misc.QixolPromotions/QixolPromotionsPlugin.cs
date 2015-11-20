@@ -364,7 +364,7 @@ namespace Qixol.Plugin.Misc.Promo
             this.InsertStringResource("Plugins.Misc.QixolPromo.SyncCheckoutAttributes.Hint", "Indicates whether checkout attributes (where those attributes have values which have a price adjustment defined) will be synchronized between NOP and Qixol Promo.");
 
             this.InsertStringResource("Plugins.Misc.QixolPromo.IntegrationCodes", "Integration Codes");
-            this.InsertStringResource("Plugins.Misc.QixolPromo.ShowPromoDetails", "Show promomotion details");
+            this.InsertStringResource("Plugins.Misc.QixolPromo.ShowPromoDetails", "Show promotion details");
             this.InsertStringResource("Plugins.Misc.QixolPromo.ShowPromoDetails.Hint", "Select the promo details to be displayed to the user when showing applied promotions in the shopping cart.");
             this.InsertStringResource("Plugins.Misc.QixolPromo.ShowPromoDetails.UserText", "Show promotion end-user/customer description");
             this.InsertStringResource("Plugins.Misc.QixolPromo.ShowPromoDetails.PromotionName", "Show promotion name");
