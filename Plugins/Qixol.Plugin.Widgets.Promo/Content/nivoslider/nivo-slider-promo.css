@@ -18,6 +18,11 @@
 }
 
 /* stackhorizontal and stackvertical */
-.stack-wrapper a {
+.stack-wrapper {
 	font-size: 0px;
+    display: inline;
+}
+
+.stack-wrapper div {
+    display: inline;
 }

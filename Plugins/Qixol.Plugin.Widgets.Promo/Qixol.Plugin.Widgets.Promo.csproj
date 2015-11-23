@@ -246,10 +246,10 @@
     <None Include="Views\Customer\DisplayTemplates\IssuedCouponModel.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="Views\Shared\DisplayTemplates\PromoBannerDisplayModel.cshtml">
+    <None Include="Views\Shared\DisplayTemplates\PromoBannerDisplayPictureModel.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="Views\Shared\EditorTemplates\Picture.cshtml">
+    <None Include="Views\Shared\DisplayTemplates\PromoBannerDisplayModel.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="Views\Shared\_PromoPictureBanner.cshtml">

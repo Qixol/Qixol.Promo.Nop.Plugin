@@ -30,6 +30,7 @@ using Qixol.Nop.Promo.Core.Domain.Banner;
 using Qixol.Nop.Promo.Services.Localization;
 using Nop.Services.Localization;
 using Nop.Web.Framework.Themes;
+using Qixol.Plugin.Widgets.Promo.Domain;
 
 namespace Qixol.Plugin.Widgets.Promo.Controllers
 {
@@ -210,13 +211,13 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
                                                        }
 
                                                        if (validatedPromo.ValidToDisplay)
-                                                           bannerToDisplay.Pictures.Add(GetBannerPictureModel(ps));
+                                                           bannerToDisplay.Pictures.Add(GetBannerPictureModel(ps, s.TransitionType));
                                                    }
                                                }
                                                else
                                                {
                                                    // If there isn't a promo reference - we'll have to always display it!
-                                                   bannerToDisplay.Pictures.Add(GetBannerPictureModel(ps));
+                                                   bannerToDisplay.Pictures.Add(GetBannerPictureModel(ps, s.TransitionType));
                                                }
                                            });
 
@@ -224,6 +225,14 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
                           {
                               // Ensure pictures are sorted by the display sequence.
                               bannerToDisplay.Pictures = bannerToDisplay.Pictures.OrderBy(ob => ob.DisplaySequence).ToList();
+
+                              string width = "100";
+                              // set the width of pictures (if stacking)
+                              if (s.TransitionType.CompareTo(NivoTransition.STACKHORIZONTAL.TransitionType) == 0)
+                              {
+                                  width = string.Format("{0:0.00}", 100M / bannerToDisplay.Pictures.Count);
+                              }
+                              bannerToDisplay.Pictures.ForEach(p => { p.Width = width; });
                               bannersToDisplay.Add(bannerToDisplay);
                           }
                       });
@@ -240,14 +249,15 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
             return widgetZone.ToLower().StartsWith("productdetails_");
         }
 
-        private PromoBannerDisplayPictureModel GetBannerPictureModel(PromoBannerPicture promoBannerPicture)
+        private PromoBannerDisplayPictureModel GetBannerPictureModel(PromoBannerPicture promoBannerPicture, string transitionType)
         {
             var returnItem = new PromoBannerDisplayPictureModel()
             {
                 Comment = promoBannerPicture.Comment,
                 DisplaySequence = promoBannerPicture.DisplaySequence,
                 PictureId = promoBannerPicture.PictureId,
-                Url = promoBannerPicture.Url
+                Url = promoBannerPicture.Url,
+                TransitionType = transitionType
             };
 
             returnItem.PictureUrl = _pictureService.GetPictureUrl(returnItem.PictureId);

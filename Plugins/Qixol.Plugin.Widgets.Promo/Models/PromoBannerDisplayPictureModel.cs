@@ -18,5 +18,8 @@ namespace Qixol.Plugin.Widgets.Promo.Models
 
         public int DisplaySequence { get; set; }
 
+        public string TransitionType { get; set; }
+
+        public string Width { get; set; }
     }
 }
