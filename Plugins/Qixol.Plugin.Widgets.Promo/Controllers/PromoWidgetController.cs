@@ -31,6 +31,7 @@ using Qixol.Nop.Promo.Services.Localization;
 using Nop.Services.Localization;
 using Nop.Web.Framework.Themes;
 using Qixol.Plugin.Widgets.Promo.Domain;
+using System.Globalization;
 
 namespace Qixol.Plugin.Widgets.Promo.Controllers
 {
@@ -230,7 +231,7 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
                               // set the width of pictures (if stacking)
                               if (s.TransitionType.CompareTo(NivoTransition.STACKHORIZONTAL.TransitionType) == 0)
                               {
-                                  width = string.Format("{0:0.00}", 100M / bannerToDisplay.Pictures.Count);
+                                  width = (100M / bannerToDisplay.Pictures.Count).ToString(CultureInfo.InvariantCulture);
                               }
                               bannerToDisplay.Pictures.ForEach(p => { p.Width = width; });
                               bannersToDisplay.Add(bannerToDisplay);

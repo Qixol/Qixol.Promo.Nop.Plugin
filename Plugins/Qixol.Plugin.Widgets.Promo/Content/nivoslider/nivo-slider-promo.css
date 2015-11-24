@@ -17,12 +17,39 @@
     font-size: 14px;
 }
 
-/* stackhorizontal and stackvertical */
-.stack-wrapper {
+stack-wrapper-vertical {
+    font-size: 0px;
+    display: inline;
+}
+
+.stack-wrapper-horizontal {
 	font-size: 0px;
     display: inline;
 }
 
-.stack-wrapper div {
+.stack-wrapper-horizontal div {
     display: inline;
+}
+
+.stack-wrapper-horizontal img {
+    display: none;
+}
+
+@media all and (max-width: 1000px) {
+}
+
+@media all and (min-width: 481px) {
+    .stack-wrapper-horizontal img {
+        display: inline;
+    }
+}
+
+@media all and (min-width: 769px) {
+
+}
+
+@media all and (min-width: 1001px) {
+}
+
+@media all and (min-width: 1367px) {
 }

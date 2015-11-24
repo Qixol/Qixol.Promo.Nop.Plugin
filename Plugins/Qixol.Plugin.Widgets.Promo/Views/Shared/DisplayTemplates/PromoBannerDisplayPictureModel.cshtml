@@ -5,27 +5,18 @@
     Layout = null;
 }
 
-@if (Model.TransitionType.CompareTo(NivoTransition.STACKHORIZONTAL.TransitionType) == 0)
-{
-    @Html.Raw("<div style=\"width: @Model.Width\">");
-}
-
 @{
     if (!string.IsNullOrEmpty(Model.PictureUrl))
     {
         if (!string.IsNullOrEmpty(Model.Url))
         {
             <a href="@Model.Url">
-                <img src="@Model.PictureUrl" data-thumb="@Model.PictureUrl" data-transition="@Model.TransitionType" alt="" title="@Model.Comment" style="width: @Model.Width%" />
+                <img src="@Model.PictureUrl" data-thumb="@Model.PictureUrl" data-transition="@Model.TransitionType" alt="" title="@Model.Comment" />
             </a>
         }
         else
         {
-            <img src="@Model.PictureUrl" data-thumb="@Model.PictureUrl" data-transition="@Model.TransitionType" alt="" title="@Model.Comment" style="width: @Model.Width%" />
+            <img src="@Model.PictureUrl" data-thumb="@Model.PictureUrl" data-transition="@Model.TransitionType" alt="" title="@Model.Comment" />
         }
     }
-}
-@if (Model.TransitionType.CompareTo(NivoTransition.STACKHORIZONTAL.TransitionType) == 0)
-{
-    @Html.Raw("</div>");
 }

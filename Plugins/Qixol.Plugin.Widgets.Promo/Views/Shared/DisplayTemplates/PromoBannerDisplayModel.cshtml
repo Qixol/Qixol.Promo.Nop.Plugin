@@ -16,7 +16,12 @@ else
 {
     if (Model.TransitionType.Equals(Qixol.Plugin.Widgets.Promo.Domain.NivoTransition.STACKHORIZONTAL.TransitionType))
     {
-        <div class="stack-wrapper">
+        <style>
+            .stack-wrapper-horizontal img {
+                width: @Model.Pictures.First().Width%;
+            }
+        </style>
+        <div class="stack-wrapper-horizontal">
             @Html.DisplayFor(m => Model.Pictures)
         </div>
     }
@@ -24,7 +29,7 @@ else
     {
         if (Model.TransitionType.Equals(Qixol.Plugin.Widgets.Promo.Domain.NivoTransition.STACKVERTICAL.TransitionType))
         {
-            <div class="stack-wrapper">
+            <div class="stack-wrapper-vertical">
                 @Html.DisplayFor(m => Model.Pictures)
             </div>
         }
