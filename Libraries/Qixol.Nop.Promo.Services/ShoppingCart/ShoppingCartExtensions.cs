@@ -28,6 +28,7 @@ using System.Web.Mvc;
 using Qixol.Nop.Promo.Services.Orders;
 using Nop.Core.Domain.Common;
 using Nop.Core.Infrastructure;
+using Nop.Core.Plugins;
 
 namespace Qixol.Nop.Promo.Services.ShoppingCart
 {
@@ -64,6 +65,7 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
             IGiftCardService _giftCardService = EngineContext.Current.Resolve<IGiftCardService>();
             ICountryService _countryService = EngineContext.Current.Resolve<ICountryService>();
             IStateProvinceService _stateProvinceService = EngineContext.Current.Resolve<IStateProvinceService>();
+            IPluginFinder _pluginFinder = EngineContext.Current.Resolve<IPluginFinder>();
 
             Customer customer = _workContext.CurrentCustomer;
 
@@ -427,7 +429,11 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
             //  when setting up promotions!).
             basketRequest.AddCustomAttribute("incustomercurrency", _promoSettings.UseSelectedCurrencyWhenSubmittingBaskets.ToString());
 
-            string basketRequestString = basketRequest.ToXmlString();
+            // Add identifier for integration source ("nopCommerce")
+            var promoPlugin = _pluginFinder.GetPluginDescriptorBySystemName("Misc.QixolPromo");
+            basketRequest.AddCustomAttribute("integrationsource", string.Format("nopCommerce - plugin v{0}", promoPlugin.Version));
+
+            string basketRequestString = basketRequest.ToXml();
 
             _genericAttributeService.SaveAttribute<string>(customer, PromoCustomerAttributeNames.PromoBasketRequest, basketRequestString, _storeContext.CurrentStore.Id);
 

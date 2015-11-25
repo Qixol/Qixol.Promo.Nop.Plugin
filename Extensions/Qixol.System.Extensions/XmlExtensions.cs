@@ -37,32 +37,5 @@ namespace Qixol.System.Extensions
 
             return (T)objectFromXml;
         }
-
-        public static string ToXmlString(this object xmlObject, Type[] additionalTypes = null)
-        {
-            string returnString = null;
-
-            if (xmlObject == null)
-                return returnString;
-
-            try
-            {
-                XmlSerializer xmlSerializer = new XmlSerializer(xmlObject.GetType(), additionalTypes);
-                MemoryStream memoryStream = new MemoryStream();
-                StreamWriter streamWriter = new StreamWriter(memoryStream);
-                xmlSerializer.Serialize(streamWriter, xmlObject);
-
-                UTF8Encoding encoding = new UTF8Encoding();
-                returnString = encoding.GetString(memoryStream.ToArray());
-                memoryStream.Close();
-                streamWriter.Close();
-            }
-            catch
-            {
-                return returnString;
-            }
-
-            return returnString;
-        }
     }
 }

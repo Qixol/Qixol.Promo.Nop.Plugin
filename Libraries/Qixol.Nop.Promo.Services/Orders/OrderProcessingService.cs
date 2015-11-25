@@ -412,7 +412,7 @@ namespace Qixol.Nop.Promo.Services.Orders
                     PromoOrder promoOrder = new PromoOrder()
                     {
                         RequestXml = _workContext.CurrentCustomer.GetAttribute<string>(PromoCustomerAttributeNames.PromoBasketRequest, _genericAttributeService, _storeContext.CurrentStore.Id),
-                        ResponseXml = basketResponse.ToXmlString(),
+                        ResponseXml = basketResponse.ToXml(),
                         OrderId = order.Id,
                         DeliveryOriginalPrice = basketResponse.DeliveryOriginalPrice
                     };

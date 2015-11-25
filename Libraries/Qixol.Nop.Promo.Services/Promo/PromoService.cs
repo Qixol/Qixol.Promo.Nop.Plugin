@@ -360,8 +360,7 @@ namespace Qixol.Nop.Promo.Services.Promo
 
                 if (_promoSettings.LogMessages)
                 {
-                    var serializedBasketRequestData = basketRequest.ToXmlString();
-
+                    var serializedBasketRequestData = basketRequest.ToXml();
                     _logger.InsertLog(global::Nop.Core.Domain.Logging.LogLevel.Information, "Qixol Promos basket request", serializedBasketRequestData, _workContext.CurrentCustomer);
                 }
 
@@ -380,7 +379,7 @@ namespace Qixol.Nop.Promo.Services.Promo
                         ConvertResponseFromCurrency(basketResponse, basketRequest.CurrencyCode);
                 }
 
-                var serializedBasketResponseData = basketResponse.ToXmlString();
+                var serializedBasketResponseData = basketResponse.ToXml();
                 if (_promoSettings.LogMessages)
                 {
                     _logger.InsertLog(global::Nop.Core.Domain.Logging.LogLevel.Information, "Qixol Promos basket response", serializedBasketResponseData, _workContext.CurrentCustomer);
@@ -391,7 +390,7 @@ namespace Qixol.Nop.Promo.Services.Promo
             catch (Exception ex)
             {
                 _logger.Error("Failed in SendBasketRequestToPromoService", ex, _workContext.CurrentCustomer);
-                _logger.InsertLog(global::Nop.Core.Domain.Logging.LogLevel.Information, "SendBasketRequestToPromoService", basketRequest.ToXmlString(), _workContext.CurrentCustomer);
+                _logger.InsertLog(global::Nop.Core.Domain.Logging.LogLevel.Information, "SendBasketRequestToPromoService", basketRequest.ToXml(), _workContext.CurrentCustomer);
             }
 
             return _promoUtilities.GetBasketResponse();
