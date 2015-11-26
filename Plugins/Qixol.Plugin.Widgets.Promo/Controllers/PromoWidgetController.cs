@@ -378,7 +378,7 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
                                 {
                                     if (pi.DiscountPercent.HasValue && pi.DiscountPercent.Value > 0)
                                     {
-                                        pi.YouSaveText = string.Format("{#.##}%", pi.DiscountPercent.Value);
+                                        pi.YouSaveText = string.Format("{0:#.##}%", pi.DiscountPercent.Value);
                                     }
                                 }
                                 break;
