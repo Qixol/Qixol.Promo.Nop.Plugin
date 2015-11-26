@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -11,10 +11,6 @@
     <AssemblyName>Qixol.Nop.Promo.Core</AssemblyName>
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    
-    
-    
-    
     <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -116,7 +112,7 @@
     <Compile Include="Domain\Promo\PromoWidgetSettings.cs" />
     <Compile Include="Domain\Promo\QixolPromotionsCustomerAttributeNames.cs" />
     <Compile Include="Domain\Promo\ValidatedPromotion.cs" />
-    <Compile Include="Domain\Promo\ValidatedPromotionAvailibility.cs" />
+    <Compile Include="Domain\Promo\ValidatedPromotionAvailability.cs" />
     <Compile Include="Domain\PromotionTypeName.cs" />
     <Compile Include="Domain\Promo\PromoSettings.cs" />
     <Compile Include="Domain\Banner\PromoBanner.cs" />

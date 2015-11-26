@@ -41,8 +41,8 @@ namespace Qixol.Plugin.Widgets.Promo.Extensions.MappingExtensions
                     RequiredItemQty = promo.RequiredItemQty,
                     RequiredItemSpend = promo.RequiredItemSpend,
 
-                    Availibility = promo.Availibility != null
-                                        ? promo.Availibility.Select(ptda => new PromoAvailibilityItemModel() { Start = ptda.Start.ToLocalTime(), End = ptda.End.ToLocalTime() }).ToList()
+                    Availability = promo.Availability != null
+                                        ? promo.Availability.Select(ptda => new PromoAvailabilityItemModel() { Start = ptda.Start.ToLocalTime(), End = ptda.End.ToLocalTime() }).ToList()
                                         : null
                 };            
         }

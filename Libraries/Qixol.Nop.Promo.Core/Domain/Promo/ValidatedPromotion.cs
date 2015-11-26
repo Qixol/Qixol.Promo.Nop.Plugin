@@ -131,7 +131,7 @@ namespace Qixol.Nop.Promo.Core.Domain.Promo
         /// <summary>
         /// List of timebands when the promo is available.
         /// </summary>
-        public List<ValidatedPromoAvailibility> Availibility { get; set; }
+        public List<ValidatedPromoAvailability> Availability { get; set; }
 
         /// <summary>
         /// The unique reference specified by the user when creating the promo in Promo.
@@ -149,7 +149,7 @@ namespace Qixol.Nop.Promo.Core.Domain.Promo
 
         public ValidatedPromo()
         {
-            Availibility = new List<ValidatedPromoAvailibility>();
+            Availability = new List<ValidatedPromoAvailability>();
         }
 
         #endregion
@@ -210,8 +210,8 @@ namespace Qixol.Nop.Promo.Core.Domain.Promo
                 ValidForTime = integrationPromo.ValidateForTime(DateTime.UtcNow),
 
                 // Where timebands are specified, return them
-                Availibility = (integrationPromo.AvailableTimes != null && integrationPromo.AvailableTimes.Count > 0) ?
-                                    integrationPromo.AvailableTimes.Select(a => new ValidatedPromoAvailibility() { Start = a.StartTime, End = a.EndTime }).ToList()
+                Availability = (integrationPromo.AvailableTimes != null && integrationPromo.AvailableTimes.Count > 0) ?
+                                    integrationPromo.AvailableTimes.Select(a => new ValidatedPromoAvailability() { Start = a.StartTime, End = a.EndTime }).ToList()
                                     : null,
 
             };

@@ -143,7 +143,7 @@
     <Compile Include="Models\PromoBannerPictureModel.cs" />
     <Compile Include="Models\PromoBannerWidgetZoneModel.cs" />
     <Compile Include="Models\PromotionAddPictureModel.cs" />
-    <Compile Include="Models\PromotionAvailibilityItemModel.cs" />
+    <Compile Include="Models\PromotionAvailabilityItemModel.cs" />
     <Compile Include="Models\PromotionPictureModel.cs" />
     <Compile Include="Models\WidgetConfigModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

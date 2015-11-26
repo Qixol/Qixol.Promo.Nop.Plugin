@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Qixol.Plugin.Widgets.Promo.Models
 {
-    public class PromoAvailibilityItemModel
+    public class PromoAvailabilityItemModel
     {
         public DateTime Start { get; set; }
 

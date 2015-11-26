@@ -175,16 +175,16 @@
                                         <span class="promotionDetailsInfoItemTitle promotionDetailsInfoItemTitleHighlight">@T("Plugins.Misc.QixolPromo.Product.Promos.Item.NotForAllVariants")</span>
                                     </div>
                                 }
-                                @if (promoDetails.Availibility != null && promoDetails.Availibility.Count > 0)
+                                @if (promoDetails.Availability != null && promoDetails.Availability.Count > 0)
                                 {
                                     <div>
-                                        @foreach (var availibility in promoDetails.Availibility)
+                                        @foreach (var availability in promoDetails.Availability)
 	                                    {
                                             <div>
-                                                <span class="promotionDetailsInfoItemTitle">@T("Plugins.Misc.QixolPromo.Product.Promos.Item.Availibility.From")</span>
-                                                <span>@availibility.Start.ToShortTimeString()</span>
-                                                <span class="promotionDetailsInfoItemTitle">@T("Plugins.Misc.QixolPromo.Product.Promos.Item.Availibility.To")</span>
-                                                <span>@availibility.End.ToShortTimeString()</span>
+                                                <span class="promotionDetailsInfoItemTitle">@T("Plugins.Misc.QixolPromo.Product.Promos.Item.Availability.From")</span>
+                                                <span>@availability.Start.ToShortTimeString()</span>
+                                                <span class="promotionDetailsInfoItemTitle">@T("Plugins.Misc.QixolPromo.Product.Promos.Item.Availability.To")</span>
+                                                <span>@availability.End.ToShortTimeString()</span>
                                             </div>		 
 	                                    }
                                     </div>

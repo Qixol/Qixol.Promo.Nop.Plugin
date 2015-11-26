@@ -54,11 +54,11 @@ namespace Qixol.Plugin.Widgets.Promo.Models
 
         public string YourReference { get; set; }
 
-        public List<PromoAvailibilityItemModel> Availibility { get; set; }
+        public List<PromoAvailabilityItemModel> Availability { get; set; }
 
         public ProductDetailsPromotionItemModel()
         {
-            Availibility = new List<PromoAvailibilityItemModel>();            
+            Availability = new List<PromoAvailabilityItemModel>();            
         }
     }
 }

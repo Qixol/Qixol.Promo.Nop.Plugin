@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Qixol.Nop.Promo.Core.Domain.Promo
 {
-    public class ValidatedPromoAvailibility
+    public class ValidatedPromoAvailability
     {
         public DateTime Start { get; set; }
         public DateTime End { get; set; }

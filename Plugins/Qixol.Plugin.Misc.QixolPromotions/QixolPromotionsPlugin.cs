@@ -418,8 +418,8 @@ namespace Qixol.Plugin.Misc.Promo
             this.InsertStringResource("Plugins.Misc.QixolPromo.Product.Promos.Item.MinBasketSpend.1", "Spend");
             this.InsertStringResource("Plugins.Misc.QixolPromo.Product.Promos.Item.MinBasketSpend.1", "or more to receive this offer.");
             this.InsertStringResource("Plugins.Misc.QixolPromo.Product.Promos.Item.NotForAllVariants", "** This offer is only available for selected options for this item **");
-            this.InsertStringResource("Plugins.Misc.QixolPromo.Product.Promos.Item.Availibility.From", "Available:");
-            this.InsertStringResource("Plugins.Misc.QixolPromo.Product.Promos.Item.Availibility.To", "to");
+            this.InsertStringResource("Plugins.Misc.QixolPromo.Product.Promos.Item.Availability.From", "Available:");
+            this.InsertStringResource("Plugins.Misc.QixolPromo.Product.Promos.Item.Availability.To", "to");
             this.InsertStringResource("Plugins.Misc.QixolPromo.Product.Promos.Footer", "Offers are applied when you view your shopping cart");
             this.InsertStringResource("Plugins.Misc.QixolPromo.Product.Promos.Item.TieredPricesFrom", "From");
 
