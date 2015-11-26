@@ -91,32 +91,6 @@
             <tbody>
                 @foreach (var promoDetails in Model.PromotionItems)
                 {
-
-                    var youSaveInfo = "-";
-                    bool showFromText = false;
-                    switch (promoDetails.PromotionTypeName)
-                    {
-                        case Qixol.Nop.Promo.Core.Domain.PromotionTypeName.BuyOneGetOneFree:
-                            youSaveInfo = T("Plugins.Misc.QixolPromo.Product.Promos.Item.GetOneFree").ToString();     //"Get One Free";
-                            break;
-                        case Qixol.Nop.Promo.Core.Domain.PromotionTypeName.BuyOneGetOneReduced:
-                        case Qixol.Nop.Promo.Core.Domain.PromotionTypeName.ProductsReduction:
-                            if (promoDetails.DiscountAmount.HasValue && promoDetails.DiscountAmount.Value > 0)
-                            {
-                                youSaveInfo = promoDetails.DiscountAmountAsCurrency;
-                                showFromText = Model.HasTierPrices;
-                            }
-                            else
-                            {
-                                if (promoDetails.DiscountPercent.HasValue && promoDetails.DiscountPercent.Value > 0)
-                                {
-                                    youSaveInfo = string.Concat(promoDetails.DiscountPercent.Value.ToString("#.##"), "%");
-                                }
-                            }
-                            break;
-                        default:
-                            break;
-                    }
                 
                     <tr>
                         <td class="promotionDetailsTableCell" style="width: 50px;"><img src="@promoDetails.ImageUrl" style="height: 48px; width: 48px;" /></td>
@@ -193,11 +167,11 @@
                         </td>
                         <td class="promotionDetailsTableCell promotionDetailsInfoItemYouSave">
                             <div>
-                                @if (showFromText)
+                                @if (promoDetails.ShowFromText)
                                 { 
                                     <span class="promotionDetailsInfoItemYouSaveFrom" style="font-size: ">@T("Plugins.Misc.QixolPromo.Product.Promos.Item.TieredPricesFrom")</span><br />
                                 }
-                                @youSaveInfo
+                                @promoDetails.YouSaveText
                             </div>
                         </td>
                     </tr>

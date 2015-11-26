@@ -304,58 +304,88 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
             ProductDetailsPromotionModel model = new ProductDetailsPromotionModel();
             model.HasPromo = false;
 
-            if (_promoSettings.Enabled && (_widgetSettings.ShowStickersInProductPage || _widgetSettings.ShowPromoDetailsOnProductPage))
-            {
-                int productId = 0;
-                if (int.TryParse(additionalData.ToString(), out productId))
-                {
-                    var productValidation = ValidateProductForPromos(productId);
-                    if (productValidation.HasPromo)
+            if (!_promoSettings.Enabled)
+                return model;
+
+            if (!(_widgetSettings.ShowStickersInProductPage || _widgetSettings.ShowPromoDetailsOnProductPage))
+                return model;
+
+            int productId = 0;
+            if (!int.TryParse(additionalData.ToString(), out productId))
+                return model;
+
+            var productValidation = ValidateProductForPromos(productId);
+            if (!productValidation.HasPromo)
+                return model;
+
+            var product = _productService.GetProductById(productId);
+            if (product != null)
+                model.HasTierPrices = product.HasTierPrices;
+
+            model.Id = productId;
+            model.ShowSticker = _widgetSettings.ShowStickersInProductPage;
+            model.ShowPromotionDetails = _widgetSettings.ShowPromoDetailsOnProductPage;
+            model.HasPromo = true;
+            model.ImageUrl = GetSingleImageUrl(productValidation.PromosToDisplay, productValidation.BaseImageUrl);
+            model.PromotionItems = productValidation.PromosToDisplay.Select(ptd => ptd.ToModel()).ToList();
+            model.PromotionItems.ForEach(pi =>
                     {
-                        var product = _productService.GetProductById(productId);
-                        if (product != null)
-                            model.HasTierPrices = product.HasTierPrices;
+                        // If the description is a resource key, this will get it, otherwise use the description.
+                        pi.Description = _localizationService.GetValidatedResource(pi.Description);
 
-                        model.Id = productId;
-                        model.ShowSticker = _widgetSettings.ShowStickersInProductPage;
-                        model.ShowPromotionDetails = _widgetSettings.ShowPromoDetailsOnProductPage;
-                        model.HasPromo = true;
-                        model.ImageUrl = GetSingleImageUrl(productValidation.PromosToDisplay, productValidation.BaseImageUrl);
-                        model.PromotionItems = productValidation.PromosToDisplay.Select(ptd => ptd.ToModel()).ToList();
-                        model.PromotionItems.ForEach(pi =>
+                        pi.ImageUrl = GetPromoImageUrl(pi.YourReference, pi.PromotionTypeName, pi.ImageName);
+
+                        if (pi.DiscountAmount.HasValue && pi.DiscountAmount.Value > 0)
+                        {
+                            var discountAmountForCurrency = _promoSettings.UseSelectedCurrencyWhenSubmittingBaskets
+                                                                ? pi.DiscountAmount.Value
+                                                                : _currencyService.ConvertFromPrimaryStoreCurrency(pi.DiscountAmount.Value, _workContext.WorkingCurrency);
+                            pi.DiscountAmountAsCurrency = _priceFormatter.FormatPrice(discountAmountForCurrency, true, _workContext.WorkingCurrency, _workContext.WorkingLanguage, false);
+                        }
+
+                        if (pi.MinimumSpend.HasValue && pi.MinimumSpend.Value > 0)
+                        {
+                            var minimumSpendForCurrency = _promoSettings.UseSelectedCurrencyWhenSubmittingBaskets
+                                                                ? pi.MinimumSpend.Value
+                                                                : _currencyService.ConvertFromPrimaryStoreCurrency(pi.MinimumSpend.Value, _workContext.WorkingCurrency);
+                            pi.MinimumSpendAsCurrency = _priceFormatter.FormatPrice(minimumSpendForCurrency, true, _workContext.WorkingCurrency, _workContext.WorkingLanguage, false);
+                        }
+
+                        if (pi.RequiredItemSpend.HasValue && pi.RequiredItemSpend.Value > 0)
+                        {
+                            var rqdItemSpendForCurrency = _promoSettings.UseSelectedCurrencyWhenSubmittingBaskets
+                                                                ? pi.RequiredItemSpend.Value
+                                                                : _currencyService.ConvertFromPrimaryStoreCurrency(pi.RequiredItemSpend.Value, _workContext.WorkingCurrency);
+                            pi.RequiredItemSpendAsCurrency = _priceFormatter.FormatPrice(rqdItemSpendForCurrency, true, _workContext.WorkingCurrency, _workContext.WorkingLanguage, false);
+                        }
+
+                        pi.YouSaveText = "-";
+                        pi.ShowFromText = false;
+                        switch (pi.PromotionTypeName)
+                        {
+                            case Qixol.Nop.Promo.Core.Domain.PromotionTypeName.BuyOneGetOneFree:
+                                pi.YouSaveText = _localizationService.GetResource("Plugins.Misc.QixolPromo.Product.Promos.Item.GetOneFree");     //"Get One Free";
+                                break;
+
+                            case Qixol.Nop.Promo.Core.Domain.PromotionTypeName.BuyOneGetOneReduced:
+                            case Qixol.Nop.Promo.Core.Domain.PromotionTypeName.ProductsReduction:
+                                if (pi.DiscountAmount.HasValue && pi.DiscountAmount.Value > 0)
                                 {
-                                    // If the description is a resource key, this will get it, otherwise use the description.
-                                    pi.Description = _localizationService.GetValidatedResource(pi.Description);
-
-                                    pi.ImageUrl = GetPromoImageUrl(pi.YourReference, pi.PromotionTypeName, pi.ImageName);
-
-                                    if (pi.DiscountAmount.HasValue && pi.DiscountAmount.Value > 0)
+                                    pi.YouSaveText = pi.DiscountAmountAsCurrency;
+                                    pi.ShowFromText = product.HasTierPrices;
+                                }
+                                else
+                                {
+                                    if (pi.DiscountPercent.HasValue && pi.DiscountPercent.Value > 0)
                                     {
-                                        var discountAmountForCurrency = _promoSettings.UseSelectedCurrencyWhenSubmittingBaskets 
-                                                                            ? pi.DiscountAmount.Value
-                                                                            : _currencyService.ConvertFromPrimaryStoreCurrency(pi.DiscountAmount.Value, _workContext.WorkingCurrency);
-                                        pi.DiscountAmountAsCurrency = _priceFormatter.FormatPrice(discountAmountForCurrency, true, _workContext.WorkingCurrency, _workContext.WorkingLanguage, false);
+                                        pi.YouSaveText = string.Format("{#.##}%", pi.DiscountPercent.Value);
                                     }
-
-                                    if (pi.MinimumSpend.HasValue && pi.MinimumSpend.Value > 0)
-                                    {
-                                        var minimumSpendForCurrency = _promoSettings.UseSelectedCurrencyWhenSubmittingBaskets
-                                                                            ? pi.MinimumSpend.Value
-                                                                            : _currencyService.ConvertFromPrimaryStoreCurrency(pi.MinimumSpend.Value, _workContext.WorkingCurrency);
-                                        pi.MinimumSpendAsCurrency = _priceFormatter.FormatPrice(minimumSpendForCurrency, true, _workContext.WorkingCurrency, _workContext.WorkingLanguage, false);
-                                    }
-
-                                    if (pi.RequiredItemSpend.HasValue && pi.RequiredItemSpend.Value > 0)
-                                    {
-                                        var rqdItemSpendForCurrency = _promoSettings.UseSelectedCurrencyWhenSubmittingBaskets
-                                                                            ? pi.RequiredItemSpend.Value
-                                                                            : _currencyService.ConvertFromPrimaryStoreCurrency(pi.RequiredItemSpend.Value, _workContext.WorkingCurrency);
-                                        pi.RequiredItemSpendAsCurrency = _priceFormatter.FormatPrice(rqdItemSpendForCurrency, true, _workContext.WorkingCurrency, _workContext.WorkingLanguage, false);
-                                    }
-                                });
-                    }
-                }
-            }
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+                    });
 
             return model;
         }

@@ -8,6 +8,8 @@ namespace Qixol.Plugin.Widgets.Promo.Models
 {
     public class ProductDetailsPromotionModel
     {
+        private List<ProductDetailsPromotionItemModel> _productDetailsPromotionItems;
+
         public bool HasPromo { get; set; }
 
         public int Id { get; set; }
@@ -20,11 +22,10 @@ namespace Qixol.Plugin.Widgets.Promo.Models
 
         public bool HasTierPrices { get; set; }
 
-        public List<ProductDetailsPromotionItemModel> PromotionItems { get; set; }
-
-        public ProductDetailsPromotionModel()
+        public List<ProductDetailsPromotionItemModel> PromotionItems
         {
-            PromotionItems = new List<ProductDetailsPromotionItemModel>();
+            get { return _productDetailsPromotionItems ?? (_productDetailsPromotionItems = new List<ProductDetailsPromotionItemModel>()); }
+            set { _productDetailsPromotionItems = value; }
         }
     }
 }

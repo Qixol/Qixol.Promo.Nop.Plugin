@@ -8,6 +8,8 @@ namespace Qixol.Plugin.Widgets.Promo.Models
 {
     public class ProductDetailsPromotionItemModel
     {
+        private List<PromoAvailabilityItemModel> _availability;
+
         public string Title { get; set; }
 
         public string PromotionTypeName { get; set; }
@@ -54,11 +56,14 @@ namespace Qixol.Plugin.Widgets.Promo.Models
 
         public string YourReference { get; set; }
 
-        public List<PromoAvailabilityItemModel> Availability { get; set; }
+        public string YouSaveText { get; set; }
 
-        public ProductDetailsPromotionItemModel()
+        public bool ShowFromText { get; set; }
+
+        public List<PromoAvailabilityItemModel> Availability
         {
-            Availability = new List<PromoAvailabilityItemModel>();            
+            get { return _availability ?? (_availability = new List<PromoAvailabilityItemModel>()); }
+            set { _availability = value; }
         }
     }
 }
