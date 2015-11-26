@@ -16,7 +16,6 @@ namespace Qixol.Nop.Promo.Core.Domain.Promo
 
         public bool Enabled { get; set; }
         public bool LogMessages { get; set; }
-        public bool IsTest { get; set; }
         public int QueueHoldPeriodInSeconds { get; set; }
 
         public string VariantAttributeFormat { get; set; }

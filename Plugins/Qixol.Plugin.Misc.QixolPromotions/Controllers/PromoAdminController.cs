@@ -128,7 +128,6 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             // general
             model.Enabled = _promoSettings.Enabled;
             model.LogMessages = _promoSettings.LogMessages;
-            model.IsTest = _promoSettings.IsTest;
             model.ShowHelperMessages = _promoSettings.ShowHelperMessages;
             
             // Connection Details
@@ -184,7 +183,6 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             // general
             _promoSettings.Enabled = model.Enabled;
             _promoSettings.LogMessages = model.LogMessages;
-            _promoSettings.IsTest = model.IsTest;
             _promoSettings.ShowHelperMessages = model.ShowHelperMessages;
 
             // Connection Details

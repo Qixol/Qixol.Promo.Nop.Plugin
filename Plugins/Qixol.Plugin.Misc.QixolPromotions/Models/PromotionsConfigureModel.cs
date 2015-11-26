@@ -26,9 +26,6 @@ namespace Qixol.Plugin.Misc.Promo.Models
         [NopResourceDisplayName("Plugins.Misc.QixolPromo.LogMessages")]
         public bool LogMessages { get; set; }
 
-        [NopResourceDisplayName("Plugins.Misc.QixolPromo.IsTest")]
-        public bool IsTest { get; set; }
-
         [NopResourceDisplayName("Plugins.Misc.QixolPromo.CompanyKey")]
         public string CompanyKey { get; set; }
 

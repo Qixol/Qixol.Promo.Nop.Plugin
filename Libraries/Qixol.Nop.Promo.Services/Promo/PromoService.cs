@@ -351,13 +351,6 @@ namespace Qixol.Nop.Promo.Services.Promo
             {
                 BasketServiceManager basketServiceManager = _promoSettings.GetBasketService();
 
-                if (_promoSettings.IsTest)
-                {
-                    basketRequest.Store = "TEST";
-                    basketRequest.StoreGroup = "TEST";
-                    basketRequest.Channel = "TEST";
-                }
-
                 if (_promoSettings.LogMessages)
                 {
                     var serializedBasketRequestData = basketRequest.ToXml();

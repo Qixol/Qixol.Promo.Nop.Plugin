@@ -289,8 +289,6 @@ namespace Qixol.Plugin.Misc.Promo
             this.InsertStringResource("Plugins.Misc.QixolPromo.Enabled.Hint", "Enable the plugin for promos");
             this.InsertStringResource("Plugins.Misc.QixolPromo.LogMessages", "Log messages");
             this.InsertStringResource("Plugins.Misc.QixolPromo.LogMessages.Hint", "Log all request and response messages from interactions with the Qixol Promos Engine");
-            this.InsertStringResource("Plugins.Misc.QixolPromo.IsTest", "Send test requests");
-            this.InsertStringResource("Plugins.Misc.QixolPromo.IsTest.Hint", "Send only test requests to the promos engine");
 
             this.InsertStringResource("Plugins.Misc.QixolPromo.CompanyKey", "Company key");
             this.InsertStringResource("Plugins.Misc.QixolPromo.CompanyKey.Hint", "The company key supplied by the Qixol Promos Engine");
