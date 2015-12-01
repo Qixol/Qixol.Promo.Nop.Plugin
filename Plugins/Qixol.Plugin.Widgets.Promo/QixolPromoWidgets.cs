@@ -119,18 +119,9 @@ namespace Qixol.Plugin.Widgets.Promo
 
         public IList<string> GetWidgetZones()
         {
-            List<string> baseWidgetZoneNames = WidgetZonesHelper.GetAllWidgets().Select(w => w.Name).ToList();
+            List<string> activeWidgetZoneNames = _promoBannerService.RetrieveAllEnabledWidgetZones().Select(cw => cw.WidgetZoneSystemName).ToList();
 
-            var customWidgetZoneNames = _promoBannerService.RetrieveAllEnabledWidgetZones().Select(cw => cw.WidgetZoneSystemName).ToList();
-            baseWidgetZoneNames.ForEach(wzn =>
-            {
-                customWidgetZoneNames.Remove(wzn);
-            });
-
-            List<string> allWidgetZones = baseWidgetZoneNames;
-            allWidgetZones.AddRange(customWidgetZoneNames);
-
-            return allWidgetZones;
+            return activeWidgetZoneNames;
         }
 
         #region Locale Resources

@@ -1,8 +1,11 @@
-﻿using Nop.Services.Localization;
+﻿using Nop.Core;
+using Nop.Core.Caching;
+using Nop.Services.Localization;
 using Nop.Services.Media;
 using Nop.Web.Framework.Controllers;
 using Nop.Web.Framework.Kendoui;
 using Nop.Web.Framework.Mvc;
+using Nop.Web.Infrastructure.Cache;
 using Qixol.Nop.Promo.Core.Domain.Banner;
 using Qixol.Nop.Promo.Services.Banner;
 using Qixol.Plugin.Widgets.Promo.Models;
@@ -23,6 +26,7 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
         private readonly IPromoBannerService _promoBannerService;
         private readonly ILocalizationService _localizationService;
         private readonly IPictureService _pictureService;
+        private readonly IStoreContext _storeContext;
 
         #endregion
 
@@ -30,11 +34,13 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
 
         public PromoBannerController(IPromoBannerService promoBannerService,
                                      ILocalizationService localizationService,
-                                     IPictureService pictureService)
+                                     IPictureService pictureService,
+                                     IStoreContext storeContext)
         {
             this._promoBannerService = promoBannerService;
             this._localizationService = localizationService;
             this._pictureService = pictureService;
+            this._storeContext = storeContext;
         }
 
         #endregion
@@ -216,6 +222,7 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
             };
 
             _promoBannerService.InsertBannerWidgetZone(newBannerWidgetZone);
+            RemoveWidgetZoneFromCache(newBannerWidgetZone.WidgetZoneSystemName);
 
             return Json(new { Result = true }, JsonRequestBehavior.AllowGet);
         }
@@ -236,6 +243,7 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
                 return Json(new DataSourceResult { Errors = ModelState.SerializeErrors() });
             }
 
+            RemoveWidgetZoneFromCache(bannerWidgetZone.WidgetZoneSystemName);
             _promoBannerService.DeleteBannerWidgetZone(bannerWidgetZone);
 
             return new NullJsonResult();
@@ -243,5 +251,15 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
 
         #endregion
 
+        #region helpers
+
+        private void RemoveWidgetZoneFromCache(string widgetZoneName)
+        {
+            var cacheManager = new MemoryCacheManager();
+            var cacheKey = string.Format(ModelCacheEventConsumer.WIDGET_MODEL_KEY, _storeContext.CurrentStore.Id, widgetZoneName);
+            cacheManager.Remove(cacheKey);
+        }
+
+        #endregion
     }
 }
