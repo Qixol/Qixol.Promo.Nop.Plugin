@@ -24,11 +24,7 @@ stack-wrapper-vertical {
 
 .stack-wrapper-horizontal {
 	font-size: 0px;
-    display: inline;
-}
-
-.stack-wrapper-horizontal div {
-    display: inline;
+    display: block;
 }
 
 .stack-wrapper-horizontal img {
