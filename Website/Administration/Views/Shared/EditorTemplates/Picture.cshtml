@@ -84,12 +84,10 @@ else
             }
         });
 
-        $("#@(clientId + "remove")").click(function (e) {
-            alert('you should not be here');
-            $("#@(clientId + "image")").html("<img src='@pictureService.GetDefaultPictureUrl(100)'/>");
+        $("#@(clientId + "remove")").click(function(e) {
+            $("#@(clientId + "image")").html("<img src='@pictureService.GetDefaultPictureUrl()'/>");
             $("#@(clientId + "value") input").val(0);
-            $("#@(clientId)").find(".qq-upload-list-selector").find("li").hide();
             $(this).hide();
-    });
+        });
     });
 </script>
