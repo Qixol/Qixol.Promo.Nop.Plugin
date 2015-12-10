@@ -121,6 +121,11 @@ namespace Qixol.Plugin.Widgets.Promo
         {
             List<string> activeWidgetZoneNames = _promoBannerService.RetrieveAllEnabledWidgetZones().Select(cw => cw.WidgetZoneSystemName).ToList();
 
+            // Add always active zones (used for stickers & coupon account details
+            activeWidgetZoneNames.Add("account_navigation_after");
+            activeWidgetZoneNames.Add("productdetails_add_info");
+            activeWidgetZoneNames.Add("productbox_addinfo_after");
+
             return activeWidgetZoneNames;
         }
 
