@@ -15,6 +15,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Qixol.Nop.Promo.Services.Localization;
+using Nop.Services.Logging;
 
 namespace Qixol.Nop.Promo.Services.Catalog
 {
@@ -28,7 +29,8 @@ namespace Qixol.Nop.Promo.Services.Catalog
         private readonly IWorkContext _workContext;
         private readonly ICurrencyService _currencyService;
         private readonly IPriceCalculationService _priceCalculationService;
-        private readonly ILocalizationService _localizationService; 
+        private readonly ILocalizationService _localizationService;
+        private readonly ILogger _logger;
         //private readonly IStoreContext _storeContext;
         //private readonly IDiscountService _discountService;
         //private readonly ICategoryService _categoryService;
@@ -57,7 +59,8 @@ namespace Qixol.Nop.Promo.Services.Catalog
             PromoSettings promoSettings,
             ICurrencyService currencyService,
             IPriceCalculationService priceCalculationService,
-            ILocalizationService localizationService)
+            ILocalizationService localizationService,
+            ILogger logger)
             : base (workContext, storeContext, discountService,
                     categoryService, manufacturerService, productAttributeParser,
                     productService, cacheManager, shoppingCartSettings,
@@ -69,6 +72,7 @@ namespace Qixol.Nop.Promo.Services.Catalog
             this._currencyService = currencyService;
             this._priceCalculationService = priceCalculationService;
             this._localizationService = localizationService;
+            this._logger = logger;
         }
 
         #endregion
@@ -137,14 +141,23 @@ namespace Qixol.Nop.Promo.Services.Catalog
             discountAmount = basketResponse.GetLineDiscountAmount(shoppingCartItem.Product, _promoSettings, shoppingCartItem.AttributesXml);
             if (discountAmount != decimal.Zero)
             {
-                appliedDiscount = new global::Nop.Core.Domain.Discounts.Discount()
+                if (discountAmount <= lineSubTotal)
                 {
-                    Name = string.Join(", ", basketResponse.GetLineDiscountNames(shoppingCartItem.Product, _promoSettings, shoppingCartItem.AttributesXml)
-                                                           .Select(n => _localizationService.GetValidatedResource(n))),
-                    DiscountAmount = discountAmount
-                };
+                    appliedDiscount = new global::Nop.Core.Domain.Discounts.Discount()
+                    {
+                        Name = string.Join(", ", basketResponse.GetLineDiscountNames(shoppingCartItem.Product, _promoSettings, shoppingCartItem.AttributesXml)
+                                                               .Select(n => _localizationService.GetValidatedResource(n))),
+                        DiscountAmount = discountAmount
+                    };
 
-                lineSubTotal = basketResponse.GetLineSubTotal(lineSubTotal, shoppingCartItem.Product, _promoSettings, shoppingCartItem.AttributesXml);
+                    lineSubTotal -= discountAmount;
+                }
+                else
+                {
+                    string shortMessage = "PriceCalculationService - GetSubTotal";
+                    string fullMessage = string.Format("id: {0}, productId: {1}, attributesXml: {2}, basketResponseXml: {3}", shoppingCartItem.Id, shoppingCartItem.ProductId, shoppingCartItem.AttributesXml, basketResponse.ToXml());
+                    _logger.InsertLog(global::Nop.Core.Domain.Logging.LogLevel.Error, shortMessage, fullMessage, _workContext.CurrentCustomer);
+                }
             }
 
             return lineSubTotal;

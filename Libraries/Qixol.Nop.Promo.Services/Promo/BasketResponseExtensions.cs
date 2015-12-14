@@ -378,12 +378,6 @@ namespace Qixol.Nop.Promo.Services.Promo
             return totalDiscountsForLines;
         }
 
-        public static decimal GetLineSubTotal(this BasketResponse basketResponse, decimal lineTotalIncTax, Product product, PromoSettings promoSettings, string attributesXml)
-        {
-            return lineTotalIncTax - basketResponse.GetLineDiscountAmount(product, promoSettings, attributesXml);
-        }
-
-
         public static IList<BasketResponseItem> FindBasketResponseItems(this BasketResponse basketResponse, Product product, PromoSettings promoSettings, string attributesXml)
         {
             if (!BasketResponseIsValid(basketResponse))

@@ -162,100 +162,109 @@ namespace Qixol.Nop.Promo.Services.Promo
             if (cart.Count < 1)
                 return addToCartWarnings;
 
-            BasketRequest basketRequest = cart.ToQixolPromosBasketRequest();
-
-            if (basketRequest != null)
+            try
             {
+                BasketRequest basketRequest = cart.ToQixolPromosBasketRequest();
 
-                BasketResponse basketResponse = SendBasketRequestTopromoService(basketRequest);
-                if ((basketResponse != null) &&
-                    (basketResponse.Summary != null) &&
-                    (basketResponse.Summary.ProcessingResult))
+                if (basketRequest != null)
                 {
-                    // get the selectedShippingOption - if it's not null will need to save this after adding products to the cart
-                    ShippingOption selectedShippingOption = _workContext.CurrentCustomer.GetAttribute<ShippingOption>(SystemCustomerAttributeNames.SelectedShippingOption, _storeContext.CurrentStore.Id);
-                    string selectedPaymentOption = _workContext.CurrentCustomer.GetAttribute<string>(SystemCustomerAttributeNames.SelectedPaymentMethod, _storeContext.CurrentStore.Id);
 
-                    #region generated basket items
-
-                    IList<BasketResponseItem> newBasketItems = (from i in basketResponse.Items where i.Generated && !i.IsDelivery select i).ToList();
-
-                    foreach (BasketResponseItem newBasketItem in newBasketItems)
+                    BasketResponse basketResponse = SendBasketRequestTopromoService(basketRequest);
+                    if ((basketResponse != null) &&
+                        (basketResponse.Summary != null) &&
+                        (basketResponse.Summary.ProcessingResult))
                     {
-                        int productId = 0;
-                        if (!int.TryParse(newBasketItem.ProductCode, out productId))
-                        {
-                            // Do we have a checkout attribute?
-                            var checkoutAttributes = _attributeValueService.RetrieveAllForAttribute(EntityAttributeName.CheckoutAttribute);
-                            var checkoutAttribute = (from ca in checkoutAttributes where ca.Code.Equals((newBasketItem.ProductCode ?? string.Empty), StringComparison.InvariantCultureIgnoreCase) select ca).FirstOrDefault();
-                            if (checkoutAttribute == null)
-                                throw new KeyNotFoundException(string.Format("No mapping item for product code {0}", newBasketItem.ProductCode));
+                        // get the selectedShippingOption - if it's not null will need to save this after adding products to the cart
+                        ShippingOption selectedShippingOption = _workContext.CurrentCustomer.GetAttribute<ShippingOption>(SystemCustomerAttributeNames.SelectedShippingOption, _storeContext.CurrentStore.Id);
+                        string selectedPaymentOption = _workContext.CurrentCustomer.GetAttribute<string>(SystemCustomerAttributeNames.SelectedPaymentMethod, _storeContext.CurrentStore.Id);
 
-                            // is the checkout attribute already "in" the cart
-                            // if it's a single select (not checkbox?) then how do we "remove" the current one and replace it?
-                            // what about when the price adjustment value has been changed by the promo engine...?
-                            // 
-                        }
+                        #region generated basket items
 
-                        else
+                        IList<BasketResponseItem> newBasketItems = (from i in basketResponse.Items where i.Generated && !i.IsDelivery select i).ToList();
+
+                        foreach (BasketResponseItem newBasketItem in newBasketItems)
                         {
-                            if (newBasketItem.SplitFromLineId != 0)
+                            int productId = 0;
+                            if (!int.TryParse(newBasketItem.ProductCode, out productId))
                             {
-                                // The item has not been added - we need to roll it back into the original line with the discount - happens in GetSubTotal in the PriceCalculationService
-                                ShoppingCartItem sci = (from c in cart where c.Id == newBasketItem.SplitFromLineId select c).FirstOrDefault();
-                                if (sci == null)
-                                    throw new NullReferenceException(string.Format("SplitFromLineId {0} does not exist in the cart", newBasketItem.SplitFromLineId));
+                                // Do we have a checkout attribute?
+                                var checkoutAttributes = _attributeValueService.RetrieveAllForAttribute(EntityAttributeName.CheckoutAttribute);
+                                var checkoutAttribute = (from ca in checkoutAttributes where ca.Code.Equals((newBasketItem.ProductCode ?? string.Empty), StringComparison.InvariantCultureIgnoreCase) select ca).FirstOrDefault();
+                                if (checkoutAttribute == null)
+                                    throw new KeyNotFoundException(string.Format("No mapping item for product code {0}", newBasketItem.ProductCode));
+
+                                // is the checkout attribute already "in" the cart
+                                // if it's a single select (not checkbox?) then how do we "remove" the current one and replace it?
+                                // what about when the price adjustment value has been changed by the promo engine...?
+                                // 
                             }
+
                             else
                             {
-                                Product product = _productService.GetProductById(productId);
-
-                                string attributesXml = string.Empty;
-
-                                ProductMappingItem productMappingItem = _productMappingService.RetrieveFromVariantCode(productId, newBasketItem.VariantCode);
-                                if (productMappingItem != null && !productMappingItem.NoVariants)
+                                if (newBasketItem.SplitFromLineId != 0)
                                 {
-                                    attributesXml = productMappingItem.AttributesXml;
+                                    // The item has not been added - we need to roll it back into the original line with the discount - happens in GetSubTotal in the PriceCalculationService
+                                    ShoppingCartItem sci = (from c in cart where c.Id == newBasketItem.SplitFromLineId select c).FirstOrDefault();
+                                    if (sci == null)
+                                        throw new NullReferenceException(string.Format("SplitFromLineId {0} does not exist in the cart", newBasketItem.SplitFromLineId));
                                 }
-
-                                // Add the new item - any additional items were deleted before sending the basket to the promo engine
-
-                                var cartType = ShoppingCartType.ShoppingCart;
-
-                                // TODO: Customer entered price...?
-                                decimal customerEnteredPriceConverted = decimal.Zero;
-                                // TODO: rental start/end dates
-                                DateTime? rentalStartDate = null;
-                                DateTime? rentalEndDate = null;
-
-                                int quantity = int.Parse(newBasketItem.Quantity.ToString());
-
-                                List<string> itemAddToCartWarnings = new List<string>();
-                                //add to the cart
-                                itemAddToCartWarnings.AddRange(_shoppingCartService.AddToCart(_workContext.CurrentCustomer,
-                                    product, cartType, _storeContext.CurrentStore.Id,
-                                    attributesXml, customerEnteredPriceConverted,
-                                    rentalStartDate, rentalEndDate, quantity, true));
-
-                                if (itemAddToCartWarnings.Count > 0)
+                                else
                                 {
-                                    string cartWarningTemplate = _localizationService.GetResource("Plugin.Misc.QixolPromo.ShoppingCart.AddItemWarning", _workContext.WorkingLanguage.Id);
-                                    string cartWarningMessage = string.Format(cartWarningTemplate, product.Name);
-                                    addToCartWarnings.Add(cartWarningMessage);
-                                    _logger.InsertLog(global::Nop.Core.Domain.Logging.LogLevel.Error, cartWarningMessage, string.Join(", ", itemAddToCartWarnings.ToArray()), customer);
+                                    Product product = _productService.GetProductById(productId);
+
+                                    string attributesXml = string.Empty;
+
+                                    ProductMappingItem productMappingItem = _productMappingService.RetrieveFromVariantCode(productId, newBasketItem.VariantCode);
+                                    if (productMappingItem != null && !productMappingItem.NoVariants)
+                                    {
+                                        attributesXml = productMappingItem.AttributesXml;
+                                    }
+
+                                    // Add the new item - any additional items were deleted before sending the basket to the promo engine
+
+                                    var cartType = ShoppingCartType.ShoppingCart;
+
+                                    // TODO: Customer entered price...?
+                                    decimal customerEnteredPriceConverted = decimal.Zero;
+                                    // TODO: rental start/end dates
+                                    DateTime? rentalStartDate = null;
+                                    DateTime? rentalEndDate = null;
+
+                                    int quantity = int.Parse(newBasketItem.Quantity.ToString());
+
+                                    List<string> itemAddToCartWarnings = new List<string>();
+                                    //add to the cart
+                                    itemAddToCartWarnings.AddRange(_shoppingCartService.AddToCart(_workContext.CurrentCustomer,
+                                        product, cartType, _storeContext.CurrentStore.Id,
+                                        attributesXml, customerEnteredPriceConverted,
+                                        rentalStartDate, rentalEndDate, quantity, true));
+
+                                    if (itemAddToCartWarnings.Count > 0)
+                                    {
+                                        string cartWarningTemplate = _localizationService.GetResource("Plugin.Misc.QixolPromo.ShoppingCart.AddItemWarning", _workContext.WorkingLanguage.Id);
+                                        string cartWarningMessage = string.Format(cartWarningTemplate, product.Name);
+                                        addToCartWarnings.Add(cartWarningMessage);
+                                        _logger.InsertLog(global::Nop.Core.Domain.Logging.LogLevel.Error, cartWarningMessage, string.Join(", ", itemAddToCartWarnings.ToArray()), customer);
+                                    }
                                 }
                             }
                         }
+
+                        #endregion
+
+                        if (selectedShippingOption != null)
+                            _genericAttributeService.SaveAttribute<ShippingOption>(_workContext.CurrentCustomer, SystemCustomerAttributeNames.SelectedShippingOption, selectedShippingOption, _storeContext.CurrentStore.Id);
+
+                        if (!string.IsNullOrEmpty(selectedPaymentOption))
+                            _genericAttributeService.SaveAttribute<string>(_workContext.CurrentCustomer, SystemCustomerAttributeNames.SelectedPaymentMethod, selectedPaymentOption, _storeContext.CurrentStore.Id);
                     }
-
-                    #endregion
-
-                    if (selectedShippingOption != null)
-                        _genericAttributeService.SaveAttribute<ShippingOption>(_workContext.CurrentCustomer, SystemCustomerAttributeNames.SelectedShippingOption, selectedShippingOption, _storeContext.CurrentStore.Id);
-
-                    if (!string.IsNullOrEmpty(selectedPaymentOption))
-                        _genericAttributeService.SaveAttribute<string>(_workContext.CurrentCustomer, SystemCustomerAttributeNames.SelectedPaymentMethod, selectedPaymentOption, _storeContext.CurrentStore.Id);
                 }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("ProcessShoppingCart", ex, _workContext.CurrentCustomer);
+                // TODO: show the customer an error message?
+                // addToCartWarnings.Add(ex.Message);
             }
 
             return addToCartWarnings;

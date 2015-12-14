@@ -301,7 +301,7 @@ namespace Qixol.Nop.Promo.Services.Orders
             foreach (var shoppingCartItem in cart)
             {
                 decimal usePrice = _priceCalculationService.GetUnitPrice(shoppingCartItem, false);
-                decimal sciSubTotal = basketResponse.GetLineSubTotal((shoppingCartItem.Quantity * usePrice), shoppingCartItem.Product, _promoSettings, shoppingCartItem.AttributesXml);
+                decimal sciSubTotal = _promosPriceCalculationService.GetSubTotal(shoppingCartItem, true);
 
                 decimal taxRate;
                 decimal sciExclTax = _taxService.GetProductPrice(shoppingCartItem.Product, sciSubTotal, false, customer, out taxRate);
