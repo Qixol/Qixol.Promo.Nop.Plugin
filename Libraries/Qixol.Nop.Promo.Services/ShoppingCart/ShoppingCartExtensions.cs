@@ -143,7 +143,7 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
 
                 if (!string.IsNullOrEmpty(shoppingCartItem.AttributesXml))
                 {
-                    var productMappingItem = _productMappingService.RetrieveFromAttributesXml(product.Id, shoppingCartItem.AttributesXml);
+                    var productMappingItem = _productMappingService.RetrieveFromAttributesXml(product, shoppingCartItem.AttributesXml);
                     if (productMappingItem != null)
                         variantCode = productMappingItem.VariantCode;
                 }

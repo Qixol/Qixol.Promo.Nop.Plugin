@@ -162,13 +162,7 @@ namespace Qixol.Nop.Promo.Services.Orders
             List<PromoOrderItem> items = new List<PromoOrderItem>();
             IProductMappingService productMappingService = EngineContext.Current.Resolve<IProductMappingService>();
 
-            if (!string.IsNullOrEmpty(attributesXml))
-            {
-                if (product.ProductAttributeMappings != null && product.ProductAttributeMappings.Count > promoSettings.MaximumAttributesForVariants)
-                    attributesXml = string.Empty;
-            }
-
-            ProductMappingItem productMappingItem = productMappingService.RetrieveFromAttributesXml(product.Id, attributesXml);
+            ProductMappingItem productMappingItem = productMappingService.RetrieveFromAttributesXml(product, attributesXml);
             if (productMappingItem != null)
             {
                 items = (from i in promoOrder.PromoOrderItems
@@ -234,16 +228,12 @@ namespace Qixol.Nop.Promo.Services.Orders
             string productCode = product.Id.ToString();
             string variantCode = string.Empty;
 
-            if (!string.IsNullOrEmpty(attributesXml))
-            {
-                IProductMappingService productMappingService = EngineContext.Current.Resolve<IProductMappingService>();
-                if (product.ProductAttributeMappings != null && product.ProductAttributeMappings.Count > promoSettings.MaximumAttributesForVariants)
-                    attributesXml = string.Empty;
-                ProductMappingItem productMappingItem = productMappingService.RetrieveFromAttributesXml(product.Id, attributesXml);
-                if (productMappingItem == null)
-                    return null;
-                variantCode = productMappingItem.VariantCode;
-            }
+            IProductMappingService productMappingService = EngineContext.Current.Resolve<IProductMappingService>();
+
+            ProductMappingItem productMappingItem = productMappingService.RetrieveFromAttributesXml(product, attributesXml);
+            if (productMappingItem == null)
+                return null;
+            variantCode = productMappingItem.VariantCode;
 
             IList<PromoOrderItem> basketResponseItems = (from bri in promoOrder.PromoOrderItems
                                                              where bri.ProductCode.Equals(product.Id.ToString(), StringComparison.InvariantCultureIgnoreCase) &&

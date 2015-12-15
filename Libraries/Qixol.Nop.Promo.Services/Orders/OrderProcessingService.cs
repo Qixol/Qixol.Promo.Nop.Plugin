@@ -527,82 +527,90 @@ namespace Qixol.Nop.Promo.Services.Orders
                         foreach (var sc in details.Cart)
                         {
                             var basketResponseItems = basketResponse.FindBasketResponseItems(sc.Product, _promoSettings, sc.AttributesXml);
-                            //prices
-                            decimal taxRate;
-                            decimal discountAmount = basketResponseItems.Sum(i => i.LinePromotionDiscount);
-                            decimal scUnitPrice = _priceCalculationService.GetUnitPrice(sc);
-                            decimal scSubTotal = basketResponseItems.Sum(i => i.LineAmount);
-                            decimal scUnitPriceInclTax = _taxService.GetProductPrice(sc.Product, scUnitPrice, true, details.Customer, out taxRate);
-                            decimal scUnitPriceExclTax = _taxService.GetProductPrice(sc.Product, scUnitPrice, false, details.Customer, out taxRate);
-                            decimal scSubTotalInclTax = _taxService.GetProductPrice(sc.Product, scSubTotal, true, details.Customer, out taxRate);
-                            decimal scSubTotalExclTax = _taxService.GetProductPrice(sc.Product, scSubTotal, false, details.Customer, out taxRate);
 
-                            decimal discountAmountInclTax = _taxService.GetProductPrice(sc.Product, discountAmount, true, details.Customer, out taxRate);
-                            decimal discountAmountExclTax = _taxService.GetProductPrice(sc.Product, discountAmount, false, details.Customer, out taxRate);
-
-                            //attributes
-                            string attributeDescription = _productAttributeFormatter.FormatAttributes(sc.Product, sc.AttributesXml, details.Customer);
-
-                            var itemWeight = _shippingService.GetShoppingCartItemWeight(sc);
-
-                            //save order item
-                            var orderItem = new OrderItem
+                            if (basketResponseItems == null)
                             {
-                                OrderItemGuid = Guid.NewGuid(),
-                                Order = order,
-                                ProductId = sc.ProductId,
-                                UnitPriceInclTax = scUnitPriceInclTax,
-                                UnitPriceExclTax = scUnitPriceExclTax,
-                                PriceInclTax = scSubTotalInclTax,
-                                PriceExclTax = scSubTotalExclTax,
-                                OriginalProductCost = _priceCalculationService.GetProductCost(sc.Product, sc.AttributesXml),
-                                AttributeDescription = attributeDescription,
-                                AttributesXml = sc.AttributesXml,
-                                Quantity = sc.Quantity,
-                                DiscountAmountInclTax = discountAmountInclTax,
-                                DiscountAmountExclTax = discountAmountExclTax,
-                                DownloadCount = 0,
-                                IsDownloadActivated = false,
-                                LicenseDownloadId = 0,
-                                ItemWeight = itemWeight,
-                                RentalStartDateUtc = sc.RentalStartDateUtc,
-                                RentalEndDateUtc = sc.RentalEndDateUtc
-                            };
-                            order.OrderItems.Add(orderItem);
-                            _orderService.UpdateOrder(order);
-
-                            //gift cards
-                            if (sc.Product.IsGiftCard)
-                            {
-                                string giftCardRecipientName, giftCardRecipientEmail,
-                                    giftCardSenderName, giftCardSenderEmail, giftCardMessage;
-                                _productAttributeParser.GetGiftCardAttribute(sc.AttributesXml,
-                                    out giftCardRecipientName, out giftCardRecipientEmail,
-                                    out giftCardSenderName, out giftCardSenderEmail, out giftCardMessage);
-
-                                for (int i = 0; i < sc.Quantity; i++)
-                                {
-                                    var gc = new GiftCard
-                                    {
-                                        GiftCardType = sc.Product.GiftCardType,
-                                        PurchasedWithOrderItem = orderItem,
-                                        Amount = scUnitPriceExclTax,
-                                        IsGiftCardActivated = false,
-                                        GiftCardCouponCode = _giftCardService.GenerateGiftCardCode(),
-                                        RecipientName = giftCardRecipientName,
-                                        RecipientEmail = giftCardRecipientEmail,
-                                        SenderName = giftCardSenderName,
-                                        SenderEmail = giftCardSenderEmail,
-                                        Message = giftCardMessage,
-                                        IsRecipientNotified = false,
-                                        CreatedOnUtc = DateTime.UtcNow
-                                    };
-                                    _giftCardService.InsertGiftCard(gc);
-                                }
+                                // TODO: handle this error
                             }
+                            else
+                            {
+                                //prices
+                                decimal taxRate;
+                                decimal discountAmount = basketResponseItems.Sum(i => i.LinePromotionDiscount);
+                                decimal scUnitPrice = _priceCalculationService.GetUnitPrice(sc);
+                                decimal scSubTotal = basketResponseItems.Sum(i => i.LineAmount);
+                                decimal scUnitPriceInclTax = _taxService.GetProductPrice(sc.Product, scUnitPrice, true, details.Customer, out taxRate);
+                                decimal scUnitPriceExclTax = _taxService.GetProductPrice(sc.Product, scUnitPrice, false, details.Customer, out taxRate);
+                                decimal scSubTotalInclTax = _taxService.GetProductPrice(sc.Product, scSubTotal, true, details.Customer, out taxRate);
+                                decimal scSubTotalExclTax = _taxService.GetProductPrice(sc.Product, scSubTotal, false, details.Customer, out taxRate);
 
-                            //inventory
-                            _productService.AdjustInventory(sc.Product, -sc.Quantity, sc.AttributesXml);
+                                decimal discountAmountInclTax = _taxService.GetProductPrice(sc.Product, discountAmount, true, details.Customer, out taxRate);
+                                decimal discountAmountExclTax = _taxService.GetProductPrice(sc.Product, discountAmount, false, details.Customer, out taxRate);
+
+                                //attributes
+                                string attributeDescription = _productAttributeFormatter.FormatAttributes(sc.Product, sc.AttributesXml, details.Customer);
+
+                                var itemWeight = _shippingService.GetShoppingCartItemWeight(sc);
+
+                                //save order item
+                                var orderItem = new OrderItem
+                                {
+                                    OrderItemGuid = Guid.NewGuid(),
+                                    Order = order,
+                                    ProductId = sc.ProductId,
+                                    UnitPriceInclTax = scUnitPriceInclTax,
+                                    UnitPriceExclTax = scUnitPriceExclTax,
+                                    PriceInclTax = scSubTotalInclTax,
+                                    PriceExclTax = scSubTotalExclTax,
+                                    OriginalProductCost = _priceCalculationService.GetProductCost(sc.Product, sc.AttributesXml),
+                                    AttributeDescription = attributeDescription,
+                                    AttributesXml = sc.AttributesXml,
+                                    Quantity = sc.Quantity,
+                                    DiscountAmountInclTax = discountAmountInclTax,
+                                    DiscountAmountExclTax = discountAmountExclTax,
+                                    DownloadCount = 0,
+                                    IsDownloadActivated = false,
+                                    LicenseDownloadId = 0,
+                                    ItemWeight = itemWeight,
+                                    RentalStartDateUtc = sc.RentalStartDateUtc,
+                                    RentalEndDateUtc = sc.RentalEndDateUtc
+                                };
+                                order.OrderItems.Add(orderItem);
+                                _orderService.UpdateOrder(order);
+
+                                //gift cards
+                                if (sc.Product.IsGiftCard)
+                                {
+                                    string giftCardRecipientName, giftCardRecipientEmail,
+                                        giftCardSenderName, giftCardSenderEmail, giftCardMessage;
+                                    _productAttributeParser.GetGiftCardAttribute(sc.AttributesXml,
+                                        out giftCardRecipientName, out giftCardRecipientEmail,
+                                        out giftCardSenderName, out giftCardSenderEmail, out giftCardMessage);
+
+                                    for (int i = 0; i < sc.Quantity; i++)
+                                    {
+                                        var gc = new GiftCard
+                                        {
+                                            GiftCardType = sc.Product.GiftCardType,
+                                            PurchasedWithOrderItem = orderItem,
+                                            Amount = scUnitPriceExclTax,
+                                            IsGiftCardActivated = false,
+                                            GiftCardCouponCode = _giftCardService.GenerateGiftCardCode(),
+                                            RecipientName = giftCardRecipientName,
+                                            RecipientEmail = giftCardRecipientEmail,
+                                            SenderName = giftCardSenderName,
+                                            SenderEmail = giftCardSenderEmail,
+                                            Message = giftCardMessage,
+                                            IsRecipientNotified = false,
+                                            CreatedOnUtc = DateTime.UtcNow
+                                        };
+                                        _giftCardService.InsertGiftCard(gc);
+                                    }
+                                }
+
+                                //inventory
+                                _productService.AdjustInventory(sc.Product, -sc.Quantity, sc.AttributesXml);
+                            }
                         }
 
                         //clear shopping cart

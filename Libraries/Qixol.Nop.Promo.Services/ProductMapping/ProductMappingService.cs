@@ -1,8 +1,10 @@
 ﻿using global::Nop.Core.Data;
 using global::Nop.Services.Events;
+using Nop.Core.Domain.Catalog;
 using Nop.Services.Catalog;
 using Qixol.Nop.Promo.Core.Domain.AttributeValues;
 using Qixol.Nop.Promo.Core.Domain.Products;
+using Qixol.Nop.Promo.Core.Domain.Promo;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,19 +18,28 @@ namespace Qixol.Nop.Promo.Services.ProductMapping
         private readonly IRepository<ProductMappingItem> _repository;
         private readonly IProductService _productService;
         private readonly IEventPublisher _eventPublisher;
+        private readonly PromoSettings _promoSettings;
 
         public ProductMappingService(IRepository<ProductMappingItem> repository,
                                      IProductService productService,
-                                     IEventPublisher eventPublisher)
+                                     IEventPublisher eventPublisher,
+                                     PromoSettings promoSettings)
         {
             this._repository = repository;
             this._productService = productService;
             this._eventPublisher = eventPublisher;
+            this._promoSettings = promoSettings;
         }
 
-        public ProductMappingItem RetrieveFromAttributesXml(int productId, string attributesXml)
+        public ProductMappingItem RetrieveFromAttributesXml(Product product, string attributesXml)
         {
-            return this._repository.Table.Where(pm => pm.EntityId == productId && pm.EntityName == EntityAttributeName.Product &&
+            if (product.IsGiftCard)
+                attributesXml = string.Empty;
+
+            if (product.ProductAttributeMappings != null && product.ProductAttributeMappings.Count > _promoSettings.MaximumAttributesForVariants)
+                attributesXml = string.Empty;
+
+            return this._repository.Table.Where(pm => pm.EntityId == product.Id && pm.EntityName == EntityAttributeName.Product &&
                 (pm.AttributesXml ?? string.Empty).Equals((attributesXml ?? string.Empty), StringComparison.InvariantCultureIgnoreCase)).FirstOrDefault();
         }
 

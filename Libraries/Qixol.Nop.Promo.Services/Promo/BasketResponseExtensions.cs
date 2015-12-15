@@ -34,7 +34,7 @@ namespace Qixol.Nop.Promo.Services.Promo
 
             BasketResponseItem checkoutAttributeItem = null;
 
-            IAttributeValueService attributeValueService = DependencyResolver.Current.GetService<IAttributeValueService>();
+            IAttributeValueService attributeValueService = EngineContext.Current.Resolve<IAttributeValueService>();
 
             var checkoutAttributeMappingItem = attributeValueService.Retrieve(attribute.Id, EntityAttributeName.CheckoutAttribute);
             if (checkoutAttributeMappingItem != null)
@@ -237,15 +237,9 @@ namespace Qixol.Nop.Promo.Services.Promo
                 return null;
 
             List<BasketResponseItem> items = new List<BasketResponseItem>();
-            IProductMappingService productMappingService = DependencyResolver.Current.GetService<IProductMappingService>();
+            IProductMappingService productMappingService = EngineContext.Current.Resolve<IProductMappingService>();
 
-            if (!string.IsNullOrEmpty(attributesXml))
-            {
-                if (product.ProductAttributeMappings != null && product.ProductAttributeMappings.Count > promoSettings.MaximumAttributesForVariants)
-                    attributesXml = string.Empty;
-            }
-
-            ProductMappingItem productMappingItem = productMappingService.RetrieveFromAttributesXml(product.Id, attributesXml);
+            ProductMappingItem productMappingItem = productMappingService.RetrieveFromAttributesXml(product, attributesXml);
             if (productMappingItem != null)
             {
                 items = (from i in basketResponse.Items
@@ -389,16 +383,12 @@ namespace Qixol.Nop.Promo.Services.Promo
             string productCode = product.Id.ToString();
             string variantCode = string.Empty;
 
-            if (!string.IsNullOrEmpty(attributesXml))
-            {
-                IProductMappingService productMappingService = DependencyResolver.Current.GetService<IProductMappingService>();
-                if (product.ProductAttributeMappings != null && product.ProductAttributeMappings.Count > promoSettings.MaximumAttributesForVariants)
-                    attributesXml = string.Empty;
-                ProductMappingItem productMappingItem = productMappingService.RetrieveFromAttributesXml(product.Id, attributesXml);
-                if (productMappingItem == null)
-                    return null;
-                variantCode = productMappingItem.VariantCode;
-            }
+            IProductMappingService productMappingService = EngineContext.Current.Resolve<IProductMappingService>();
+
+            ProductMappingItem productMappingItem = productMappingService.RetrieveFromAttributesXml(product, attributesXml);
+            if (productMappingItem == null)
+                return null;
+            variantCode = productMappingItem.VariantCode;
 
             IList<BasketResponseItem> basketResponseItems = (from bri in basketResponse.Items
                                                              where bri.ProductCode.Equals(product.Id.ToString(), StringComparison.InvariantCultureIgnoreCase) &&
