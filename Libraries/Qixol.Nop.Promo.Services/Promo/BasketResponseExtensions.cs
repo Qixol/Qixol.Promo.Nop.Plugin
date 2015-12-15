@@ -346,6 +346,9 @@ namespace Qixol.Nop.Promo.Services.Promo
             decimal totalDiscountsForLines = Decimal.Zero;
             var responseItems = basketResponse.FindBasketResponseItems(product, promoSettings, attributesXml);
 
+            if (responseItems == null)
+                return decimal.Zero;
+
             foreach (var responseItem in responseItems)
             {
                 if (responseItem.AppliedPromotions.Count > 0)
