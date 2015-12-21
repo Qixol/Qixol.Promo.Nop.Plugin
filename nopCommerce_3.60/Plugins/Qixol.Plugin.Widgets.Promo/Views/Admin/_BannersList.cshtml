@@ -1,0 +1,217 @@
+﻿@model PromoBannerModel
+
+<div>
+    <div id="promobanners-grid"></div>
+
+    <script>
+        $(document).ready(function () {
+            $("#promobanners-grid").kendoGrid({
+                dataSource: {
+                    type: "json",
+                    transport: {
+                        read: {
+                            url: "@Html.Raw(Url.Action("BannersList", "PromoWidgetAdmin"))",
+                            type: "POST",
+                            dataType: "json"
+                        },
+                        update: {
+                            url: "@Html.Raw(Url.Action("BannerEdit", "PromoWidgetAdmin"))",
+                                    type: "POST",
+                                    dataType: "json"
+                                },
+                        destroy: {
+                            url: "@Html.Raw(Url.Action("BannerDelete", "PromoWidgetAdmin"))",
+                            type: "POST",
+                            dataType: "json"
+                        }
+                    },
+                    schema: {
+                        data: "Data",
+                        total: "Total",
+                        errors: "Errors",
+                        model: {
+                            id: "Id",
+                            fields: {
+                                Name: { editable: true, type: "string" },
+                                Enabled: { editable: true, type: "boolean" },
+                                TransitionType: { defaultValue: { TransitionTypeID: 1, TransitionTypeName: "Slice Down" } }, @* not sure this is actually used but may be needed for the field name definitions *@
+                                Configure: { editable: false, type: "string" }
+                            }
+                        }
+                    },
+                    requestEnd: function(e) {
+                        if(e.type=="destroy" || e.type=='update') {
+                            this.read();
+                        }
+                    },
+                    error: function(e) {
+                        display_kendoui_grid_error(e);
+                        // Cancel the changes
+                        this.cancelChanges();
+                    },
+                    serverPaging: true,
+                    serverFiltering: true,
+                    serverSorting: true
+                },
+                pageable: {
+                    refresh: true,
+                    numeric: false,
+                    previousNext: false,
+                    info: false
+                },
+                editable: {
+                    confirmation: true,
+                    mode: "inline"
+                },
+                scrollable: false,
+                columns: [{
+                    field: "Name",
+                    title: "@T("Plugins.Widgets.QixolPromo.PromoBanner.Name")"
+                }, {
+                    field: "Enabled",
+                    title: "@T("Plugins.Widgets.QixolPromo.PromoBanner.Enabled")",
+                    width: 100,
+                    headerAttributes: { style: "text-align:center" },
+                    attributes: { style: "text-align:center" },
+                    template: '<img src="@Url.Content("~/Administration/Content/images/")active-#=Enabled#.gif" />'
+                }, {
+                    field: "TransitionType",
+                    title: "@T("Plugins.Widgets.QixolPromo.PromoBanner.TransitionType")",
+                    width: 350,
+                    headerAttributes: { style: "text-align:center" },
+                    attributes: { style: "text-align:center" },
+                    editor: transitionTypeDropDownEditor,
+                    template: "#=TransitionTypeName#"
+                }, {
+                    field: "Configure",
+                    title: "@T("Admin.ContentManagement.Widgets.Configure")",
+                    headerAttributes: { style: "text-align:center" },
+                    attributes: { style: "text-align:center" },
+                    width: 150,
+                    template: '<a href="/Admin/PromoBanner/Admin/Banner/Index?id=#=Id#">@T("Admin.ContentManagement.Widgets.Configure")</a>'
+                }, {
+                    command: [{
+                        name: "edit",
+                        text: "@T("Admin.Common.Edit")"
+                    }, {
+                        name: "destroy",
+                        text: "@T("Admin.Common.Delete")"
+                    }],
+                    headerAttributes: { style: "text-align:center" },
+                    attributes: { style: "text-align:center" },
+                    width: 200
+                }]
+            });
+
+            $("#promobanners-grid table").on("keydown", "tr", function (e) {
+                var grid = $("#promobanners-grid").data("kendoGrid");
+                var code = (e.keyCode ? e.keyCode : e.which);
+                if (code == 13) { // "Enter" keycode
+                    setTimeout(function () {
+                        $('.k-grid-update').focus();
+                        grid.saveRow();
+                    });
+                    return false;
+                }
+            });
+        });
+
+        function transitionTypeDropDownEditor(container, options) {
+            $('<input required data-text-field="TransitionTypeName" data-value-field="TransitionTypeID" data-bind="value:' + options.field + '"/>')
+                .appendTo(container)
+                .kendoDropDownList({
+                    autoBind: false,
+                    dataSource: {
+                        type: "json",
+                        transport: {
+                            read: {
+                                url: "@Html.Raw(Url.Action("TransitionTypes", "PromoWidgetAdmin"))",
+                                type: "POST",
+                                dataType: "json"
+                            }
+                        }
+                    }
+                });
+        }
+
+    </script>
+</div>
+<p>
+    <strong>@T("Plugins.Widgets.QixolPromo.PromoBanner.AddNewTitle")</strong>
+</p>
+<script type="text/javascript">
+
+    $(document).ready(function () {
+
+        $('#addPromoBanner').click(function () {
+            @* TODO: serialize a form instead of using individual field names *@
+            var name = $("#@Html.FieldIdFor(model => model.Name)").val();
+            var isEnabled = document.getElementById("@Html.FieldIdFor(model => model.Enabled)").checked;
+            var transitionType = $('#@Html.FieldIdFor(model => model.TransitionType)').val();
+
+            @* TODO: field validators...? *@
+            if (name == "") {
+                alert('@T("Plugins.Widgets.QixolPromo.PromoBanner.Validation.Msg.1")');
+                return;
+            }
+
+            $('#addPromoBanner').attr('disabled', true);
+            $.ajax({
+                cache:false,
+                type: "POST",
+                url: "@(Url.Action("BannerAdd", "PromoWidgetAdmin"))",
+                data: { "name": name, "enabled": isEnabled, "transitionType": transitionType },
+                success: function (data) {
+                    var grid = $("#promobanners-grid");
+                    grid.data('kendoGrid').dataSource.read();
+
+                    // Reset the inputs back..  Currently doesn't clear the picture though.
+                    $('#addPromoBanner').attr('disabled', false);
+                    $("#@Html.FieldIdFor(model => model.Name)").val("");
+                    $("#@Html.FieldIdFor(model => model.Enabled)").val("true");
+                    $('#@Html.FieldIdFor(model => model.TransitionType)').val('');
+                    document.getElementById("@Html.FieldIdFor(model => model.Enabled)").checked = false;
+                },
+                error:function (xhr, ajaxOptions, thrownError){
+                    alert('@T("Plugins.Widgets.QixolPromo.PromoBanner.Failure.Msg")');
+                    $('#addPromoBanner').attr('disabled', false);
+                }  
+            });
+        });
+    });
+</script>        
+<table class="adminContent">
+    <tr>
+        <td class="adminTitle">
+            @Html.NopLabelFor(model => model.Name):
+        </td>
+        <td class="adminData">
+            @Html.EditorFor(model => model.Name)
+            @Html.ValidationMessageFor(model => model.Name)
+        </td>
+    </tr>
+    <tr>
+        <td class="adminTitle">
+            @Html.NopLabelFor(model => model.TransitionType):
+        </td>
+        <td class="adminData">
+            @*@Html.EditorFor(model => model.TransitionType)*@
+            @Html.DropDownListFor(model => model.TransitionType, Model.AvailableTransitionTypes)
+            @Html.ValidationMessageFor(model => model.TransitionType)
+        </td>
+    </tr>
+    <tr>
+        <td class="adminTitle">
+            @Html.NopLabelFor(model => model.Enabled):
+        </td>
+        <td class="adminData">
+            @Html.EditorFor(model => model.Enabled)
+            @Html.ValidationMessageFor(model => model.Enabled)
+        </td>
+    </tr>
+    <tr>
+        <td colspan="2" align="left" style="padding-top: 20px; padding-bottom: 30px;">
+            <input type="button" id="addPromoBanner" class="k-button" value="@T("Plugins.Widgets.QixolPromo.PromoBanner.AddButton")" />
+        </td>
+    </tr>
+</table>

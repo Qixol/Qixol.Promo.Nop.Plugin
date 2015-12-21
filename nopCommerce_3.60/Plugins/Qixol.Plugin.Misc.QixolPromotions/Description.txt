@@ -1,0 +1,8 @@
+﻿Group: Qixol Promo
+FriendlyName: Qixol Promo
+SystemName: Misc.QixolPromo
+Version: 3.60.5
+SupportedVersions: 3.60
+Author: Qixol web team
+DisplayOrder: 1
+FileName: Qixol.Plugin.Misc.Promo.dll

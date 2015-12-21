@@ -1,0 +1,420 @@
+﻿@model PromoConfigureModel
+
+@{
+    Layout = "";
+
+    int selectedTabIndex = 5;       // Default to 'Help'
+    if (!Model.ShowHelperMessages)
+    {
+        selectedTabIndex = GetSelectedTabIndex();
+    }
+}
+
+<script type="text/javascript">
+
+    $(document).ready(function () {
+
+        @* Set tabs and fields enabled or disabled *@
+        var tabStrip = $("#qixolpromotionsbase-configure").kendoTabStrip().data("kendoTabStrip");
+        @{
+            if (!Model.SynchronizeProducts)
+            {
+                @Html.Raw("tabStrip.enable(tabStrip.tabGroup.children().eq(2), false);");
+                @Html.Raw(string.Format("$('#{0}').prop('disabled', true);", Html.FieldIdFor(model => model.StoreId)));
+                @Html.Raw(string.Format("$('label[for=\"{0}\"]').toggleClass('k-state-disabled', true);", Html.FieldIdFor(model => model.StoreId)));
+            }
+            if (!Model.SynchronizeStores)
+            {
+                @Html.Raw(string.Format("$('#{0}').prop('disabled', !$(this).prop('checked'));", Html.FieldIdFor(model => model.Channel)));
+                @Html.Raw(string.Format("$('label[for=\"{0}\"]').toggleClass('k-state-disabled', !$(this).prop('checked'));", Html.FieldIdFor(model => model.Channel)));
+                @Html.Raw(string.Format("$('#{0}').prop('disabled', !$(this).prop('checked'));", Html.FieldIdFor(model => model.StoreGroup)));
+                @Html.Raw(string.Format("$('label[for=\"{0}\"]').toggleClass('k-state-disabled', !$(this).prop('checked'));", Html.FieldIdFor(model => model.StoreGroup)));
+            }
+            if (!(Model.AllowCustomEndpoint && (Model.SelectedServicesEndPoint == 2)))
+            {
+                @Html.Raw("tabStrip.enable(tabStrip.tabGroup.children().eq(6), false);");
+            }
+        }
+
+        @* functions *@
+        $(".generate-feed").click(function (e) {
+            showThrobber('@Html.Raw(HttpUtility.JavaScriptStringEncode(T("Admin.System.ScheduleTasks.RunNow.Progress").Text))');
+        });
+
+        $("#qixolpromotionsbase-configure").kendoTabStrip({
+            animation: {
+                open: {
+                    effects: "fadeIn"
+                }
+            },
+            select: tabstrip_on_tab_select
+        });
+
+        $("#qixolpromotionsbase-configure-integrationcodes").kendoTabStrip({
+            animation: {
+                open: {
+                    effects: "fadeIn"
+                }
+            },
+            select: tabstrip_on_tab_select
+        });
+
+        @if (Model.AllowCustomEndpoint)
+        {
+            <text>
+        $('#@Html.FieldIdFor(model => model.SelectedServicesEndPoint)').change(function () {
+            var tabStrip = $("#qixolpromotionsbase-configure").kendoTabStrip().data("kendoTabStrip");
+            tabStrip.enable(tabStrip.tabGroup.children().eq(6), ($(this).val() == 2));
+        });
+        </text>
+        }
+
+        $('#@Html.FieldIdFor(model => model.SynchronizeProducts)').change(function () {
+            var tabStrip = $("#qixolpromotionsbase-configure").kendoTabStrip().data("kendoTabStrip");
+            tabStrip.enable(tabStrip.tabGroup.children().eq(2), $(this).prop('checked'));
+            $('#@Html.FieldIdFor(model => model.StoreId)').prop('disabled', !$(this).prop('checked'));
+            $('label[for="@Html.FieldIdFor(model => model.StoreId)"]').toggleClass('k-state-disabled', !$(this).prop('checked'));
+        });
+
+        $('#@Html.FieldIdFor(model => model.SynchronizeStores)').change(function () {
+            $('#@Html.FieldIdFor(model => model.Channel)').prop('disabled', !$(this).prop('checked'));
+            $('label[for="@Html.FieldIdFor(model => model.Channel)"]').toggleClass('k-state-disabled', !$(this).prop('checked'));
+            $('#@Html.FieldIdFor(model => model.StoreGroup)').prop('disabled', !$(this).prop('checked'));
+            $('label[for="@Html.FieldIdFor(model => model.StoreGroup)"]').toggleClass('k-state-disabled', !$(this).prop('checked'));
+        });
+
+    });
+
+</script>    
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    <div id="qixolpromotionsbase-configure">
+        <ul>
+            <li @Html.RenderSelectedTabIndex(0, selectedTabIndex)>
+                @T("Plugins.Misc.QixolPromo.Integration")
+            </li>
+            <li @Html.RenderSelectedTabIndex(1, selectedTabIndex)>
+                @T("Plugins.Misc.QixolPromo.SynchronizedItems")
+            </li>
+            <li @Html.RenderSelectedTabIndex(2, selectedTabIndex)>
+                @T("Plugins.Misc.QixolPromo.ProductAttributes")
+            </li>
+            <li @Html.RenderSelectedTabIndex(3, selectedTabIndex)>
+                @T("Plugins.Misc.QixolPromo.IntegrationCodes")
+            </li>
+            <li @Html.RenderSelectedTabIndex(4, selectedTabIndex)>
+                @T("Plugins.Misc.QixolPromo.Advanced")
+            </li>
+            <li @Html.RenderSelectedTabIndex(5, selectedTabIndex)>
+                @T("Plugins.Misc.QixolPromo.Help")
+            </li>
+            @if (Model.AllowCustomEndpoint)
+            { 
+                <li @Html.RenderSelectedTabIndex(6, selectedTabIndex)>
+                    @T("Plugins.Misc.QixolPromo.ServiceEndpoint.Custom")
+                </li>
+            }
+        </ul>
+        <div>
+            @TabIntegrationSettings()
+        </div>
+        <div>
+            @TabSyncSettings()
+        </div>
+        <div>
+            @Html.Partial("_ProductAttributesList", Model)
+        </div>
+        <div>
+            @TabIntegrationCodes()
+        </div>
+        <div>
+            @TabAdvanced()
+        </div>
+        <div>
+            @Html.Partial("_AdminHelp", Model)        
+        </div>
+@if (Model.AllowCustomEndpoint)
+{
+        <div>
+            @TabCustomEndpoints()
+        </div>
+}
+    </div>
+
+    <div class="options" style="margin-top: 10px;">
+        <input type="submit" name="save" class="k-button" value="@T("Admin.Common.Save")" />
+        <a class="k-button" style="vertical-align: middle; margin-left: 7px;" href="http://admin.qixolpromo.com" target="_blank">
+            <img src="http://admin.qixolpromo.com/Content/imgs/qixol_fav.png" style="vertical-align: middle;" />
+             @T("Plugins.Misc.QixolPromo.GoToPromo")
+        </a>
+    </div>
+}
+
+@helper TabIntegrationSettings()
+{
+    <table class="adminContent" style="margin-top: 20px; margin-bottom: 20px;">
+        <tr>
+            <td class="adminTitle">
+                @Html.NopLabelFor(model => model.Enabled):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.Enabled, new { htmlAttributes = new { onChange = "setEnabled(this.checked);" } })
+            </td>
+        </tr>
+        <tr style="height: 10px;"><td></td></tr>
+        <tr>
+            <td class="adminTitle" style="vertical-align: top;">
+                @Html.NopLabelFor(model => model.CompanyKey):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.CompanyKey)
+                @Html.ValidationMessageFor(model => model.CompanyKey)
+                <div style="margin-top: 10px; margin-bottom: 10px;" id="CompanyKeyHelperArea">
+                    @T("Plugins.Misc.QixolPromo.CompanyKey.Helper1")<br />
+                    @T("Plugins.Misc.QixolPromo.CompanyKey.Helper2")<a href="http://admin.qixolpromo.com/account/register?companyType=2" target="_blank" style="margin-left: 5px;">@T("Plugins.Misc.QixolPromo.CompanyKey.RegisterLink")</a><br />
+                    @T("Plugins.Misc.QixolPromo.CompanyKey.Helper3")
+                </div>
+            </td>
+        </tr>
+
+        <tr>
+            <td class="adminTitle">
+                @Html.NopLabelFor(model => model.SelectedServicesEndPoint):
+            </td>
+            <td class="adminData">
+                @Html.DropDownListFor(model => model.SelectedServicesEndPoint, Model.ServicesEndpointsList)
+                @Html.ValidationMessageFor(model => model.SelectedServicesEndPoint)
+            </td>
+        </tr>
+    </table>
+}
+
+@helper TabSyncSettings()
+{
+    <table class="adminContent" style="margin-top: 20px; margin-bottom: 20px;">
+        <tr>
+            <td class="adminTitle">
+                @Html.NopLabelFor(model => model.SynchronizeProducts):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.SynchronizeProducts)
+                @Html.ValidationMessageFor(model => model.SynchronizeProducts)
+            </td>
+        </tr>
+
+        <tr>
+            <td class="adminTitle" style="padding-left: 25px;">
+                @Html.NopLabelFor(model => model.StoreId):
+            </td>
+            <td class="adminData">
+                @Html.DropDownListFor(model => model.StoreId, Model.AvailableStores)
+                @Html.ValidationMessageFor(model => model.StoreId)
+            </td>
+        </tr>
+        <tr style="height: 20px;"><td></td></tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.NopLabelFor(model => model.SynchronizeShippingMethods):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.SynchronizeShippingMethods)
+                @Html.ValidationMessageFor(model => model.SynchronizeShippingMethods)
+            </td>
+        </tr>
+        <tr style="height: 10px;"><td></td></tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.NopLabelFor(model => model.SynchronizeCustomerRoles):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.SynchronizeCustomerRoles)
+                @Html.ValidationMessageFor(model => model.SynchronizeCustomerRoles)
+            </td>
+        </tr>
+        <tr style="height: 10px;"><td></td></tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.NopLabelFor(model => model.SynchronizeCurrencies):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.SynchronizeCurrencies)
+                @Html.ValidationMessageFor(model => model.SynchronizeCurrencies)
+            </td>
+        </tr>
+        <tr style="height: 10px;"><td></td></tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.NopLabelFor(model => model.SynchronizeCheckoutAttributes):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.SynchronizeCheckoutAttributes)
+                @Html.ValidationMessageFor(model => model.SynchronizeCheckoutAttributes)
+            </td>
+        </tr>
+        <tr style="height: 10px;"><td></td></tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.NopLabelFor(model => model.SynchronizeStores):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.SynchronizeStores, new { htmlAttributes = new { onChange = "enableItems('storegroup', this.checked);enableItems('channel', this.checked);" } })
+                @Html.ValidationMessageFor(model => model.SynchronizeStores)
+            </td>
+        </tr>
+
+        <tr>
+            <td class="adminTitle" style="padding-left: 25px;">
+                @Html.NopLabelFor(model => model.Channel):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.Channel)
+                @Html.ValidationMessageFor(model => model.Channel)
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle" style="padding-left: 25px;">
+                @Html.NopLabelFor(model => model.StoreGroup):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.StoreGroup)
+                @Html.ValidationMessageFor(model => model.StoreGroup)
+                <div style="margin-top: 10px;">
+                    @T("Plugins.Misc.QixolPromo.Channel.Helper1")<br />
+                    @T("Plugins.Misc.QixolPromo.Channel.Helper2")
+                </div>
+            </td>
+        </tr>
+
+        <tr style="height: 20px;"><td></td></tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.NopLabelFor(model => model.SynchronizeAllWhenSaving):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.SynchronizeAllWhenSaving)
+                @Html.ValidationMessageFor(model => model.SynchronizeAllWhenSaving)
+            </td>
+        </tr>
+    </table>        
+}
+
+@helper TabAdvanced()
+{
+    <table class="adminContent" style="margin-top: 20px; margin-bottom: 20px;">
+        <tr>
+            <td class="adminTitle" colspan="2" style="font-weight:bold;">
+                @T("Plugins.Misc.QixolPromo.CartOptions")
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle" style="padding-left: 25px;">
+                @Html.NopLabelFor(model => model.ShowPromotionNameOption):
+            </td>
+            <td class="adminData">
+                @Html.DropDownListFor(model => model.ShowPromotionNameOption, Model.ShowPromotionNameOptionsList)
+                @Html.ValidationMessageFor(model => model.ShowPromotionNameOption)
+            </td>
+        </tr>
+        <tr style="height: 10px;"><td></td></tr>
+        <tr>
+            <td class="adminTitle" colspan="2" style="font-weight:bold;">
+                @T("Plugins.Misc.QixolPromo.BasketValidation")
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle" style="padding-left: 25px;">
+                @Html.NopLabelFor(model => model.UseSelectedCurrencyWhenSubmittingBaskets):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.UseSelectedCurrencyWhenSubmittingBaskets)
+            </td>
+        </tr>
+
+        @if (Model.ShowAdvancedIntegrationSettings)
+        { 
+            <tr style="height: 10px;"><td></td></tr>
+            <tr>
+                <td class="adminTitle" colspan="2" style="font-weight:bold;">
+                    @T("Plugins.Misc.QixolPromo.AdvancedIntegrationSettings")
+                </td>
+            </tr>
+            <tr>
+                <td class="adminTitle" style="padding-left: 25px;">
+                    @Html.NopLabelFor(model => model.LogMessages):
+                </td>
+                <td class="adminData">
+                    @Html.EditorFor(model => model.LogMessages)
+                </td>
+            </tr>
+        }
+
+    </table>
+}
+
+@helper TabIntegrationCodes()
+{
+    <div id="qixolpromotionsbase-configure-integrationcodes">
+        <ul>
+            <li @Html.RenderSelectedTabIndex(0, 0)>
+                @T("admin.configuration.stores")
+            </li>
+            <li>
+                @T("admin.configuration.shipping.methods")
+            </li>
+            <li>
+                @T("admin.customers.customerroles")
+            </li>
+            <li>
+                @T("admin.catalog.attributes.checkoutattributes")
+            </li>
+        </ul>
+        <div>
+            @Html.Partial("_IntegrationCodesList", Qixol.Nop.Promo.Core.Domain.AttributeValues.EntityAttributeName.Store)
+        </div>
+        <div>
+            @Html.Partial("_IntegrationCodesList", Qixol.Nop.Promo.Core.Domain.AttributeValues.EntityAttributeName.DeliveryMethod)
+        </div>
+        <div>
+            @Html.Partial("_IntegrationCodesList", Qixol.Nop.Promo.Core.Domain.AttributeValues.EntityAttributeName.CustomerRole)
+        </div>
+        <div>
+            @Html.Partial("_IntegrationCodesList", Qixol.Nop.Promo.Core.Domain.AttributeValues.EntityAttributeName.CheckoutAttribute)
+        </div>
+    </div>
+}
+
+
+@helper TabCustomEndpoints()
+{
+    <table class="adminContent" style="margin-top: 20px; margin-bottom: 20px;">
+        <tr>
+            <td class="adminTitle">
+                @Html.NopLabelFor(model => model.PromoImportServiceEndpointAddress):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.PromoImportServiceEndpointAddress, new { htmlAttributes = new { style = "width:600px; " } })
+                @Html.ValidationMessageFor(model => model.PromoImportServiceEndpointAddress)
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.NopLabelFor(model => model.PromoExportServiceEndpointAddress):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.PromoExportServiceEndpointAddress, new { htmlAttributes = new { style = "width:600px; " } })
+                @Html.ValidationMessageFor(model => model.PromoExportServiceEndpointAddress)
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle">
+                @Html.NopLabelFor(model => model.BasketRequestServiceEndpointAddress):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.BasketRequestServiceEndpointAddress, new { htmlAttributes = new { style = "width:600px; " } })
+                @Html.ValidationMessageFor(model => model.BasketRequestServiceEndpointAddress)
+            </td>
+        </tr>
+    </table>
+}

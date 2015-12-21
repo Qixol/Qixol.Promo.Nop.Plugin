@@ -1,0 +1,106 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.24627.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "Website", "Website\", "{AF5EB52F-EBF6-49E5-9A01-36D480790D51}"
+	ProjectSection(WebsiteProperties) = preProject
+		TargetFrameworkMoniker = ".NETFramework,Version%3Dv4.5.1"
+		Debug.AspNetCompiler.VirtualPath = "/localhost_50455"
+		Debug.AspNetCompiler.PhysicalPath = "Website\"
+		Debug.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_50455\"
+		Debug.AspNetCompiler.Updateable = "true"
+		Debug.AspNetCompiler.ForceOverwrite = "true"
+		Debug.AspNetCompiler.FixedNames = "false"
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.VirtualPath = "/localhost_50455"
+		Release.AspNetCompiler.PhysicalPath = "Website\"
+		Release.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_50455\"
+		Release.AspNetCompiler.Updateable = "true"
+		Release.AspNetCompiler.ForceOverwrite = "true"
+		Release.AspNetCompiler.FixedNames = "false"
+		Release.AspNetCompiler.Debug = "False"
+		VWDPort = "50455"
+		SlnRelativePath = "Website\"
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Website", "Website", "{56B3C9FE-E307-46D8-821E-D708A1EBF0DF}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Extensions", "Extensions", "{8CC98E96-3B2E-4CCA-8DAB-19853F8172C0}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libraries", "Libraries", "{BAA9413A-3DE8-4EB9-9111-96520CBF4E5B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugins", "Plugins", "{F1D8F2E3-7F8A-439B-A222-F0511DB6A1BE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared Solution Items", "Shared Solution Items", "{A9143718-DE85-46FB-812C-894ECA5A9069}"
+	ProjectSection(SolutionItems) = preProject
+		Shared Solution Items\SharedAssemblyInfo.cs = Shared Solution Items\SharedAssemblyInfo.cs
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utilities", "Utilities", "{E59862EA-4BCE-48F0-97EE-B5A859EFFB02}"
+	ProjectSection(SolutionItems) = preProject
+		Utilities\SP_PNP_Backup.sql = Utilities\SP_PNP_Backup.sql
+		Utilities\SP_PNP_Restore.sql = Utilities\SP_PNP_Restore.sql
+		Utilities\Upgrade_from_3.60.5_to_3.70.1.sql = Utilities\Upgrade_from_3.60.5_to_3.70.1.sql
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Qixol.System.Extensions", "Extensions\Qixol.System.Extensions\Qixol.System.Extensions.csproj", "{EA4F5BBA-BDC2-4625-B409-A6BB4F7A624B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Qixol.Nop.Promo.Core", "Libraries\Qixol.Nop.Promo.Core\Qixol.Nop.Promo.Core.csproj", "{913636AF-4223-4AF2-B425-255340AB51F5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Qixol.Nop.Promo.Data", "Libraries\Qixol.Nop.Promo.Data\Qixol.Nop.Promo.Data.csproj", "{FFC52E6C-E015-49A4-902F-18A6BA7CF5FF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Qixol.Nop.Promo.Services", "Libraries\Qixol.Nop.Promo.Services\Qixol.Nop.Promo.Services.csproj", "{390EE906-71E4-4738-B383-76D825E3BA1C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Qixol.Plugin.Misc.Promo", "Plugins\Qixol.Plugin.Misc.QixolPromotions\Qixol.Plugin.Misc.Promo.csproj", "{47D1E575-63FA-4DB6-ABC2-145227EC1900}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Qixol.Plugin.Widgets.Promo", "Plugins\Qixol.Plugin.Widgets.Promo\Qixol.Plugin.Widgets.Promo.csproj", "{E47BA7CD-20D4-453F-BA8A-02DBE095DB70}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AF5EB52F-EBF6-49E5-9A01-36D480790D51}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AF5EB52F-EBF6-49E5-9A01-36D480790D51}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AF5EB52F-EBF6-49E5-9A01-36D480790D51}.Release|Any CPU.ActiveCfg = Debug|Any CPU
+		{AF5EB52F-EBF6-49E5-9A01-36D480790D51}.Release|Any CPU.Build.0 = Debug|Any CPU
+		{EA4F5BBA-BDC2-4625-B409-A6BB4F7A624B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EA4F5BBA-BDC2-4625-B409-A6BB4F7A624B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EA4F5BBA-BDC2-4625-B409-A6BB4F7A624B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EA4F5BBA-BDC2-4625-B409-A6BB4F7A624B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{913636AF-4223-4AF2-B425-255340AB51F5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{913636AF-4223-4AF2-B425-255340AB51F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{913636AF-4223-4AF2-B425-255340AB51F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{913636AF-4223-4AF2-B425-255340AB51F5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FFC52E6C-E015-49A4-902F-18A6BA7CF5FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FFC52E6C-E015-49A4-902F-18A6BA7CF5FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FFC52E6C-E015-49A4-902F-18A6BA7CF5FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FFC52E6C-E015-49A4-902F-18A6BA7CF5FF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{390EE906-71E4-4738-B383-76D825E3BA1C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{390EE906-71E4-4738-B383-76D825E3BA1C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{390EE906-71E4-4738-B383-76D825E3BA1C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{390EE906-71E4-4738-B383-76D825E3BA1C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{47D1E575-63FA-4DB6-ABC2-145227EC1900}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{47D1E575-63FA-4DB6-ABC2-145227EC1900}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{47D1E575-63FA-4DB6-ABC2-145227EC1900}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{47D1E575-63FA-4DB6-ABC2-145227EC1900}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E47BA7CD-20D4-453F-BA8A-02DBE095DB70}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E47BA7CD-20D4-453F-BA8A-02DBE095DB70}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E47BA7CD-20D4-453F-BA8A-02DBE095DB70}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E47BA7CD-20D4-453F-BA8A-02DBE095DB70}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{AF5EB52F-EBF6-49E5-9A01-36D480790D51} = {56B3C9FE-E307-46D8-821E-D708A1EBF0DF}
+		{EA4F5BBA-BDC2-4625-B409-A6BB4F7A624B} = {8CC98E96-3B2E-4CCA-8DAB-19853F8172C0}
+		{913636AF-4223-4AF2-B425-255340AB51F5} = {BAA9413A-3DE8-4EB9-9111-96520CBF4E5B}
+		{FFC52E6C-E015-49A4-902F-18A6BA7CF5FF} = {BAA9413A-3DE8-4EB9-9111-96520CBF4E5B}
+		{390EE906-71E4-4738-B383-76D825E3BA1C} = {BAA9413A-3DE8-4EB9-9111-96520CBF4E5B}
+		{47D1E575-63FA-4DB6-ABC2-145227EC1900} = {F1D8F2E3-7F8A-439B-A222-F0511DB6A1BE}
+		{E47BA7CD-20D4-453F-BA8A-02DBE095DB70} = {F1D8F2E3-7F8A-439B-A222-F0511DB6A1BE}
+	EndGlobalSection
+EndGlobal

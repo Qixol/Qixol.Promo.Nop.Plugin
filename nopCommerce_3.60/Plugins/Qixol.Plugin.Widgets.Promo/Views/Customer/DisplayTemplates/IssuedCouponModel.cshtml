@@ -1,0 +1,31 @@
+﻿@model IssuedCouponModel
+
+@using global::Nop.Core
+@using global::Nop.Core.Infrastructure
+@using global::Nop.Web.Models.ShoppingCart;
+@using global::Nop.Web.Framework.Themes;
+
+<tr class="">
+    <td class="a-center name">
+        @if (Model.IsConfirmed)
+        {
+            @Model.Code
+        }
+    </td>
+    <td class="a-center status">
+        @Model.Status
+    </td>
+    <td class="a-center validto">
+        @if (Model.ValidTo > DateTime.MinValue)
+        {
+            @Model.ValidTo
+        }
+        else
+        {
+            @T("Plugins.Misc.QixolPromo.Coupons.ValidTo.Always")
+        }
+    </td>
+    <td class="a-center display-details">
+        @Model.DisplayDetails
+    </td>
+</tr>

@@ -1,0 +1,210 @@
+﻿@model PromoAddPictureModel
+
+<div>
+    <div id="promopictures-grid"></div>
+
+    <script>
+        function onDataBound() {
+            //Selects all delete buttons
+            $("#promopictures-grid tbody tr .k-grid-delete").each(function () {
+                var currentDataItem = $("#promopictures-grid").data("kendoGrid").dataItem($(this).closest("tr"));
+
+                //Check in the current dataItem if the row is the system default, and if so remove it.
+                if (currentDataItem.SystemDefault == true) {
+                    $(this).remove();
+                }
+            })
+        }
+
+        $(document).ready(function () {
+            $("#promopictures-grid").kendoGrid({
+                dataSource: {
+                    type: "json",
+                    transport: {
+                        read: {
+                            url: "@Html.Raw(Url.Action("PicturesList", "PromoWidgetAdmin"))",
+                            type: "POST",
+                            dataType: "json"
+                        },
+                        destroy: {
+                            url: "@Html.Raw(Url.Action("PictureDelete", "PromoWidgetAdmin"))",
+                            type: "POST",
+                            dataType: "json"
+                        }
+                    },
+                    schema: {
+                        data: "Data",
+                        total: "Total",
+                        errors: "Errors",
+                        model: {
+                            id: "Id",
+                            fields: {
+                                PictureUrl: { editable: false, type: "string" },
+                                DefaultForTypeName: { editable: false, type: "string" },
+                                PromoReference: { editable: false, type: "string" },
+                                SystemDefault: { editable: false, type: "bool" },
+                                DefaultForTypeDisplay: { editable: false, type: "string" }
+                            }
+                        }
+                    },
+                    requestEnd: function(e) {
+                        if(e.type=="destroy") {
+                            this.read();
+                        }
+                    },
+                    error: function(e) {
+                        display_kendoui_grid_error(e);
+                        // Cancel the changes
+                        this.cancelChanges();
+                    },
+                    serverPaging: true,
+                    serverFiltering: true,
+                    serverSorting: true
+                },
+                dataBound: function(e) {
+                    onDataBound();
+                },
+                pageable: {
+                    refresh: true,
+                    numeric: false,
+                    previousNext: false,
+                    info: false
+                },
+                editable: {
+                    confirmation: true,
+                    mode: "inline"
+                },
+                scrollable: false,
+                columns: [{
+                    field: "PictureUrl",
+                    title: "@T("Plugins.Widgets.QixolPromo.PromoPicture.Picture")",
+                    template: '<a href="#=PictureUrl#" target="_blank"><img alt="#=PictureId#" src="#=PictureUrl#" width="80" /><a/>',
+                    width: 100
+                }, {
+                    field: "DefaultForTypeDisplay",
+                    title: "@T("Plugins.Widgets.QixolPromo.PromoPicture.DefaultForType.ColumnHeader")",
+                    width: 150
+                }, {
+                    field: "PromoReference",
+                    title: "@T("Plugins.Widgets.QixolPromo.PromoPicture.PromoReference")",
+                    width: 150
+                }, {
+                    command: [{
+                        name: "destroy",
+                        text: "@T("Admin.Common.Delete")"
+                    }],
+                    headerAttributes: { style: "text-align:center" },
+                    attributes: { style: "text-align:center" },
+                    width: 50
+                }]
+            });
+        });
+    </script>
+</div>
+<p>
+    <strong>@T("Admin.Catalog.Products.Pictures.AddNew")</strong>
+</p>
+<script type="text/javascript">
+     
+    function setIsDefaultForType(isChecked)
+    {
+        enableItems("@Html.FieldIdFor(model => model.PromoReference)", !isChecked);
+        enableItems("@Html.FieldIdFor(model => model.DefaultForTypeName)", isChecked);
+    }
+
+    $(document).ready(function () {
+
+        enableItems("@Html.FieldIdFor(model => model.DefaultForTypeName)", false);
+
+        $('#addPromoPicture').click(function () {
+            var pictureId = $("#@Html.FieldIdFor(model => model.PictureId)").val();
+            var defaultForType = document.getElementById("@Html.FieldIdFor(model => model.IsDefaultForType)").checked;
+            var promoRef = $("#@Html.FieldIdFor(model => model.PromoReference)").val();
+            var promoType = $("#@Html.FieldIdFor(model => model.DefaultForTypeName)").val();
+
+            if (pictureId == 0) {
+                alert('@T("Plugins.Widgets.QixolPromo.PromoPicture.Validation.Msg.1")');
+                return;
+            }
+
+            if (defaultForType == false && promoRef == "") {
+                alert("@T("Plugins.Widgets.QixolPromo.PromoPicture.Validation.Msg.2")");
+                return;
+            }
+
+            if (defaultForType == true && promoType == "") {
+                alert("@T("Plugins.Widgets.QixolPromo.PromoPicture.Validation.Msg.3")");
+                return;
+            }
+
+            $('#addPromoPicture').attr('disabled', true);
+            $.ajax({
+                cache:false,
+                type: "POST",
+                url: "@(Url.Action("PictureAdd", "PromoWidgetAdmin"))",
+                data: { "pictureId": pictureId, "defaultForType": defaultForType, "promoRef": promoRef, "promoType": promoType },
+                success: function (data) {
+                    var grid = $("#promopictures-grid");
+                    grid.data('kendoGrid').dataSource.read();
+
+                    // Reset the inputs back..  Currently doesn't clear the picture though.
+                    $('#addPromoPicture').attr('disabled', false);
+                    $("#@Html.FieldIdFor(model => model.PictureId)").val(0);
+                    $("#@Html.FieldIdFor(model => model.PromoReference)").val("");
+                    document.getElementById("@Html.FieldIdFor(model => model.IsDefaultForType)").checked = false;
+                    enableItems("@Html.FieldIdFor(model => model.DefaultForTypeName)", false);
+                    enableItems("@Html.FieldIdFor(model => model.PromoReference)", true);
+                },
+                error:function (xhr, ajaxOptions, thrownError){
+                    alert('@T("Plugins.Widgets.QixolPromo.PromoPicture.Failure.Msg")');
+                    $('#addPromoPicture').attr('disabled', false);
+                }  
+            });
+        });
+    });
+</script>        
+<table class="adminContent">
+    <tr>
+        <td class="adminTitle">
+            @Html.NopLabelFor(model => model.PictureId):
+        </td>
+        <td class="adminData">
+            @Html.EditorFor(model => model.PictureId)
+            @Html.ValidationMessageFor(model => model.PictureId)
+        </td>
+    </tr>
+    <tr style="height: 10px;"><td colspan="2"></td></tr>
+    <tr>
+        <td class="adminTitle">
+            @Html.NopLabelFor(model => model.IsDefaultForType):
+        </td>
+        <td class="adminData">
+            @Html.EditorFor(model => model.IsDefaultForType, new { htmlAttributes = new { onChange = "setIsDefaultForType(this.checked);" } })
+            @Html.ValidationMessageFor(model => model.IsDefaultForType)
+        </td>
+    </tr>
+    <tr>
+        <td class="adminTitle" style="padding-left: 25px;">
+            @Html.NopLabelFor(model => model.DefaultForTypeName):
+        </td>
+        <td class="adminData">
+            @Html.DropDownListFor(model => model.DefaultForTypeName, Model.PromoTypes)
+            @Html.ValidationMessageFor(model => model.DefaultForTypeName)
+        </td>
+    </tr>
+    <tr style="height: 10px;"><td colspan="2"></td></tr>
+    <tr>
+        <td class="adminTitle">
+            @Html.NopLabelFor(model => model.PromoReference):
+        </td>
+        <td class="adminData">
+            @Html.EditorFor(model => model.PromoReference)
+            @Html.ValidationMessageFor(model => model.PromoReference)
+        </td>
+    </tr>
+    <tr>
+        <td colspan="2" align="left" style="padding-top: 20px; padding-bottom: 30px;">
+            <input type="button" id="addPromoPicture" class="k-button" value="@T("Plugins.Widgets.QixolPromo.PromoPicture.AddButon")" />
+        </td>
+    </tr>
+</table>
