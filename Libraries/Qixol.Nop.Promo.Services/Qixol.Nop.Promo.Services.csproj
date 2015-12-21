@@ -11,10 +11,6 @@
     <AssemblyName>Qixol.Nop.Promo.Services</AssemblyName>
     <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    
-    
-    
-    
     <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -70,9 +66,8 @@
       <HintPath>..\..\Website\bin\Nop.Web.Framework.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Qixol.Promo.Integration.Lib, Version=2.0.1.3, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\packages\Qixol.Promo.Integration.Lib.2.0.1.3\Qixol.Promo.Integration.Lib.dll</HintPath>
+    <Reference Include="Qixol.Promo.Integration.Lib">
+      <HintPath>..\..\packages\Qixol.Promo.Integration.Lib\Qixol.Promo.Integration.Lib.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
