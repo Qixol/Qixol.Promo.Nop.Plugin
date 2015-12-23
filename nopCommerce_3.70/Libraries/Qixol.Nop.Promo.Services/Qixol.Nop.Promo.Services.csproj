@@ -135,6 +135,7 @@
     <Compile Include="ProductMapping\ProductMappingService.cs" />
     <Compile Include="ProductMapping\ProductPromotionMappingService.cs" />
     <Compile Include="Promo\BasketResponseExtensions.cs" />
+    <Compile Include="Promo\BasketResponseSummaryAppliedPromotionExtensions.cs" />
     <Compile Include="Promo\IPromotionDetailService.cs" />
     <Compile Include="Promo\IPromotionPictureService.cs" />
     <Compile Include="Promo\IPromoService.cs" />

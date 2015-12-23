@@ -526,7 +526,7 @@ namespace Qixol.Nop.Promo.Services.Orders
                         //move shopping cart items to order items
                         foreach (var sc in details.Cart)
                         {
-                            var basketResponseItems = basketResponse.FindBasketResponseItems(sc.Product, _promoSettings, sc.AttributesXml);
+                            var basketResponseItems = basketResponse.FindBasketResponseItems(sc);
 
                             if (basketResponseItems == null)
                             {

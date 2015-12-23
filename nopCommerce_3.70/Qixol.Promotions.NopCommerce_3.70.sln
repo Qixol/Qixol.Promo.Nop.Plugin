@@ -41,7 +41,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utilities", "Utilities", "{
 	ProjectSection(SolutionItems) = preProject
 		Utilities\SP_PNP_Backup.sql = Utilities\SP_PNP_Backup.sql
 		Utilities\SP_PNP_Restore.sql = Utilities\SP_PNP_Restore.sql
-		Utilities\Upgrade_from_3.60.5_to_3.70.1.sql = Utilities\Upgrade_from_3.60.5_to_3.70.1.sql
+		Utilities\Upgrade_from_3.60.5_to_3.70.5.sql = Utilities\Upgrade_from_3.60.5_to_3.70.5.sql
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Qixol.System.Extensions", "Extensions\Qixol.System.Extensions\Qixol.System.Extensions.csproj", "{EA4F5BBA-BDC2-4625-B409-A6BB4F7A624B}"

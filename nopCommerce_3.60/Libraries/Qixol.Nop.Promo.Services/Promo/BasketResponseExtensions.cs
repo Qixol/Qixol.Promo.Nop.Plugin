@@ -1,4 +1,5 @@
 ﻿using Nop.Core.Domain.Catalog;
+using Nop.Core.Domain.Orders;
 using Nop.Core.Infrastructure;
 using Nop.Services.Catalog;
 using Qixol.Nop.Promo.Core.Domain.AttributeValues;
@@ -106,11 +107,11 @@ namespace Qixol.Nop.Promo.Services.Promo
             return true;
         }
 
-        public static string GetBasketLevelPromotionName(this BasketResponse basketResponse, PromoSettings settings)
+        public static string BasketLevelPromotionName(this BasketResponse basketResponse)
         {
             var promo = basketResponse.BasketLevelPromotion();
             if (promo != null)
-                return GetDisplayPromoDetails(settings.ShowPromotionDetailsInBasket, promo);
+                return promo.DisplayDetails();
             return string.Empty;
         }
 
@@ -152,14 +153,13 @@ namespace Qixol.Nop.Promo.Services.Promo
             return orderDiscountTotal;
         }
 
-        public static int GetIssuedPoints(this BasketResponse basketResponse)
+        public static int IssuedPoints(this BasketResponse basketResponse)
         {
             if (!BasketResponseIsValid(basketResponse))
                 return 0;
 
             return Convert.ToInt32(basketResponse.TotalIssuedPoints);
         }
-
 
         #endregion
 
@@ -178,19 +178,19 @@ namespace Qixol.Nop.Promo.Services.Promo
             return false;
         }
 
-        public static string GetDeliveryPromoName(this BasketResponse basketResponse, PromoSettings promoSettings)
+        public static string DeliveryPromoName(this BasketResponse basketResponse)
         {
             if (!basketResponse.IsValid())
                 return string.Empty;
 
             var deliveryPromo = basketResponse.DeliveryPromo();
             if (deliveryPromo != null)
-                return GetDisplayPromoDetails(promoSettings.ShowPromotionDetailsInBasket, deliveryPromo);
+                return deliveryPromo.DisplayDetails();
 
             return string.Empty;
         }
 
-        public static decimal GetDeliveryPromoDiscount(this BasketResponse basketResponse)
+        public static decimal DeliveryPromoDiscount(this BasketResponse basketResponse)
         {
             if (!basketResponse.IsValid())
                 return decimal.Zero;
@@ -231,7 +231,7 @@ namespace Qixol.Nop.Promo.Services.Promo
 
         #region Line Level methods 
 
-        public static List<BasketResponseAppliedPromotion> LineLevelPromotions(this BasketResponse basketResponse, Product product, PromoSettings promoSettings, string attributesXml)
+        public static List<BasketResponseAppliedPromotion> LineLevelPromotions(this BasketResponse basketResponse, ShoppingCartItem shoppingCartItem)
         {
             if (!BasketResponseIsValid(basketResponse))
                 return null;
@@ -239,7 +239,7 @@ namespace Qixol.Nop.Promo.Services.Promo
             List<BasketResponseItem> items = new List<BasketResponseItem>();
             IProductMappingService productMappingService = EngineContext.Current.Resolve<IProductMappingService>();
 
-            ProductMappingItem productMappingItem = productMappingService.RetrieveFromAttributesXml(product, attributesXml);
+            ProductMappingItem productMappingItem = productMappingService.RetrieveFromShoppingCartItem(shoppingCartItem);
             if (productMappingItem != null)
             {
                 items = (from i in basketResponse.Items
@@ -296,14 +296,14 @@ namespace Qixol.Nop.Promo.Services.Promo
             return itemPromos;
         }
 
-        public static List<string> GetLineDiscountNames(this BasketResponse basketResponse, Product product, PromoSettings promoSettings, string attributesXml)
+        public static List<string> LineDiscountNames(this BasketResponse basketResponse, ShoppingCartItem shoppingCartItem)
         {
             List<string> promotionNames = new List<string>();
 
             if (!BasketResponseIsValid(basketResponse))
                 return promotionNames;
 
-            List<BasketResponseAppliedPromotion> lineLevelPromotions = basketResponse.LineLevelPromotions(product, promoSettings, attributesXml);
+            List<BasketResponseAppliedPromotion> lineLevelPromotions = basketResponse.LineLevelPromotions(shoppingCartItem);
 
             if (lineLevelPromotions == null || lineLevelPromotions.Count == 0)
                 return promotionNames;
@@ -324,7 +324,7 @@ namespace Qixol.Nop.Promo.Services.Promo
                     if ((!appliedPromo.BasketLevelPromotion && !appliedPromo.DeliveryLevelPromotion) ||
                         appliedPromo.PromotionType.Equals("FREEPRODUCT", StringComparison.InvariantCultureIgnoreCase)) // always treat FreeProduct as line level
                     {
-                        promotionNames.Add(GetDisplayPromoDetails(promoSettings.ShowPromotionDetailsInBasket, appliedPromo));
+                        promotionNames.Add(appliedPromo.DisplayDetails());
                     }
                 }
             }
@@ -332,13 +332,13 @@ namespace Qixol.Nop.Promo.Services.Promo
             return promotionNames;
         }
 
-        public static decimal GetLineDiscountAmount(this BasketResponse basketResponse, Product product, PromoSettings promoSettings, string attributesXml)
+        public static decimal GetLineDiscountAmount(this BasketResponse basketResponse, ShoppingCartItem shoppingCartItem)
         {
             if (!BasketResponseIsValid(basketResponse))
                 return decimal.Zero;
 
             decimal totalDiscountsForLines = Decimal.Zero;
-            var responseItems = basketResponse.FindBasketResponseItems(product, promoSettings, attributesXml);
+            var responseItems = basketResponse.FindBasketResponseItems(shoppingCartItem);
 
             if (responseItems == null)
                 return decimal.Zero;
@@ -375,7 +375,49 @@ namespace Qixol.Nop.Promo.Services.Promo
             return totalDiscountsForLines;
         }
 
-        public static IList<BasketResponseItem> FindBasketResponseItems(this BasketResponse basketResponse, Product product, PromoSettings promoSettings, string attributesXml)
+        public static IList<BasketResponseItem> FindBasketResponseItems(this BasketResponse basketResponse, ShoppingCartItem shoppingCartItem)
+        {
+            if (!BasketResponseIsValid(basketResponse))
+                return null;
+
+            string productCode = shoppingCartItem.ProductId.ToString();
+            string variantCode = string.Empty;
+
+            IProductMappingService productMappingService = EngineContext.Current.Resolve<IProductMappingService>();
+
+            ProductMappingItem productMappingItem = productMappingService.RetrieveFromShoppingCartItem(shoppingCartItem);
+            if (productMappingItem == null)
+                return null;
+            variantCode = productMappingItem.VariantCode;
+
+            IList<BasketResponseItem> basketResponseItems =
+                (from bri in basketResponse.Items
+                where bri.ProductCode.Equals(shoppingCartItem.ProductId.ToString(), StringComparison.InvariantCultureIgnoreCase) &&
+                    ((string.IsNullOrEmpty(variantCode) ||
+                    (!string.IsNullOrEmpty(variantCode) &&
+                    bri.VariantCode.Equals(variantCode, StringComparison.InvariantCultureIgnoreCase))) &&
+                    ((!bri.Generated && bri.Id == shoppingCartItem.Id) ||
+                    (bri.Generated && bri.SplitFromLineId == shoppingCartItem.Id)))
+                select bri).ToList();
+
+            // If we don't have any matches, check for free products
+            // It's probable that neither the Id nor SplitFromLineId will match so just use product code and variant code
+            if (basketResponseItems.Count == 0)
+            {
+                basketResponseItems =
+                (from bri in basketResponse.Items
+                 where bri.ProductCode.Equals(shoppingCartItem.ProductId.ToString(), StringComparison.InvariantCultureIgnoreCase) &&
+                     ((string.IsNullOrEmpty(variantCode) ||
+                     (!string.IsNullOrEmpty(variantCode) &&
+                     bri.VariantCode.Equals(variantCode, StringComparison.InvariantCultureIgnoreCase))) &&
+                     bri.Generated)
+                 select bri).ToList();
+            }
+
+            return basketResponseItems;
+        }
+
+        public static IList<BasketResponseItem> FindBasketResponseItems(this BasketResponse basketResponse, Product product, string attributesXml)
         {
             if (!BasketResponseIsValid(basketResponse))
                 return null;
@@ -449,29 +491,6 @@ namespace Qixol.Nop.Promo.Services.Promo
                 return false;
 
             return true;
-        }
-
-
-        public static string GetDisplayPromoDetails(int displaySetting, BasketResponseSummaryAppliedPromotion promo)
-        {
-            switch (displaySetting)
-            {
-                case PromotionDetailsDisplayOptions.ShowEndUserText:
-                    // The display text is not mandatory, so default it to the promotion type if there is no text.
-                    if (!string.IsNullOrEmpty(promo.DisplayText))
-                        return promo.DisplayText;
-                    else
-                        return promo.PromotionTypeDisplay;
-
-                case PromotionDetailsDisplayOptions.ShowPromotionName:
-                    return promo.PromotionName;
-
-                case PromotionDetailsDisplayOptions.ShowNoText:
-                    return string.Empty;
-
-                default:
-                    return promo.PromotionTypeDisplay;
-            }
         }
 
         #endregion

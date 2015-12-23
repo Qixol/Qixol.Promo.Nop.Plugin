@@ -102,7 +102,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             if (basketResponse == null || !basketResponse.IsValid())
                 return new EmptyResult();
 
-            return Content(_localizationService.GetValidatedResource(basketResponse.GetBasketLevelPromotionName(_promoSettings)));
+            return Content(_localizationService.GetValidatedResource(basketResponse.BasketLevelPromotionName()));
         }
 
         public ActionResult HasShippingDiscount()
@@ -156,7 +156,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             if (basketResponse == null || !basketResponse.IsValid())
                 return new EmptyResult();
 
-            return Content(_localizationService.GetValidatedResource(basketResponse.GetDeliveryPromoName(_promoSettings)));
+            return Content(_localizationService.GetValidatedResource(basketResponse.DeliveryPromoName()));
         }
 
         public ActionResult GetOrderTotalDiscountName()
@@ -168,7 +168,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             if (basketResponse == null || !basketResponse.IsValid())
                 return new EmptyResult();
 
-            return Content(_localizationService.GetValidatedResource(basketResponse.GetBasketLevelPromotionName(_promoSettings)));
+            return Content(_localizationService.GetValidatedResource(basketResponse.BasketLevelPromotionName()));
         }
 
         public ActionResult GetLineDiscountName(ShoppingCartModel.ShoppingCartItemModel shoppingCartItemModel)
@@ -185,7 +185,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             if (shoppingCartItem == null)
                 return new EmptyResult();
 
-            var promoNames = basketResponse.GetLineDiscountNames(shoppingCartItem.Product, _promoSettings, shoppingCartItem.AttributesXml);
+            var promoNames = basketResponse.LineDiscountNames(shoppingCartItem);
             if (promoNames != null && promoNames.Count > 0)
                 return Content(string.Join("<br />", promoNames.Select(n => _localizationService.GetValidatedResource(n)).ToArray()));
             else

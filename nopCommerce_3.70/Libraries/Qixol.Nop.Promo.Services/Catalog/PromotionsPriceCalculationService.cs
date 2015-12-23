@@ -99,7 +99,7 @@ namespace Qixol.Nop.Promo.Services.Catalog
             if (basketResponse.Items == null || basketResponse.Items.Count == 0)
                 return base.GetFinalPrice(product, customer, additionalCharge, includeDiscountsInBaseCall, quantity, rentalStartDate, rentalEndDate, out discountAmount, out appliedDiscount);
 
-            var basketResponseProducts = basketResponse.FindBasketResponseItems(product, _promoSettings, string.Empty);
+            var basketResponseProducts = basketResponse.FindBasketResponseItems(product, string.Empty);
 
             if (basketResponseProducts == null || basketResponseProducts.Count == 0)
                 return base.GetFinalPrice(product, customer, additionalCharge, includeDiscountsInBaseCall, quantity, rentalStartDate, rentalEndDate, out discountAmount, out appliedDiscount);
@@ -137,15 +137,15 @@ namespace Qixol.Nop.Promo.Services.Catalog
             BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
             if(!basketResponse.IsValid())
                 return lineSubTotal;
-            
-            discountAmount = basketResponse.GetLineDiscountAmount(shoppingCartItem.Product, _promoSettings, shoppingCartItem.AttributesXml);
+
+            discountAmount = basketResponse.GetLineDiscountAmount(shoppingCartItem);
             if (discountAmount != decimal.Zero)
             {
                 if (discountAmount <= lineSubTotal)
                 {
                     appliedDiscount = new global::Nop.Core.Domain.Discounts.Discount()
                     {
-                        Name = string.Join(", ", basketResponse.GetLineDiscountNames(shoppingCartItem.Product, _promoSettings, shoppingCartItem.AttributesXml)
+                        Name = string.Join(", ", basketResponse.LineDiscountNames(shoppingCartItem)
                                                                .Select(n => _localizationService.GetValidatedResource(n))),
                         DiscountAmount = discountAmount
                     };

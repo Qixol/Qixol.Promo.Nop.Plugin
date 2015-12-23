@@ -195,7 +195,7 @@ namespace Qixol.Nop.Promo.Services.Orders
                                     {
                                         var summaryPromo = (from sp in basketResponse.Summary.AppliedPromotions where sp.PromotionId == appliedPromo.PromotionId select sp).FirstOrDefault();
                                         if (summaryPromo != null)
-                                            formattedPromo += BasketResponseExtensions.GetDisplayPromoDetails(_promoSettings.ShowPromotionDetailsInBasket, summaryPromo);
+                                            formattedPromo += summaryPromo.DisplayDetails();
 
                                         if (renderPrices)
                                         {

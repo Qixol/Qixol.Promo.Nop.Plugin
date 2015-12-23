@@ -1,6 +1,7 @@
 ﻿using global::Nop.Core.Data;
 using global::Nop.Services.Events;
 using Nop.Core.Domain.Catalog;
+using Nop.Core.Domain.Orders;
 using Nop.Services.Catalog;
 using Qixol.Nop.Promo.Core.Domain.AttributeValues;
 using Qixol.Nop.Promo.Core.Domain.Products;
@@ -35,6 +36,25 @@ namespace Qixol.Nop.Promo.Services.ProductMapping
         {
             if (product.IsGiftCard)
                 attributesXml = string.Empty;
+
+            if (product.ProductAttributeCombinations == null || product.ProductAttributeCombinations.Count == 0)
+                attributesXml = string.Empty;
+
+            if (product.ProductAttributeMappings != null && product.ProductAttributeMappings.Count > _promoSettings.MaximumAttributesForVariants)
+                attributesXml = string.Empty;
+
+            return this._repository.Table.Where(pm => pm.EntityId == product.Id && pm.EntityName == EntityAttributeName.Product &&
+                (pm.AttributesXml ?? string.Empty).Equals((attributesXml ?? string.Empty), StringComparison.InvariantCultureIgnoreCase)).FirstOrDefault();
+        }
+
+        public ProductMappingItem RetrieveFromShoppingCartItem(ShoppingCartItem shoppingCartItem)
+        {
+            string attributesXml = string.Empty;
+
+            var product = _productService.GetProductById(shoppingCartItem.ProductId);
+
+            if (product.ProductAttributeCombinations != null && product.ProductAttributeCombinations.Count > 0)
+                attributesXml = shoppingCartItem.AttributesXml;
 
             if (product.ProductAttributeMappings != null && product.ProductAttributeMappings.Count > _promoSettings.MaximumAttributesForVariants)
                 attributesXml = string.Empty;

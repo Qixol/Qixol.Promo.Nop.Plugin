@@ -148,7 +148,7 @@ namespace Qixol.Nop.Promo.Services.Orders
                 return base.CalculateRewardPoints(customer, amount);
 
             BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
-            return basketResponse.GetIssuedPoints();
+            return basketResponse.IssuedPoints();
         }
 
         protected override decimal GetShippingDiscount(Customer customer, decimal shippingTotal, out Discount appliedDiscount)
@@ -159,12 +159,12 @@ namespace Qixol.Nop.Promo.Services.Orders
             appliedDiscount = null;
 
             BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
-            var discountAmount = basketResponse.GetDeliveryPromoDiscount();
+            var discountAmount = basketResponse.DeliveryPromoDiscount();
             if (discountAmount != decimal.Zero)
             {
                 appliedDiscount = new Discount()
                 {
-                    Name = basketResponse.GetDeliveryPromoName(_promoSettings),
+                    Name = basketResponse.DeliveryPromoName(),
                     DiscountAmount = discountAmount
                 };
             }

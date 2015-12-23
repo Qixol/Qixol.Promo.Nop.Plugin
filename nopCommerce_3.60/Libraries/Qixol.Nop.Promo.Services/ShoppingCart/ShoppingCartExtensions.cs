@@ -141,12 +141,9 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
                 string barcode = product.Gtin;
                 string variantCode = string.Empty;
 
-                if (!string.IsNullOrEmpty(shoppingCartItem.AttributesXml))
-                {
-                    var productMappingItem = _productMappingService.RetrieveFromAttributesXml(product, shoppingCartItem.AttributesXml);
-                    if (productMappingItem != null)
-                        variantCode = productMappingItem.VariantCode;
-                }
+                var productMappingItem = _productMappingService.RetrieveFromShoppingCartItem(shoppingCartItem);
+                if (productMappingItem != null)
+                    variantCode = productMappingItem.VariantCode;
 
                 // DM Cope with baskets in current currency
                 decimal usePrice = _priceCalculationService.GetUnitPrice(shoppingCartItem, includeDiscounts: false);
