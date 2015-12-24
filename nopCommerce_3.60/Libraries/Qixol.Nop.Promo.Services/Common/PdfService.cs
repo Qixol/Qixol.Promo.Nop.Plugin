@@ -542,9 +542,58 @@ namespace Qixol.Nop.Promo.Services.Common
                     //productsTable.AddCell(cellProductItem);
                     productsTable.AddCell(ptotalTable);
                 }
-                doc.Add(productsTable);
 
                 #endregion
+
+                #region issued coupons
+
+                if (promoOrder != null && promoOrder.PromoOrderCoupons != null && promoOrder.PromoOrderCoupons.Count > 0)
+                {
+                    foreach (var promoOrderCoupon in promoOrder.PromoOrderCoupons)
+                    {
+                        var issuedCouponTable = new PdfPTable(1);
+                        issuedCouponTable.RunDirection = GetDirection(lang);
+                        issuedCouponTable.DefaultCell.Border = Rectangle.NO_BORDER;
+
+                        // coupon details
+                        issuedCouponTable.AddCell(new Paragraph(_localizationService.GetResource("Plugin.Misc.QixolPromo.Coupon.YouReceived"), font));
+                        issuedCouponTable.AddCell(new Paragraph(promoOrderCoupon.DisplayText, promosFont));
+                        string code = string.Format("{0}: {1}", _localizationService.GetResource("Plugin.Misc.QixolPromo.Coupon.Code"), promoOrderCoupon.CouponCode);
+                        issuedCouponTable.AddCell(new Paragraph(code, font));
+
+                        productsTable.AddCell(issuedCouponTable);
+
+                        //SKU - empty cell
+                        if (_catalogSettings.ShowProductSku)
+                        {
+                            var sku = string.Empty;
+                            cellProductItem = new PdfPCell(new Phrase(sku ?? String.Empty, font));
+                            cellProductItem.HorizontalAlignment = Element.ALIGN_CENTER;
+                            productsTable.AddCell(cellProductItem);
+                        }
+
+                        //price - empty cell
+                        string unitPrice = string.Empty;
+                        cellProductItem = new PdfPCell(new Phrase(unitPrice, font));
+                        cellProductItem.HorizontalAlignment = Element.ALIGN_LEFT;
+                        productsTable.AddCell(cellProductItem);
+
+                        //qty
+                        cellProductItem = new PdfPCell(new Phrase(string.Empty, font));
+                        cellProductItem.HorizontalAlignment = Element.ALIGN_LEFT;
+                        productsTable.AddCell(cellProductItem);
+
+                        //total
+                        string subTotal = string.Empty;
+                        cellProductItem = new PdfPCell(new Phrase(subTotal, font));
+                        cellProductItem.HorizontalAlignment = Element.ALIGN_LEFT;
+                        productsTable.AddCell(cellProductItem);
+                    }
+                }
+
+                #endregion
+
+                doc.Add(productsTable);
 
                 #region Checkout attributes
 
