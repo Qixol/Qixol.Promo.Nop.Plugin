@@ -10,7 +10,6 @@ using global::Nop.Services.Directory;
 using global::Nop.Services.Localization;
 using global::Nop.Services.Orders;
 using global::Nop.Services.Shipping;
-using Qixol.System.Extensions;
 using Qixol.Nop.Promo.Core.Domain.AttributeValues;
 using Qixol.Nop.Promo.Core.Domain.Products;
 using Qixol.Nop.Promo.Core.Domain.Promo;

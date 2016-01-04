@@ -153,10 +153,6 @@
     <Compile Include="Tax\TaxServiceExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Extensions\Qixol.System.Extensions\Qixol.System.Extensions.csproj">
-      <Project>{ea4f5bba-bdc2-4625-b409-a6bb4f7a624b}</Project>
-      <Name>Qixol.System.Extensions</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Qixol.Nop.Promo.Core\Qixol.Nop.Promo.Core.csproj">
       <Project>{913636af-4223-4af2-b425-255340ab51f5}</Project>
       <Name>Qixol.Nop.Promo.Core</Name>

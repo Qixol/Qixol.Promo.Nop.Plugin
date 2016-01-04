@@ -53,6 +53,9 @@ namespace Qixol.Nop.Promo.Services.ProductMapping
 
             var product = _productService.GetProductById(shoppingCartItem.ProductId);
 
+            if (product.ProductAttributeMappings != null && product.ProductAttributeMappings.Count > 0)
+                attributesXml = shoppingCartItem.AttributesXml;
+
             if (product.ProductAttributeCombinations != null && product.ProductAttributeCombinations.Count > 0)
                 attributesXml = shoppingCartItem.AttributesXml;
 

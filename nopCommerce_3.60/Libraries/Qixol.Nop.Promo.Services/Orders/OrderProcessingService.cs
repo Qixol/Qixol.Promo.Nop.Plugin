@@ -22,7 +22,6 @@ using global::Nop.Services.Security;
 using global::Nop.Services.Shipping;
 using global::Nop.Services.Tax;
 using global::Nop.Services.Vendors;
-using Qixol.System.Extensions;
 using Qixol.Nop.Promo.Core.Domain.Promo;
 using Qixol.Promo.Integration.Lib.Basket;
 using System;
@@ -1363,7 +1362,7 @@ namespace Qixol.Nop.Promo.Services.Orders
             if (basketResponseAttribute == null || string.IsNullOrEmpty(basketResponseAttribute.Value))
                 return 0;
 
-            BasketResponse basketResponse = basketResponseAttribute.Value.ToObject<BasketResponse>();
+            BasketResponse basketResponse = BasketResponse.FromXml(basketResponseAttribute.Value);
             if (basketResponse == null)
                 return 0;
 

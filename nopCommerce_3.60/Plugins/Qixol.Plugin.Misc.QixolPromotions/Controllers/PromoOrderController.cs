@@ -3,7 +3,6 @@ using Nop.Services.Catalog;
 using Nop.Services.Common;
 using Nop.Web.Controllers;
 using Nop.Web.Models.ShoppingCart;
-using Qixol.System.Extensions;
 using Qixol.Nop.Promo.Core.Domain.Promo;
 using Qixol.Plugin.Misc.Promo.Models;
 using Qixol.Nop.Promo.Services;

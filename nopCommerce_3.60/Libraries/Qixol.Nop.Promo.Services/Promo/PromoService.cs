@@ -23,7 +23,6 @@ using Qixol.Nop.Promo.Core.Domain.Promo;
 using global::Nop.Core.Domain.Customers;
 using global::Nop.Core.Domain.Orders;
 using Qixol.Nop.Promo.Services.ProductMapping;
-using Qixol.System.Extensions;
 using Qixol.Nop.Promo.Services.Coupons;
 using Qixol.Promo.Integration.Lib;
 using Qixol.Promo.Integration.Lib.Basket;
@@ -273,7 +272,7 @@ namespace Qixol.Nop.Promo.Services.Promo
         public void SendConfirmedBasket(global::Nop.Core.Domain.Orders.Order placedOrder)
         {            
             var customer = _workContext.CurrentCustomer;
-            BasketRequest basketRequest = customer.GetAttribute<string>(PromoCustomerAttributeNames.PromoBasketRequest, _storeContext.CurrentStore.Id).ToObject<BasketRequest>();
+            BasketRequest basketRequest = BasketRequest.FromXml(customer.GetAttribute<string>(PromoCustomerAttributeNames.PromoBasketRequest, _storeContext.CurrentStore.Id));
             basketRequest.Confirmed = true;
 
             #region Custom Attributes
