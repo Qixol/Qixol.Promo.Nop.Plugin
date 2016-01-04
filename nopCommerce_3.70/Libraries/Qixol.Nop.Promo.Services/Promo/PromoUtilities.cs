@@ -18,7 +18,6 @@ using global::Nop.Core;
 using global::Nop.Services.Common;
 using global::Nop.Core.Domain.Shipping;
 using global::Nop.Services.Orders;
-using Qixol.System.Extensions;
 using Qixol.Nop.Promo.Core.Domain.Import;
 using System.Runtime.Serialization.Json;
 using Qixol.Nop.Promo.Core.Domain.Products;
@@ -174,7 +173,7 @@ namespace Qixol.Nop.Promo.Services.Promo
             Customer customer = _workContext.CurrentCustomer;
             string basketResponseString = customer.GetAttribute<string>(PromoCustomerAttributeNames.PromoBasketResponse, _storeContext.CurrentStore.Id);
 
-            BasketResponse basketResponse = basketResponseString.ToObject<BasketResponse>();
+            BasketResponse basketResponse = BasketResponse.FromXml(basketResponseString);
             return basketResponse;
         }
 
