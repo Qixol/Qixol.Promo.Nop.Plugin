@@ -173,7 +173,12 @@ namespace Qixol.Nop.Promo.Services.Promo
             Customer customer = _workContext.CurrentCustomer;
             string basketResponseString = customer.GetAttribute<string>(PromoCustomerAttributeNames.PromoBasketResponse, _storeContext.CurrentStore.Id);
 
-            BasketResponse basketResponse = BasketResponse.FromXml(basketResponseString);
+            BasketResponse basketResponse = null;
+            if (!string.IsNullOrEmpty(basketResponseString))
+            {
+                basketResponse = BasketResponse.FromXml(basketResponseString);
+            }
+
             return basketResponse;
         }
 

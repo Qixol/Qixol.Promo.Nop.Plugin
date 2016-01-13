@@ -49,6 +49,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utilities", "Utilities", "{
 		Utilities\SP_PNP_Backup.sql = Utilities\SP_PNP_Backup.sql
 		Utilities\SP_PNP_Restore.sql = Utilities\SP_PNP_Restore.sql
 		Utilities\Upgrade_from_3.60.4_to_3.60.5.sql = Utilities\Upgrade_from_3.60.4_to_3.60.5.sql
+		Utilities\Upgrade_from_3.60.5_to_3.60.6.sql = Utilities\Upgrade_from_3.60.5_to_3.60.6.sql
+		Utilities\Upgrade_from_3.60.6_to_3.60.7.sql = Utilities\Upgrade_from_3.60.6_to_3.60.7.sql
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared Solution Items", "Shared Solution Items", "{FC372C95-D84F-4D00-A5E9-FB47AB64E731}"

@@ -408,95 +408,103 @@ namespace Qixol.Nop.Promo.Services.Orders
 
                     BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
 
-                    PromoOrder promoOrder = new PromoOrder()
+                    if (basketResponse == null)
                     {
-                        RequestXml = _workContext.CurrentCustomer.GetAttribute<string>(PromoCustomerAttributeNames.PromoBasketRequest, _genericAttributeService, _storeContext.CurrentStore.Id),
-                        ResponseXml = basketResponse.ToXml(),
-                        OrderId = order.Id,
-                        DeliveryOriginalPrice = basketResponse.DeliveryOriginalPrice
-                    };
-
-                    _promoOrderService.InsertPromoOrder(promoOrder);
-
-                    basketResponse.Items.ForEach(bi =>
+                        throw new NopException(string.Format("Failed to create PromoOrder for order: {0}", order.Id));
+                    }
+                    else
                     {
-                        PromoOrderItem promoOrderItem = new PromoOrderItem()
+
+                        PromoOrder promoOrder = new PromoOrder()
                         {
-                            LineAmount = bi.LineAmount,
+                            RequestXml = _workContext.CurrentCustomer.GetAttribute<string>(PromoCustomerAttributeNames.PromoBasketRequest, _genericAttributeService, _storeContext.CurrentStore.Id),
+                            ResponseXml = basketResponse.ToXml(),
                             OrderId = order.Id,
-                            PromoOrderId = promoOrder.Id,
-                            IsDelivery = bi.IsDelivery,
-                            ProductCode = bi.ProductCode,
-                            VariantCode = bi.VariantCode,
-                            LinePromotionDiscount = bi.LinePromotionDiscount,
-                            Barcode = bi.Barcode,
-                            Generated = bi.Generated,
-                            ManualDiscount = bi.ManualDiscount,
-                            OriginalAmount = bi.OriginalAmount,
-                            OriginalPrice = bi.OriginalPrice,
-                            OriginalQuantity = bi.OriginalQuantity,
-                            Price = bi.Price,
-                            ProductDescription = bi.ProductDescription,
-                            Quantity = bi.Quantity,
-                            SplitFromLineId = bi.SplitFromLineId,
-                            TotalDiscount = bi.TotalDiscount,
-                            TotalIssuedPoints = bi.TotalIssuedPoints
+                            DeliveryOriginalPrice = basketResponse.DeliveryOriginalPrice
                         };
 
-                        promoOrder.PromoOrderItems.Add(promoOrderItem);
-                        _promoOrderService.UpdatePromoOrder(promoOrder);
+                        _promoOrderService.InsertPromoOrder(promoOrder);
 
-                        bi.AppliedPromotions.ForEach(ap =>
+                        basketResponse.Items.ForEach(bi =>
                         {
-                            string promotionTypeDisplay = string.Empty;
-                            string promotionType = string.Empty;
-                            string promotionName = string.Empty;
-                            string promotionDisplayText = string.Empty;
-                            var appliedPromo = (from sap in basketResponse.Summary.AppliedPromotions where sap.PromotionId == ap.PromotionId select sap).FirstOrDefault();
-                            if (appliedPromo != null)
+                            PromoOrderItem promoOrderItem = new PromoOrderItem()
                             {
-                                promotionName = appliedPromo.PromotionName;
-                                promotionType = appliedPromo.PromotionType;
-                                promotionTypeDisplay = appliedPromo.PromotionTypeDisplay;
-                                promotionDisplayText = appliedPromo.DisplayText;
-                            }
-
-                            PromoOrderItemPromotion promoOrderItemPromotion = new PromoOrderItemPromotion()
-                            {
-                                BasketLevel = ap.BasketLevelPromotion,
-                                DeliveryLevel = ap.DeliveryLevelPromotion,
-                                DiscountAmount = ap.DiscountAmount,
-                                ForLineId = ap.AssociatedLine,
-                                Instance = ap.InstanceId,
-                                PointsIssued = ap.PointsIssued,
-                                PromotionId = ap.PromotionId,
-                                DisplayText = promotionDisplayText,
-                                PromotionTypeDisplay = promotionTypeDisplay,
-                                PromotionName = promotionName,
-                                PromotionType = promotionType,
-                                ExternalIdentifier = ap.ExternalIdentifier,
-                                ReportingGroupCode = ap.ReportingGroupCode
-                            };
-                            promoOrderItem.PromoOrderItemPromotions.Add(promoOrderItemPromotion);
-                            _promoOrderService.UpdatePromoOrder(promoOrder);
-                        });
-                    });
-
-                    basketResponse.Coupons.ForEach(c =>
-                        {
-                            PromoOrderCoupon promoOrderCoupon = new PromoOrderCoupon()
-                            {
-                                CouponCode = c.CouponCode,
-                                Issued = c.Issued,
+                                LineAmount = bi.LineAmount,
                                 OrderId = order.Id,
                                 PromoOrderId = promoOrder.Id,
-                                CouponName = c.CouponName,
-                                IssuedConfirmed = c.IssuedConfirmed,
-                                DisplayText = c.DisplayText
+                                IsDelivery = bi.IsDelivery,
+                                ProductCode = bi.ProductCode,
+                                VariantCode = bi.VariantCode,
+                                LinePromotionDiscount = bi.LinePromotionDiscount,
+                                Barcode = bi.Barcode,
+                                Generated = bi.Generated,
+                                ManualDiscount = bi.ManualDiscount,
+                                OriginalAmount = bi.OriginalAmount,
+                                OriginalPrice = bi.OriginalPrice,
+                                OriginalQuantity = bi.OriginalQuantity,
+                                Price = bi.Price,
+                                ProductDescription = bi.ProductDescription,
+                                Quantity = bi.Quantity,
+                                SplitFromLineId = bi.SplitFromLineId,
+                                TotalDiscount = bi.TotalDiscount,
+                                TotalIssuedPoints = bi.TotalIssuedPoints
                             };
-                            promoOrder.PromoOrderCoupons.Add(promoOrderCoupon);
+
+                            promoOrder.PromoOrderItems.Add(promoOrderItem);
                             _promoOrderService.UpdatePromoOrder(promoOrder);
+
+                            bi.AppliedPromotions.ForEach(ap =>
+                            {
+                                string promotionTypeDisplay = string.Empty;
+                                string promotionType = string.Empty;
+                                string promotionName = string.Empty;
+                                string promotionDisplayText = string.Empty;
+                                var appliedPromo = (from sap in basketResponse.Summary.AppliedPromotions where sap.PromotionId == ap.PromotionId select sap).FirstOrDefault();
+                                if (appliedPromo != null)
+                                {
+                                    promotionName = appliedPromo.PromotionName;
+                                    promotionType = appliedPromo.PromotionType;
+                                    promotionTypeDisplay = appliedPromo.PromotionTypeDisplay;
+                                    promotionDisplayText = appliedPromo.DisplayText;
+                                }
+
+                                PromoOrderItemPromotion promoOrderItemPromotion = new PromoOrderItemPromotion()
+                                {
+                                    BasketLevel = ap.BasketLevelPromotion,
+                                    DeliveryLevel = ap.DeliveryLevelPromotion,
+                                    DiscountAmount = ap.DiscountAmount,
+                                    ForLineId = ap.AssociatedLine,
+                                    Instance = ap.InstanceId,
+                                    PointsIssued = ap.PointsIssued,
+                                    PromotionId = ap.PromotionId,
+                                    DisplayText = promotionDisplayText,
+                                    PromotionTypeDisplay = promotionTypeDisplay,
+                                    PromotionName = promotionName,
+                                    PromotionType = promotionType,
+                                    ExternalIdentifier = ap.ExternalIdentifier,
+                                    ReportingGroupCode = ap.ReportingGroupCode
+                                };
+                                promoOrderItem.PromoOrderItemPromotions.Add(promoOrderItemPromotion);
+                                _promoOrderService.UpdatePromoOrder(promoOrder);
+                            });
                         });
+
+                        basketResponse.Coupons.ForEach(c =>
+                            {
+                                PromoOrderCoupon promoOrderCoupon = new PromoOrderCoupon()
+                                {
+                                    CouponCode = c.CouponCode,
+                                    Issued = c.Issued,
+                                    OrderId = order.Id,
+                                    PromoOrderId = promoOrder.Id,
+                                    CouponName = c.CouponName,
+                                    IssuedConfirmed = c.IssuedConfirmed,
+                                    DisplayText = c.DisplayText
+                                };
+                                promoOrder.PromoOrderCoupons.Add(promoOrderCoupon);
+                                _promoOrderService.UpdatePromoOrder(promoOrder);
+                            });
+                    }
 
                     #region clean up
 
