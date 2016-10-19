@@ -151,7 +151,9 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
 
                 BasketRequestItem item = new BasketRequestItem()
                 {
-                    Barcode = barcode,
+                    // Hotfix - 2016-10-17 - START
+                    //Barcode = barcode,
+                    // Hotfix - 2016-10-17 - END
                     Id = shoppingCartItem.Id,
                     Price = usePrice,
                     ProductCode = productCode,

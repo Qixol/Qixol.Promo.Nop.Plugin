@@ -31,7 +31,9 @@ namespace Qixol.Nop.Promo.Core.Domain.Products
 
             ProductImportRequestItem importProduct = new ProductImportRequestItem()
             {
-                Barcode = string.IsNullOrEmpty(sourceProduct.Gtin) ? string.Empty : sourceProduct.Gtin,
+                // Hotfix - 2016-10-17 - START
+                //Barcode = string.IsNullOrEmpty(sourceProduct.Gtin) ? string.Empty : sourceProduct.Gtin,
+                // Hotfix - 2016-10-17 - END
                 Deleted = sourceProduct.Deleted,
                 Description = sourceProduct.Name,
                 Price = sourceProduct.Price,
@@ -52,11 +54,33 @@ namespace Qixol.Nop.Promo.Core.Domain.Products
 
         private static List<ProductImportRequestAttributeItem> GetAttributesForProduct(Product product, List<ProductAttributeConfigItem> productAttributeConfigItems, List<Vendor> vendors, List<TaxCategory> taxCategories, ICategoryService categoryService)
         {
+            // Hotfix - 2016-10-17 - START
+            var gtinAttributeValue = string.IsNullOrEmpty(product.Gtin) ? string.Empty : product.Gtin;
+            // Hotfix - 2016-10-17 - END
+
             var configItems = productAttributeConfigItems.Where(paci => paci.Enabled).ToList();
-            if (configItems.Count == 0)
+
+            // Hotfix - 2016-10-17 - START
+            // REMOVED CODE
+            //if (configItems.Count == 0 && string.IsNullOrEmpty(gtinAttributeValue))
+            //    return null;
+            // ADDED CODE
+            if (configItems.Count == 0 && string.IsNullOrEmpty(gtinAttributeValue))
                 return null;
+            // Hotfix - 2016-10-17 - END
 
             var returnList = new List<ProductImportRequestAttributeItem>();
+            // Hotfix - 2016-10-17 - START
+            if (!string.IsNullOrEmpty(gtinAttributeValue))
+            {
+                ProductImportRequestAttributeItem gtinAttributeItem = new ProductImportRequestAttributeItem()
+                {
+                    Name = "gtin",
+                    Value = gtinAttributeValue
+                };
+                returnList.Add(gtinAttributeItem);
+            }
+            // Hotfix - 2016-10-17 - END
             configItems.ForEach(ci =>
                 {
                     var attributeItems = GetValueForConfigItem(ci, product, vendors, taxCategories, categoryService);
