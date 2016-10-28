@@ -331,6 +331,20 @@
                 @Html.EditorFor(model => model.UseSelectedCurrencyWhenSubmittingBaskets)
             </td>
         </tr>
+        <tr style="height: 10px;"><td></td></tr>
+        <tr>
+            <td class="adminTitle" colspan="2" style="font-weight:bold;">
+                @T("Plugin.Misc.QixolPromo.MissedPromotions")
+            </td>
+        </tr>
+        <tr>
+            <td class="adminTitle" style="padding-left: 25px;">
+                @Html.NopLabelFor(model => model.ShowMissedPromotions):
+            </td>
+            <td class="adminData">
+                @Html.EditorFor(model => model.ShowMissedPromotions)
+            </td>
+        </tr>
 
         @if (Model.ShowAdvancedIntegrationSettings)
         { 

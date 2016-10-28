@@ -318,6 +318,62 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
 
         #region Shopping Cart
 
+        [ValidateInput(false)]
+        [HttpPost, ActionName("Cart")]
+        [FormValueRequired("missed-promotions")]
+        public ActionResult MissedPromotions(FormCollection form)
+        {
+            var cart = _workContext.CurrentCustomer.ShoppingCartItems
+                .Where(sci => sci.ShoppingCartType == ShoppingCartType.ShoppingCart)
+                .LimitPerStore(_storeContext.CurrentStore.Id)
+                .ToList();
+
+            //parse and save checkout attributes
+            ParseAndSaveCheckoutAttributes(cart, form);
+
+            //validate attributes
+            var checkoutAttributes = _workContext.CurrentCustomer.GetAttribute<string>(SystemCustomerAttributeNames.CheckoutAttributes, _genericAttributeService, _storeContext.CurrentStore.Id);
+            var checkoutAttributeWarnings = _shoppingCartService.GetShoppingCartWarnings(cart, checkoutAttributes, true);
+            if (checkoutAttributeWarnings.Count > 0)
+            {
+                //something wrong, redisplay the page with warnings
+                var model = new ShoppingCartModel();
+                PrepareShoppingCartModel(model, cart, validateCheckoutAttributes: true);
+                return View(model);
+            }
+
+            //everything is OK
+            if (!_promoSettings.ShowMissedPromotions)
+            {
+                if (_workContext.CurrentCustomer.IsGuest())
+                {
+                    if (!_orderSettings.AnonymousCheckoutAllowed)
+                        return new HttpUnauthorizedResult();
+
+                    return RedirectToRoute("LoginCheckoutAsGuest", new { returnUrl = Url.RouteUrl("ShoppingCart") });
+                }
+
+                return RedirectToRoute("Checkout");
+            }
+
+            // TODO: confirm flow if not logged in - show Missed promotions or force log in before showing missed promotions?
+            if (_workContext.CurrentCustomer.IsGuest())
+            {
+                if (!_orderSettings.AnonymousCheckoutAllowed)
+                    return new HttpUnauthorizedResult();
+
+                // TODO: not redirecting to the route name at present
+                //return RedirectToRoute("LoginMissedPromotionsAsGuest", new { returnUrl = Url.RouteUrl("ShoppingCart") });
+                RouteValueDictionary rvd = new RouteValueDictionary();
+                rvd.Add("area", null);
+                rvd.Add("returnUrl", "ShoppingCart");
+                return RedirectToAction("Login", "Customer", rvd);
+            }
+
+            //return RedirectToRoute("MissedPromotions");
+            return RedirectToAction("MissedPromotions", "Checkout");
+        }
+
         [ChildActionOnly]
         public ActionResult PromoOrderSummary(bool? prepareAndDisplayOrderReviewData)
         {

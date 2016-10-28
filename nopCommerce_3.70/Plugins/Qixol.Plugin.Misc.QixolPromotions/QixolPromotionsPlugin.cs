@@ -146,6 +146,7 @@ namespace Qixol.Plugin.Misc.Promo
                 ShowHelperMessages = true,
                 InitialSetup = true,
                 UseSelectedCurrencyWhenSubmittingBaskets = false,
+                ShowMissedPromotions = true,
                 HideNopDiscountMenuItems = true,
 
 #if DEBUG
@@ -451,6 +452,15 @@ namespace Qixol.Plugin.Misc.Promo
             this.InsertStringResource("Plugins.Misc.QixolPromo.Help.Resources.HelpGuide", "Help Guide");
             this.InsertStringResource("Plugins.Misc.QixolPromo.Help.Resources.Tutorials", "Tutorials and getting started videos");
             this.InsertStringResource("Plugins.Misc.QixolPromo.Help.Resources.ProductOverview", "Qixol Promo Product Overview");
+
+            #endregion
+
+            #region Missed Promotions
+
+            this.InsertStringResource("Plugin.Misc.QixolPromo.MissedPromotions.PageTitle", "Missed Promotions");
+            this.InsertStringResource("Plugin.Misc.QixolPromo.MissedPromotions", "Missed Promotions");
+            this.InsertStringResource("Plugins.Misc.QixolPromo.ShowMissedPromotions", "Show Missed Promotions");
+            this.InsertStringResource("Plugins.Misc.QixolPromo.ShowMissedPromotions.Hint", "When stepping from the cart to checkout show the missed promotions page.");
 
             #endregion
         }

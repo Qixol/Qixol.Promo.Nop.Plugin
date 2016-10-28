@@ -318,11 +318,12 @@
                                    });
                                });
                            </script>
-                           <button type="submit" id="checkout" name="checkout" value="checkout" class="button-1 checkout-button">
-                               @T("Checkout.Button")
-                           </button>
-                       }
-                   </div>
+                        @*<button type="submit" id="checkout" name="checkout" value="checkout" class="button-1 checkout-button">*@
+                            <button type="submit" id="missed-promotions" name="missed-promotions" value="missed-promotions" class="button-1 checkout-button">
+                                @T("Checkout.Button")
+                            </button>
+                            }
+</div>
                    <div class="addon-buttons">
                        @*Payment method buttons (e.g. GoogleCheckoutButton, Paypal Express)*@
                        @Html.Partial("_ButtonPaymentMethod", Model)

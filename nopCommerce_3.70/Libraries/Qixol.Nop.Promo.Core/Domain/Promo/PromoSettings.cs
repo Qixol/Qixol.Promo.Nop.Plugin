@@ -65,5 +65,7 @@ namespace Qixol.Nop.Promo.Core.Domain.Promo
         public bool HideNopDiscountMenuItems { get; set; }
 
         public bool ShowAdvancedIntegrationSettings { get; set; }
+
+        public bool ShowMissedPromotions { get; set; }
     }
 }

@@ -117,5 +117,8 @@ namespace Qixol.Plugin.Misc.Promo.Models
         [NopResourceDisplayName("Plugins.Misc.QixolPromo.UseSelectedCurrency")]
         public bool UseSelectedCurrencyWhenSubmittingBaskets { get; set; }
 
+        [NopResourceDisplayName("Plugins.Misc.QixolPromo.ShowMissedPromotions")]
+        public bool ShowMissedPromotions { get; set; }
+
     }
 }

@@ -7,6 +7,8 @@ namespace Qixol.Nop.Promo.Services.Promo
     {
         List<string> ProcessShoppingCart();
 
+        List<string> ProcessShoppingCart(bool getMissedPromotions);
+
         void SendConfirmedBasket(global::Nop.Core.Domain.Orders.Order placedOrder);
 
     }

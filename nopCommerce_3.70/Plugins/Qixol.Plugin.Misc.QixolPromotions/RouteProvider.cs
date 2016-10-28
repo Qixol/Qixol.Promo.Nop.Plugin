@@ -68,6 +68,25 @@ namespace Qixol.Plugin.Misc.Promo
                     );
             routes.Remove(promosCheckoutOnePageRoute);
             routes.Insert(0, promosCheckoutOnePageRoute);
+
+            var missedPromotionsRoute = routes.MapRoute("MissedPromotions",
+                    "missedpromotions/",
+                    new { controller = "Checkout", action = "MissedPromotions" },
+                    new[] { "Qixol.Plugin.Misc.Promo.Controllers" }
+                    );
+            // not strictly necessary as this is not superseding a base nop route
+            routes.Remove(missedPromotionsRoute);
+            routes.Insert(0, missedPromotionsRoute);
+
+            //login page for checkout as guest
+            var loginMissedPromotionsAsGuestRoute = routes.MapRoute("LoginMissedPromotionsAsGuest",
+                            "login/missedpromotionsasguest",
+                            new { controller = "Customer", action = "Login", checkoutAsGuest = true },
+                            new[] { "Qixol.Plugin.Misc.Promo.Controllers" });
+            // not strictly necessary as this is not superseding a base nop route
+            routes.Remove(loginMissedPromotionsAsGuestRoute);
+            routes.Insert(0, loginMissedPromotionsAsGuestRoute);
+
             #endregion
         }
 

@@ -154,6 +154,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             model.SynchronizeCurrencies = _promoSettings.SynchronizeCurrencies;
 
             model.UseSelectedCurrencyWhenSubmittingBaskets = _promoSettings.UseSelectedCurrencyWhenSubmittingBaskets;
+            model.ShowMissedPromotions = _promoSettings.ShowMissedPromotions;
 
             model.ShowPromotionNameOption = _promoSettings.ShowPromotionDetailsInBasket;
             model.DisplayVersion = GetDisplayVersion();
@@ -209,6 +210,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             _promoSettings.SynchronizeCurrencies = model.SynchronizeCurrencies;
 
             _promoSettings.UseSelectedCurrencyWhenSubmittingBaskets = model.UseSelectedCurrencyWhenSubmittingBaskets;
+            _promoSettings.ShowMissedPromotions = model.ShowMissedPromotions;
 
             _promoSettings.ShowPromotionDetailsInBasket = model.ShowPromotionNameOption;
             _promoSettings.ServiceEndpointSelection = model.SelectedServicesEndPoint;
