@@ -45,7 +45,7 @@
       <HintPath>..\..\Website\bin\Nop.Services.XmlSerializers.dll</HintPath>
     </Reference>
     <Reference Include="Qixol.Promo.Integration.Lib, Version=2.0.1.4, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Qixol.Promo.Integration.Lib.2.0.1.4\lib\net45\Qixol.Promo.Integration.Lib.dll</HintPath>
+      <HintPath>..\..\packages\Qixol.Promo.Integration.Lib.2.0.1.5\lib\net45\Qixol.Promo.Integration.Lib.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />

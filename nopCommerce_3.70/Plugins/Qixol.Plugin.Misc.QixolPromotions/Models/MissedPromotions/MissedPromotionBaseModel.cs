@@ -11,6 +11,20 @@ namespace Qixol.Plugin.Misc.Promo.Models.MissedPromotions
     {
         private IList<MissedPromotionCriteriaModel> _criteria;
         private IList<ShoppingCartModel.ShoppingCartItemModel> _matchedCartItemModels;
+        private string _promotionType;
+
+        // TODO: this really should not be needed - the various sub-models should be sufficient...
+        public string PromotionType
+        {
+            get
+            {
+                return _promotionType ?? (_promotionType = "UNKNOWN");
+            }
+            set
+            {
+                _promotionType = value;
+            }
+        }
 
         public string PromotionName { get; set; }
         public string Category { get; set; }

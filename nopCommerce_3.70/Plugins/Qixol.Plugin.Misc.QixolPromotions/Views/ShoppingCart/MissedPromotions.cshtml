@@ -6,13 +6,13 @@
     Layout = "~/Views/Shared/_ColumnsOne.cshtml";
 
     //title
-    Html.AddTitleParts(T("Plugin.Misc.QixolPromo.MissedPromotions.PageTitle").Text);
+    Html.AddTitleParts(T("Plugins.Misc.QixolPromo.MissedPromotions.PageTitle").Text);
 }
 
 <div class="page missed-promotions-page">
     @* TODO: css based on shopping-cart-page *@
     <div class="page-title">
-        <h1>@T("Plugin.Misc.QixolPromo.MissedPromotions.PageTitle")</h1>
+        <h1>@T("Plugins.Misc.QixolPromo.MissedPromotions.PageTitle")</h1>
     </div>
     <div class="page-body">
         @Html.Partial("MissedPromotionsSummary", Model)

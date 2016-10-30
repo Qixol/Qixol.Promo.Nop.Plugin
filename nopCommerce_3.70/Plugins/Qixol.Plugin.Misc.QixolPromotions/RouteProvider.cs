@@ -71,7 +71,7 @@ namespace Qixol.Plugin.Misc.Promo
 
             var missedPromotionsRoute = routes.MapRoute("MissedPromotions",
                     "missedpromotions/",
-                    new { controller = "Checkout", action = "MissedPromotions" },
+                    new { controller = "ShoppingCart", action = "MissedPromotions" },
                     new[] { "Qixol.Plugin.Misc.Promo.Controllers" }
                     );
             // not strictly necessary as this is not superseding a base nop route

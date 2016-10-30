@@ -1,0 +1,27 @@
+﻿@model MissedPromotionBogofModel
+
+@using Qixol.Plugin.Misc.Promo.Models.MissedPromotions;
+
+@{
+    Layout = null;
+}
+<tr>
+    <td class="product-picture">
+        @*<a href="@Url.RouteUrl("Product", new { SeName = Model.ProductSeName })"><img alt="@Model.Picture.AlternateText" src="@Model.Picture.ImageUrl" title="@Model.Picture.Title" /></a>*@
+    </td>
+    <td class="product">
+        @if (!string.IsNullOrEmpty(Model.PromotionName))
+        {
+            <div class="promotion-item">@Model.PromotionName</div>
+        }
+        else
+        {
+            <div class="promotion-item">BOGOF</div>
+        }
+        @foreach (var matchedCartItemModel in Model.MatchedCartItemModels)
+        {
+            <div>@matchedCartItemModel.ProductName</div>
+        }
+    </td>
+    <td class="unit-price"></td>
+</tr>

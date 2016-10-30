@@ -77,7 +77,7 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="Qixol.Promo.Integration.Lib, Version=2.0.1.4, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Qixol.Promo.Integration.Lib.2.0.1.4\lib\net45\Qixol.Promo.Integration.Lib.dll</HintPath>
+      <HintPath>..\..\packages\Qixol.Promo.Integration.Lib.2.0.1.5\lib\net45\Qixol.Promo.Integration.Lib.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -201,19 +201,22 @@
     <None Include="Views\Admin\_ProductAttributesList.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <Content Include="Views\Checkout\DisplayTemplates\MissedPromotionBogofModel.cshtml">
+    <Content Include="Views\ShoppingCart\DisplayTemplates\MissedPromotionBogofModel.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Views\Checkout\DisplayTemplates\MissedPromotionUnknownModel.cshtml">
+    <Content Include="Views\ShoppingCart\DisplayTemplates\MissedPromotionUnknownModel.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <None Include="Views\Checkout\DisplayTemplates\MissedPromotionBundleModel.cshtml">
+    <None Include="Views\ShoppingCart\DisplayTemplates\MissedPromotionBundleModel.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="Views\Checkout\DisplayTemplates\MissedPromotionFreeProductModel.cshtml">
+    <None Include="Views\ShoppingCart\DisplayTemplates\MissedPromotionFreeProductModel.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="Views\Checkout\MissedPromotions.cshtml">
+    <Content Include="Views\ShoppingCart\DisplayTemplates\MissedPromotionBaseModel.cshtml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <None Include="Views\ShoppingCart\MissedPromotions.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="Views\Order\Details.cshtml">
@@ -222,7 +225,7 @@
     <None Include="Views\ShoppingCart\IssuedCoupons.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <Content Include="Views\Checkout\MissedPromotionsSummary.cshtml">
+    <Content Include="Views\ShoppingCart\MissedPromotionsSummary.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <None Include="Views\ShoppingCart\OrderSummary.cshtml">

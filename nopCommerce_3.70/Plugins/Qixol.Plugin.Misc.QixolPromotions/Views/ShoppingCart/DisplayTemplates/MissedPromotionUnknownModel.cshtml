@@ -1,0 +1,19 @@
+﻿@model MissedPromotionUnknownModel
+
+@using Qixol.Plugin.Misc.Promo.Models.MissedPromotions;
+
+@{
+    Layout = null;
+}
+<tr>
+    <td class="product-picture">
+        @*<a href="@Url.RouteUrl("Product", new { SeName = item.ProductSeName })"><img alt="@item.Picture.AlternateText" src="@item.Picture.ImageUrl" title="@item.Picture.Title" /></a>*@
+    </td>
+    <td class="product">
+        @if (!string.IsNullOrEmpty(Model.PromotionName))
+        {
+            <div class="promotion-item">@Model.PromotionName</div>
+        }
+    </td>
+    <td class="unit-price"></td>
+</tr>

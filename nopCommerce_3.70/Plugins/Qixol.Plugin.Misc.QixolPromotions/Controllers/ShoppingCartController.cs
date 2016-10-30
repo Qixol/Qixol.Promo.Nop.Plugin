@@ -44,6 +44,7 @@ using Nop.Web.Controllers;
 using Qixol.Nop.Promo.Services.Catalog;
 using Qixol.Nop.Promo.Services.Promo;
 using Qixol.Nop.Promo.Core.Domain.Promo;
+using Qixol.Plugin.Misc.Promo.Models.MissedPromotions;
 
 namespace Qixol.Plugin.Misc.Promo.Controllers
 {
@@ -371,13 +372,122 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             }
 
             //return RedirectToRoute("MissedPromotions");
-            return RedirectToAction("MissedPromotions", "Checkout");
+            return RedirectToAction("MissedPromotions");
         }
 
         [ChildActionOnly]
         public ActionResult PromoOrderSummary(bool? prepareAndDisplayOrderReviewData)
         {
             return base.OrderSummary(prepareAndDisplayOrderReviewData);
+        }
+
+        #endregion
+
+        #region Missed Promotions
+
+
+        public ActionResult MissedPromotions()
+        {
+            #region copied from Checkout/Index (except for call to PromoService)
+
+            var cart = _workContext.CurrentCustomer.ShoppingCartItems
+                .Where(sci => sci.ShoppingCartType == ShoppingCartType.ShoppingCart)
+                .LimitPerStore(_storeContext.CurrentStore.Id)
+                .ToList();
+            if (cart.Count == 0)
+                return RedirectToRoute("ShoppingCart");
+
+            if ((_workContext.CurrentCustomer.IsGuest() && !_orderSettings.AnonymousCheckoutAllowed))
+                return new HttpUnauthorizedResult();
+
+            //validation (cart)
+            var checkoutAttributesXml = _workContext.CurrentCustomer.GetAttribute<string>(SystemCustomerAttributeNames.CheckoutAttributes, _genericAttributeService, _storeContext.CurrentStore.Id);
+            //var scWarnings = _shoppingCartService.GetShoppingCartWarnings(cart, checkoutAttributesXml, true);
+            var scWarnings = _promoService.ProcessShoppingCart(true);
+            if (scWarnings.Count > 0)
+                return RedirectToRoute("ShoppingCart");
+            //validation (each shopping cart item)
+            //foreach (ShoppingCartItem sci in cart)
+            //{
+            //    var sciWarnings = _shoppingCartService.GetShoppingCartItemWarnings(_workContext.CurrentCustomer,
+            //        sci.ShoppingCartType,
+            //        sci.Product,
+            //        sci.StoreId,
+            //        sci.AttributesXml,
+            //        sci.CustomerEnteredPrice,
+            //        sci.RentalStartDateUtc,
+            //        sci.RentalEndDateUtc,
+            //        sci.Quantity,
+            //        false);
+            //    if (sciWarnings.Count > 0)
+            //        return RedirectToRoute("ShoppingCart");
+            //}
+
+            #endregion
+
+            #region missed promotions
+
+            var model = new MissedPromotionsModel();
+
+            var basketResponse = _promoUtilities.GetBasketResponse();
+            foreach (var missedPromo in basketResponse.MissedPromotions)
+            {
+                // TODO: enum for PromotionType (from integration lib...?)
+                switch (missedPromo.PromotionType)
+                {
+                    case "FREEPRODUCT":
+                        model.MissedPromotions.Add(new MissedPromotionFreeProductModel()
+                        {
+                            PromotionName = missedPromo.DisplayText
+                        });
+                        break;
+                    case "BOGOF":
+                        var missedBogofModel = new MissedPromotionBogofModel()
+                        {
+                            PromotionName = missedPromo.DisplayText,
+                            PromotionType = "BOGOF"
+                        };
+                        foreach (var ci in missedPromo.Criteria.CriteriaItems)
+                        {
+                            foreach (var item in ci.Items)
+                            {
+                                item.MatchedLineIds.ForEach(i =>
+                                {
+                                    ShoppingCartItem matchedCartItem = (from c in cart where c.Id == i select c).FirstOrDefault();
+                                    if (matchedCartItem != null)
+                                    {
+                                        var cartItemModel = new ShoppingCartModel.ShoppingCartItemModel
+                                        {
+                                            Id = matchedCartItem.Id,
+                                            Sku = matchedCartItem.Product.FormatSku(matchedCartItem.AttributesXml, _productAttributeParser),
+                                            ProductId = matchedCartItem.Product.Id,
+                                            ProductName = matchedCartItem.Product.GetLocalized(x => x.Name),
+                                            ProductSeName = matchedCartItem.Product.GetSeName(),
+                                            Quantity = matchedCartItem.Quantity,
+                                            AttributeInfo = _productAttributeFormatter.FormatAttributes(matchedCartItem.Product, matchedCartItem.AttributesXml),
+                                        };
+                                        cartItemModel.Picture = PrepareCartItemPictureModel(matchedCartItem,_mediaSettings.CartThumbPictureSize, true, cartItemModel.ProductName);
+                                        missedBogofModel.MatchedCartItemModels.Add(cartItemModel);
+                                    }
+                                });
+                            }
+                        }
+                        model.MissedPromotions.Add(missedBogofModel);
+                        break;
+                    case "BUNDLE":
+                        model.MissedPromotions.Add(new MissedPromotionBundleModel()
+                        {
+                            PromotionName = missedPromo.DisplayText
+                        });
+                        break;
+                    default:
+                        model.MissedPromotions.Add(new MissedPromotionUnknownModel() { PromotionName = missedPromo.DisplayText });
+                        break;
+                }
+            }
+            return View(model);
+
+            #endregion
         }
 
         #endregion
