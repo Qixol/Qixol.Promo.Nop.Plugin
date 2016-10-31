@@ -344,8 +344,10 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                 return View(model);
             }
 
+            var basketResponse = _promoUtilities.GetBasketResponse();
+
             //everything is OK
-            if (!_promoSettings.ShowMissedPromotions)
+            if (!_promoSettings.ShowMissedPromotions || basketResponse.MissedPromotions.Count == 0)
             {
                 if (_workContext.CurrentCustomer.IsGuest())
                 {
@@ -431,6 +433,11 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             var model = new MissedPromotionsModel();
 
             var basketResponse = _promoUtilities.GetBasketResponse();
+            if (basketResponse.MissedPromotions.Count == 0)
+            {
+                return RedirectToRoute("Checkout");
+            }
+
             foreach (var missedPromo in basketResponse.MissedPromotions)
             {
                 // TODO: enum for PromotionType (from integration lib...?)
