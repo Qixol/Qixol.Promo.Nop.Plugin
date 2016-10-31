@@ -11,6 +11,7 @@ namespace Qixol.Plugin.Misc.Promo.Models.MissedPromotions
     {
         private IList<MissedPromotionCriteriaModel> _criteria;
         private IList<ShoppingCartModel.ShoppingCartItemModel> _matchedCartItemModels;
+        private global::Nop.Web.Models.Catalog.ProductDetailsModel.AddToCartModel _addToCartModel;
         private string _promotionType;
 
         // TODO: this really should not be needed - the various sub-models should be sufficient...
@@ -50,6 +51,18 @@ namespace Qixol.Plugin.Misc.Promo.Models.MissedPromotions
             set
             {
                 _matchedCartItemModels = value;
+            }
+        }
+
+        public global::Nop.Web.Models.Catalog.ProductDetailsModel.AddToCartModel AddToCartModel
+        {
+            get
+            {
+                return _addToCartModel ?? (_addToCartModel = new global::Nop.Web.Models.Catalog.ProductDetailsModel.AddToCartModel());
+            }
+            set
+            {
+                _addToCartModel = value;
             }
         }
 

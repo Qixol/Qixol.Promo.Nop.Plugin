@@ -45,6 +45,7 @@ using Qixol.Nop.Promo.Services.Catalog;
 using Qixol.Nop.Promo.Services.Promo;
 using Qixol.Nop.Promo.Core.Domain.Promo;
 using Qixol.Plugin.Misc.Promo.Models.MissedPromotions;
+using Nop.Web.Models.Catalog;
 
 namespace Qixol.Plugin.Misc.Promo.Controllers
 {
@@ -447,6 +448,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                             PromotionName = missedPromo.DisplayText,
                             PromotionType = "BOGOF"
                         };
+                        // TODO: It's a BOGOF - there can be only one...
                         foreach (var ci in missedPromo.Criteria.CriteriaItems)
                         {
                             foreach (var item in ci.Items)
@@ -468,6 +470,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                                         };
                                         cartItemModel.Picture = PrepareCartItemPictureModel(matchedCartItem,_mediaSettings.CartThumbPictureSize, true, cartItemModel.ProductName);
                                         missedBogofModel.MatchedCartItemModels.Add(cartItemModel);
+                                        missedBogofModel.AddToCartModel = PrepareAddToCartModel(matchedCartItem);
                                     }
                                 });
                             }
@@ -488,6 +491,68 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             return View(model);
 
             #endregion
+        }
+
+        // TODO: code copied from Product controller, PrepareProductDetailsPageModel method...
+        private ProductDetailsModel.AddToCartModel PrepareAddToCartModel(ShoppingCartItem matchedCartItem)
+        {
+            ProductDetailsModel.AddToCartModel model = new ProductDetailsModel.AddToCartModel();
+            var matchedProduct = _productService.GetProductById(matchedCartItem.ProductId);
+
+            model.ProductId = matchedCartItem.ProductId;
+            model.UpdatedShoppingCartItemId = matchedCartItem.Id;
+
+            //quantity
+            model.EnteredQuantity = matchedCartItem.Quantity;
+            //allowed quantities
+            var allowedQuantities = matchedProduct.ParseAllowedQuantities();
+            foreach (var qty in allowedQuantities)
+            {
+                model.AllowedQuantities.Add(new SelectListItem
+                {
+                    Text = qty.ToString(),
+                    Value = qty.ToString(),
+                    Selected = matchedCartItem != null && matchedCartItem.Quantity == qty
+                });
+            }
+            //minimum quantity notification
+            if (matchedProduct.OrderMinimumQuantity > 1)
+            {
+                model.MinimumQuantityNotification = string.Format(_localizationService.GetResource("Products.MinimumQuantityNotification"), matchedProduct.OrderMinimumQuantity);
+            }
+
+            ////'add to cart', 'add to wishlist' buttons
+            //model.AddToCart.DisableBuyButton = product.DisableBuyButton || !_permissionService.Authorize(StandardPermissionProvider.EnableShoppingCart);
+            //model.AddToCart.DisableWishlistButton = product.DisableWishlistButton || !_permissionService.Authorize(StandardPermissionProvider.EnableWishlist);
+            //if (!_permissionService.Authorize(StandardPermissionProvider.DisplayPrices))
+            //{
+            //    model.AddToCart.DisableBuyButton = true;
+            //    model.AddToCart.DisableWishlistButton = true;
+            //}
+            ////pre-order
+            if (matchedProduct.AvailableForPreOrder)
+            {
+                model.AvailableForPreOrder = !matchedProduct.PreOrderAvailabilityStartDateTimeUtc.HasValue ||
+                    matchedProduct.PreOrderAvailabilityStartDateTimeUtc.Value >= DateTime.UtcNow;
+                model.PreOrderAvailabilityStartDateTimeUtc = matchedProduct.PreOrderAvailabilityStartDateTimeUtc;
+            }
+            //rental
+            model.IsRental = matchedProduct.IsRental;
+
+            //customer entered price
+            model.CustomerEntersPrice = matchedProduct.CustomerEntersPrice;
+            if (model.CustomerEntersPrice)
+            {
+                decimal minimumCustomerEnteredPrice = _currencyService.ConvertFromPrimaryStoreCurrency(matchedProduct.MinimumCustomerEnteredPrice, _workContext.WorkingCurrency);
+                decimal maximumCustomerEnteredPrice = _currencyService.ConvertFromPrimaryStoreCurrency(matchedProduct.MaximumCustomerEnteredPrice, _workContext.WorkingCurrency);
+
+                model.CustomerEnteredPrice = matchedCartItem.CustomerEnteredPrice;
+                model.CustomerEnteredPriceRange = string.Format(_localizationService.GetResource("Products.EnterProductPrice.Range"),
+                    _priceFormatter.FormatPrice(minimumCustomerEnteredPrice, false, false),
+                    _priceFormatter.FormatPrice(maximumCustomerEnteredPrice, false, false));
+            }
+
+            return model;
         }
 
         #endregion

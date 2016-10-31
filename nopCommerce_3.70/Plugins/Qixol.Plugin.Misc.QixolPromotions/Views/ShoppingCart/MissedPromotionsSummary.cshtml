@@ -1,10 +1,10 @@
 ﻿@model MissedPromotionsModel
 
 @using Qixol.Plugin.Misc.Promo.Models.MissedPromotions;
-
-@using global::Nop.Core.Domain.Tax
-@using global::Nop.Core
-@using global::Nop.Core.Infrastructure
+@using global::Nop.Web.Models.Catalog;
+@using global::Nop.Core.Domain.Tax;
+@using global::Nop.Core;
+@using global::Nop.Core.Infrastructure;
 @using global::Nop.Web.Models.ShoppingCart;
 @using global::Nop.Web.Framework.Themes;
 
@@ -78,105 +78,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (MissedPromotionBaseModel missedPromotion in Model.MissedPromotions)
-                    {
-                        @*<tr><td></td><td>@missedPromotion.PromotionName</td><td></td></tr>*@
-                    switch (missedPromotion.PromotionType)
-                    {
-                        case "BOGOF":
-                            //MissedPromotionBogofModel mpBogof = (MissedPromotionBogofModel) missedPromotion;
-                            <tr>
-                                <td class="product-picture">
-                                    @{
-                                        var matchedCartItemModel = missedPromotion.MatchedCartItemModels.FirstOrDefault();
-                                        if (matchedCartItemModel != null)
-                                        {
-                                            <div><a href="@Url.RouteUrl("Product", new { SeName = matchedCartItemModel.ProductSeName })"><img alt="@matchedCartItemModel.Picture.AlternateText" src="@matchedCartItemModel.Picture.ImageUrl" title="@matchedCartItemModel.Picture.Title" /></a></div>
-                                        }
-                                    }
-                                </td>
-                                <td class="product">
-                                    @if (matchedCartItemModel != null)
-                                    {
-                                        <a href="@Url.RouteUrl("Product", new { SeName = matchedCartItemModel.ProductSeName })" class="product-name">@matchedCartItemModel.ProductName</a>
-                                        if (!String.IsNullOrEmpty(matchedCartItemModel.AttributeInfo))
-                                        {
-                                            <div class="attributes">
-                                                @Html.Raw(matchedCartItemModel.AttributeInfo)
-                                            </div>
-                                        }
-                                    }
-                                    @if (!string.IsNullOrEmpty(@missedPromotion.PromotionName))
-                                    {
-                                        <div class="promotion-item">@missedPromotion.PromotionName</div>
-                                    }
-                                    else
-                                    {
-                                        <div class="promotion-item">BOGOF</div>
-                                    }
-                                </td>
-                                <td class="unit-price"></td>
-                            </tr>
-                                            break;
-
-                                        case "BUNDLE":
-                                            <tr>
-                                                <td class="product-picture">
-                                                    @*<a href="@Url.RouteUrl("Product", new { SeName = Model.ProductSeName })"><img alt="@Model.Picture.AlternateText" src="@Model.Picture.ImageUrl" title="@Model.Picture.Title" /></a>*@
-                                                </td>
-                                                <td class="product">
-                                                    @if (!string.IsNullOrEmpty(@missedPromotion.PromotionName))
-                                                    {
-                                                        <div class="promotion-item">@missedPromotion.PromotionName</div>
-                                                    }
-                                                    else
-                                                    {
-                                                        <div class="promotion-item">BUNDLE</div>
-                                                    }
-                                                </td>
-                                                <td class="unit-price"></td>
-                                            </tr>
-                                            break;
-
-                                        case "FREEPRODUCT":
-                                            <tr>
-                                                <td class="product-picture">
-                                                    @*<a href="@Url.RouteUrl("Product", new { SeName = Model.ProductSeName })"><img alt="@Model.Picture.AlternateText" src="@Model.Picture.ImageUrl" title="@Model.Picture.Title" /></a>*@
-                                                </td>
-                                                <td class="product">
-                                                    @if (!string.IsNullOrEmpty(@missedPromotion.PromotionName))
-                                                    {
-                                                        <div class="promotion-item">@missedPromotion.PromotionName</div>
-                                                    }
-                                                    else
-                                                    {
-                                                        <div class="promotion-item">FREEPRODUCT</div>
-                                                    }
-                                                </td>
-                                                <td class="unit-price"></td>
-                                            </tr>
-                                            break;
-
-                                        default:
-                                            <tr>
-                                                <td class="product-picture">
-                                                    @*<a href="@Url.RouteUrl("Product", new { SeName = Model.ProductSeName })"><img alt="@Model.Picture.AlternateText" src="@Model.Picture.ImageUrl" title="@Model.Picture.Title" /></a>*@
-                                                </td>
-                                                <td class="product">
-                                                    @if (!string.IsNullOrEmpty(@missedPromotion.PromotionName))
-                                                    {
-                                                        <div class="promotion-item">@missedPromotion.PromotionName</div>
-                                                    }
-                                                    else
-                                                    {
-                                                        <div class="promotion-item">@missedPromotion.PromotionType</div>
-                                                    }
-                                                </td>
-                                                <td class="unit-price"></td>
-                                            </tr>
-                                                    break;
-                                            }
-                                        }
+                    @Html.Partial("_MissedPromotionsGrid", Model)
                 </tbody>
             </table>
         </div>
@@ -204,8 +106,8 @@
 
                                             <div class="totals">
                                                 @Html.Action("OrderTotals", "ShoppingCart", new
-           {
-               isEditable = false @*Model.IsEditable*@ })
+                                           {
+                                               isEditable = false @*Model.IsEditable*@ })
                                                 @*@if (Model.IsEditable)
                                                     {
                                                         if (!String.IsNullOrEmpty(Model.MinOrderSubtotalWarning))

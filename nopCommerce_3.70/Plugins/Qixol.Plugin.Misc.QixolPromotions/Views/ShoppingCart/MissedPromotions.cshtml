@@ -7,6 +7,9 @@
 
     //title
     Html.AddTitleParts(T("Plugins.Misc.QixolPromo.MissedPromotions.PageTitle").Text);
+
+    Html.AddScriptParts(ResourceLocation.Head, "~/Plugins/Misc.QixolPromo/Scripts/promo.ajaxcart.js");
+
 }
 
 <div class="page missed-promotions-page">
@@ -18,3 +21,8 @@
         @Html.Partial("MissedPromotionsSummary", Model)
     </div>
 </div>
+<script>
+    $(document).ready(function () {
+        promoAjaxCart.init();
+    });
+</script>

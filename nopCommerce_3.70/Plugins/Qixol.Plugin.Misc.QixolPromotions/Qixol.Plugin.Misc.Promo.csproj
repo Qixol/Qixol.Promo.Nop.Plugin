@@ -173,6 +173,9 @@
     <Compile Include="ViewEngines\QixolPromotionsViewEngine.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Scripts\promo.ajaxcart.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="Themes\DefaultClean\Content\css\styles.css">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -216,6 +219,9 @@
     <Content Include="Views\ShoppingCart\DisplayTemplates\MissedPromotionBaseModel.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <None Include="Views\ShoppingCart\_MissedPromotionsGrid.cshtml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="Views\ShoppingCart\MissedPromotions.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -234,6 +240,9 @@
     <None Include="Views\ShoppingCart\OrderTotals.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <Content Include="Views\ShoppingCart\_AddToCart.cshtml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <None Include="Views\web.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

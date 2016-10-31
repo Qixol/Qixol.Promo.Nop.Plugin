@@ -1,0 +1,52 @@
+﻿@model ProductDetailsModel.AddToCartModel
+
+@using global::Nop.Web.Models.Catalog;
+@using global::Nop.Core.Domain.Orders;
+
+@if (!Model.DisableBuyButton || Model.CustomerEntersPrice)
+{
+    <div class="add-to-cart overview" style="margin-bottom: 0px;">
+        @if (Model.UpdatedShoppingCartItemId > 0)
+        {
+            @Html.HiddenFor(x => x.UpdatedShoppingCartItemId)
+        }
+        @*
+        @if (Model.CustomerEntersPrice)
+        {
+            <div class="customer-entered-price">
+                <div class="price-input">
+                    @Html.LabelFor(model => model.CustomerEnteredPrice, new { @class = "enter-price-label" }, ":")
+                    @*round price*\@
+                    @Html.TextBox("CustomerEnteredPrice", Convert.ToInt32(Math.Ceiling(Model.CustomerEnteredPrice)), new { @class = "enter-price-input" })
+                </div>
+                <div class="price-range">
+                    @Model.CustomerEnteredPriceRange
+                </div>
+            </div>
+        }
+        *@
+        <div class="add-to-cart-panel">
+                <script type="text/javascript">
+                    $(document).ready(function () {
+                        $("#@Html.FieldIdFor(model => model.EnteredQuantity)").keydown(function (event) {
+                            if (event.keyCode == 13) {
+                                $("#add-to-cart-button-@Model.ProductId").click();
+                                return false;
+                            }
+                        });
+                    });
+
+                    function addToCart_@(Model.ProductId)() {
+                        promoAjaxCart.addproducttocart_missedPromotions('@Url.RouteUrl("AddProductToCart-Details", new { productId = Model.ProductId, shoppingCartTypeId = (int)ShoppingCartType.ShoppingCart })');
+                        //window.location = '@(Url.Action("MissedPromotions"))';
+                    }
+                </script>
+
+            @{
+                var addToCartText = "";
+                addToCartText = T("ShoppingCart.AddToCart").Text;
+            }
+            <input type="button" id="add-to-cart-button-@Model.ProductId" class="button-1 add-to-cart-button" value="@addToCartText" data-productid="@Model.ProductId" onclick="addToCart_@(Model.ProductId)();" />
+        </div>
+    </div>
+}
