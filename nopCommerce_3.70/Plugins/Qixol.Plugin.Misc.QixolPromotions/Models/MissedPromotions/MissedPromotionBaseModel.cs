@@ -14,12 +14,14 @@ namespace Qixol.Plugin.Misc.Promo.Models.MissedPromotions
         private global::Nop.Web.Models.Catalog.ProductDetailsModel.AddToCartModel _addToCartModel;
         private string _promotionType;
 
+        public string PromotionImageUrl { get; set; }
+
         // TODO: this really should not be needed - the various sub-models should be sufficient...
         public string PromotionType
         {
             get
             {
-                return _promotionType ?? (_promotionType = "UNKNOWN");
+                return _promotionType ?? (_promotionType = MissedPromotionsModel.PromotionTypeSystemName.Unknown);
             }
             set
             {

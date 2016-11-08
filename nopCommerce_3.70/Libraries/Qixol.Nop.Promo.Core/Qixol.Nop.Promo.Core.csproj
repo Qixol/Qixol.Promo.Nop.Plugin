@@ -108,10 +108,11 @@
     <Compile Include="Domain\Products\ProductPromotionMapping.cs" />
     <Compile Include="Domain\Products\ValidatedProductPromotionDetails.cs" />
     <Compile Include="Domain\PromotionsFeedStatus.cs" />
+    <Compile Include="Domain\Promo\PromoSystemAttributeNames.cs" />
     <Compile Include="Domain\Promo\PromoDetail.cs" />
     <Compile Include="Domain\Promo\PromoPicture.cs" />
     <Compile Include="Domain\Promo\PromoWidgetSettings.cs" />
-    <Compile Include="Domain\Promo\QixolPromotionsCustomerAttributeNames.cs" />
+    <Compile Include="Domain\Promo\PromoCustomerAttributeNames.cs" />
     <Compile Include="Domain\Promo\ValidatedPromotion.cs" />
     <Compile Include="Domain\Promo\ValidatedPromotionAvailability.cs" />
     <Compile Include="Domain\PromotionTypeName.cs" />

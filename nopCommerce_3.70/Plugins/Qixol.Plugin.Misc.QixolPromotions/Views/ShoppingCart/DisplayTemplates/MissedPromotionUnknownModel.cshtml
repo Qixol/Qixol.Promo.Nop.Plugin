@@ -5,15 +5,19 @@
 @{
     Layout = null;
 }
+
 <tr>
     <td class="product-picture">
-        @*<a href="@Url.RouteUrl("Product", new { SeName = item.ProductSeName })"><img alt="@item.Picture.AlternateText" src="@item.Picture.ImageUrl" title="@item.Picture.Title" /></a>*@
+        <img alt="@Model.PromotionName" src="@Model.PromotionImageUrl" title="@Model.PromotionName" style="width: 80px;" />
     </td>
     <td class="product">
-        @if (!string.IsNullOrEmpty(Model.PromotionName))
+        @if (!string.IsNullOrEmpty(@Model.PromotionName))
         {
             <div class="promotion-item">@Model.PromotionName</div>
         }
+        else
+        {
+            <div class="promotion-item">@Model.PromotionType</div>
+        }
     </td>
-    <td class="unit-price"></td>
 </tr>

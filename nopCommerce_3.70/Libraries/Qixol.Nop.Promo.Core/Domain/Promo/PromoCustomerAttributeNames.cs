@@ -7,5 +7,5 @@
         public static string PromoBasketRequest { get { return "PromoBasketRequest"; } }
         public static string PromoIssuedCoupons { get { return "PromoIssuedCoupons"; } }
         public static string PromoBasketWarnings { get { return "PromoBasketWarnings"; } }
-    }
+        }
 }

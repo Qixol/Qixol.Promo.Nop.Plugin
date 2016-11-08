@@ -65,15 +65,12 @@
                         @T("ShoppingCart.Image")
                     </th>
                     <th class="product">
-                        @T("ShoppingCart.Product(s)")
-                    </th>
-                    <th class="unit-price">
-                        @T("ShoppingCart.UnitPrice")
+                        @T("Plugins.Misc.QixolPromo.MissedPromotion(s)")
                     </th>
                 </tr>
             </thead>
             <tbody>
-                @Html.Partial("_MissedPromotionsGrid", Model)
+                @Html.DisplayFor(mp => Model.MissedPromotions)
             </tbody>
         </table>
     </div>

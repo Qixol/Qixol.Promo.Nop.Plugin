@@ -153,7 +153,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             PromoSettings promoSettings,
             IPromoService promoService,
             IPromoUtilities promoUtilities)
-            : base (productService, storeContext, workContext,
+            : base(productService, storeContext, workContext,
                     shoppingCartService, pictureService, localizationService,
                     productAttributeService, productAttributeFormatter,
                     productAttributeParser, taxService, currencyService,
@@ -344,10 +344,8 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                 return View(model);
             }
 
-            var basketResponse = _promoUtilities.GetBasketResponse();
-
             //everything is OK
-            if (!_promoSettings.ShowMissedPromotions || basketResponse.MissedPromotions.Count == 0)
+            if (!_promoSettings.ShowMissedPromotions)
             {
                 if (_workContext.CurrentCustomer.IsGuest())
                 {
@@ -388,43 +386,28 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
 
         #region Missed Promotions
 
-
         public ActionResult MissedPromotions()
         {
             #region copied from Checkout/Index (except for call to PromoService)
 
-            var cart = _workContext.CurrentCustomer.ShoppingCartItems
+            var currentCustomer = _workContext.CurrentCustomer;
+
+            var cart = currentCustomer.ShoppingCartItems
                 .Where(sci => sci.ShoppingCartType == ShoppingCartType.ShoppingCart)
                 .LimitPerStore(_storeContext.CurrentStore.Id)
                 .ToList();
             if (cart.Count == 0)
                 return RedirectToRoute("ShoppingCart");
 
-            if ((_workContext.CurrentCustomer.IsGuest() && !_orderSettings.AnonymousCheckoutAllowed))
+            if ((currentCustomer.IsGuest() && !_orderSettings.AnonymousCheckoutAllowed))
                 return new HttpUnauthorizedResult();
 
             //validation (cart)
-            var checkoutAttributesXml = _workContext.CurrentCustomer.GetAttribute<string>(SystemCustomerAttributeNames.CheckoutAttributes, _genericAttributeService, _storeContext.CurrentStore.Id);
+            var checkoutAttributesXml = currentCustomer.GetAttribute<string>(SystemCustomerAttributeNames.CheckoutAttributes, _genericAttributeService, _storeContext.CurrentStore.Id);
             //var scWarnings = _shoppingCartService.GetShoppingCartWarnings(cart, checkoutAttributesXml, true);
             var scWarnings = _promoService.ProcessShoppingCart(true);
             if (scWarnings.Count > 0)
                 return RedirectToRoute("ShoppingCart");
-            //validation (each shopping cart item)
-            //foreach (ShoppingCartItem sci in cart)
-            //{
-            //    var sciWarnings = _shoppingCartService.GetShoppingCartItemWarnings(_workContext.CurrentCustomer,
-            //        sci.ShoppingCartType,
-            //        sci.Product,
-            //        sci.StoreId,
-            //        sci.AttributesXml,
-            //        sci.CustomerEnteredPrice,
-            //        sci.RentalStartDateUtc,
-            //        sci.RentalEndDateUtc,
-            //        sci.Quantity,
-            //        false);
-            //    if (sciWarnings.Count > 0)
-            //        return RedirectToRoute("ShoppingCart");
-            //}
 
             #endregion
 
@@ -443,17 +426,11 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                 // TODO: enum for PromotionType (from integration lib...?)
                 switch (missedPromo.PromotionType)
                 {
-                    case "FREEPRODUCT":
-                        model.MissedPromotions.Add(new MissedPromotionFreeProductModel()
-                        {
-                            PromotionName = missedPromo.DisplayText
-                        });
-                        break;
-                    case "BOGOF":
+                    case MissedPromotionsModel.PromotionTypeSystemName.BuyOneGetOneFree:
                         var missedBogofModel = new MissedPromotionBogofModel()
                         {
                             PromotionName = missedPromo.DisplayText,
-                            PromotionType = "BOGOF"
+                            PromotionType = MissedPromotionsModel.PromotionTypeSystemName.BuyOneGetOneFree
                         };
                         // TODO: It's a BOGOF - there can be only one...
                         foreach (var ci in missedPromo.Criteria.CriteriaItems)
@@ -475,7 +452,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                                             Quantity = matchedCartItem.Quantity,
                                             AttributeInfo = _productAttributeFormatter.FormatAttributes(matchedCartItem.Product, matchedCartItem.AttributesXml),
                                         };
-                                        cartItemModel.Picture = PrepareCartItemPictureModel(matchedCartItem,_mediaSettings.CartThumbPictureSize, true, cartItemModel.ProductName);
+                                        cartItemModel.Picture = PrepareCartItemPictureModel(matchedCartItem, _mediaSettings.CartThumbPictureSize, true, cartItemModel.ProductName);
                                         missedBogofModel.MatchedCartItemModels.Add(cartItemModel);
                                         missedBogofModel.AddToCartModel = PrepareAddToCartModel(matchedCartItem);
                                     }
@@ -484,14 +461,47 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                         }
                         model.MissedPromotions.Add(missedBogofModel);
                         break;
-                    case "BUNDLE":
-                        model.MissedPromotions.Add(new MissedPromotionBundleModel()
+                    case MissedPromotionsModel.PromotionTypeSystemName.BuyOneGetOneReduced:
+                        var missedBogorModel = new MissedPromotionBogorModel()
                         {
-                            PromotionName = missedPromo.DisplayText
-                        });
+                            PromotionName = missedPromo.DisplayText,
+                            PromotionType = MissedPromotionsModel.PromotionTypeSystemName.BuyOneGetOneReduced
+                        };
+                        // TODO: It's a BOGOR - there can be only one...
+                        foreach (var ci in missedPromo.Criteria.CriteriaItems)
+                        {
+                            foreach (var item in ci.Items)
+                            {
+                                item.MatchedLineIds.ForEach(i =>
+                                {
+                                    ShoppingCartItem matchedCartItem = (from c in cart where c.Id == i select c).FirstOrDefault();
+                                    if (matchedCartItem != null)
+                                    {
+                                        var cartItemModel = new ShoppingCartModel.ShoppingCartItemModel
+                                        {
+                                            Id = matchedCartItem.Id,
+                                            Sku = matchedCartItem.Product.FormatSku(matchedCartItem.AttributesXml, _productAttributeParser),
+                                            ProductId = matchedCartItem.Product.Id,
+                                            ProductName = matchedCartItem.Product.GetLocalized(x => x.Name),
+                                            ProductSeName = matchedCartItem.Product.GetSeName(),
+                                            Quantity = matchedCartItem.Quantity,
+                                            AttributeInfo = _productAttributeFormatter.FormatAttributes(matchedCartItem.Product, matchedCartItem.AttributesXml),
+                                        };
+                                        cartItemModel.Picture = PrepareCartItemPictureModel(matchedCartItem, _mediaSettings.CartThumbPictureSize, true, cartItemModel.ProductName);
+                                        missedBogorModel.MatchedCartItemModels.Add(cartItemModel);
+                                        missedBogorModel.AddToCartModel = PrepareAddToCartModel(matchedCartItem);
+                                    }
+                                });
+                            }
+                        }
+                        model.MissedPromotions.Add(missedBogorModel);
                         break;
                     default:
-                        model.MissedPromotions.Add(new MissedPromotionUnknownModel() { PromotionName = missedPromo.DisplayText });
+                        model.MissedPromotions.Add(new MissedPromotionUnknownModel()
+                        {
+                            PromotionName = missedPromo.DisplayText,
+                            PromotionImageUrl = "/Plugins/Misc.QixolPromo/Content/Images/default-missedpromotion.png"
+                        });
                         break;
                 }
             }

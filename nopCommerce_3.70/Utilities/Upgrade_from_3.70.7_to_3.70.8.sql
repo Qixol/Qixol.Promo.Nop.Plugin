@@ -19,6 +19,9 @@ if not exists(select * from LocaleStringResource where ResourceName = 'Plugins.M
 if not exists(select * from LocaleStringResource where ResourceName = 'Plugins.Misc.QixolPromo.MissedPromotions')
 	INSERT INTO LocaleStringResource(LanguageId, ResourceName, ResourceValue) values (1, 'Plugins.Misc.QixolPromo.MissedPromotions', 'Missed Promotions')
 
+if not exists(select * from LocaleStringResource where ResourceName = 'Plugins.Misc.QixolPromo.MissedPromotion(s)')
+	INSERT INTO LocaleStringResource(LanguageId, ResourceName, ResourceValue) values (1, 'Plugins.Misc.QixolPromo.MissedPromotion(s)', 'Missed Promotion(s)')
+
 -- Settings
 if not exists(select * from Setting where [Name] = 'promosettings.showmissedpromotions')
 	insert into Setting ([Name], [Value], StoreId) values ('promosettings.showmissedpromotions', 'True', 0)
