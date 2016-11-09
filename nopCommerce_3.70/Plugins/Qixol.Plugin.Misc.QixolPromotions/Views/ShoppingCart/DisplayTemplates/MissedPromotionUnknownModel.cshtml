@@ -11,13 +11,7 @@
         <img alt="@Model.PromotionName" src="@Model.PromotionImageUrl" title="@Model.PromotionName" style="width: 80px;" />
     </td>
     <td class="product">
-        @if (!string.IsNullOrEmpty(@Model.PromotionName))
-        {
-            <div class="promotion-item">@Model.PromotionName</div>
-        }
-        else
-        {
-            <div class="promotion-item">@Model.PromotionType</div>
-        }
+        <div class="promotion-item">@Model.PromotionName</div>
+        <div>Save from: @Model.SaveFrom</div>
     </td>
 </tr>

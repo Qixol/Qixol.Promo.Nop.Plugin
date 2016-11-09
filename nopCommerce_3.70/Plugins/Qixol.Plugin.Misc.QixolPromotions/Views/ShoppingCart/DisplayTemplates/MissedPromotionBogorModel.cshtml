@@ -1,6 +1,8 @@
 ﻿@model MissedPromotionBogorModel
 
 @using Qixol.Plugin.Misc.Promo.Models.MissedPromotions;
+@using global::Nop.Web.Models.Catalog;
+@using global::Nop.Core.Domain.Orders;
 
 @{
     Layout = null;
@@ -39,7 +41,20 @@
         {
             var dataDictAddToCart = new ViewDataDictionary();
             dataDictAddToCart.TemplateInfo.HtmlFieldPrefix = string.Format("addtocart_{0}", matchedCartItemModel.Id);
-            @Html.Partial("_AddToCart", Model.AddToCartModel, dataDictAddToCart)
+            <div class="add-to-cart-panel">
+                <script type="text/javascript">
+                    function addToCart_@(matchedCartItemModel.ProductId)() {
+                        promoAjaxCart.addproducttocart_missedPromotions('@Url.RouteUrl("AddProductToCart-Details", new { productId = matchedCartItemModel.ProductId, shoppingCartTypeId = (int)ShoppingCartType.ShoppingCart })');
+                        //window.location = '@(Url.Action("MissedPromotions"))';
+                    }
+                </script>
+
+                @{
+                    var addToCartText = "";
+                    addToCartText = T("ShoppingCart.AddToCart").Text;
+                }
+                <input type="button" id="add-to-cart-button-@matchedCartItemModel.ProductId" class="button-1 add-to-cart-button" value="@addToCartText" data-productid="@matchedCartItemModel.ProductId" onclick="addToCart_@(matchedCartItemModel.ProductId)();" />
+            </div>
         }
         @*@if (matchedCartItemModel != null)
             {
