@@ -133,6 +133,7 @@
     <Compile Include="Controllers\BaseActionFilter.cs" />
     <Compile Include="Controllers\CheckoutController.cs" />
     <Compile Include="Controllers\PromoCouponController.cs" />
+    <Compile Include="Controllers\MissedPromotionsController.cs" />
     <Compile Include="Controllers\ShoppingCartController.cs" />
     <Compile Include="Controllers\PromoOrderController.cs" />
     <Compile Include="Controllers\PromoAdminController.cs" />
@@ -228,16 +229,16 @@
     <None Include="Views\Admin\_ProductAttributesList.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <Content Include="Views\ShoppingCart\DisplayTemplates\MissedPromotionBogofModel.cshtml">
+    <Content Include="Views\MissedPromotions\DisplayTemplates\MissedPromotionBogofModel.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Views\ShoppingCart\DisplayTemplates\MissedPromotionUnknownModel.cshtml">
+    <Content Include="Views\MissedPromotions\DisplayTemplates\MissedPromotionUnknownModel.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <None Include="Views\ShoppingCart\DisplayTemplates\MissedPromotionBogorModel.cshtml">
+    <None Include="Views\MissedPromotions\DisplayTemplates\MissedPromotionBogorModel.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="Views\ShoppingCart\MissedPromotions.cshtml">
+    <None Include="Views\MissedPromotions\MissedPromotions.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="Views\Order\Details.cshtml">
@@ -246,7 +247,7 @@
     <None Include="Views\ShoppingCart\IssuedCoupons.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <Content Include="Views\ShoppingCart\MissedPromotionsSummary.cshtml">
+    <Content Include="Views\MissedPromotions\MissedPromotionsSummary.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <None Include="Views\ShoppingCart\OrderSummary.cshtml">

@@ -25,6 +25,7 @@ namespace Qixol.Plugin.Misc.Promo.ViewEngines
                     // themes
                     "~/Plugins/Misc.QixolPromo/Themes/{2}/Views/Order/{0}.cshtml",
                     "~/Plugins/Misc.QixolPromo/Themes/{2}/Views/Checkout/{0}.cshtml",
+                    "~/Plugins/Misc.QixolPromo/Themes/{2}/Views/MissedPromotions/{0}.cshtml",
                     "~/Plugins/Misc.QixolPromo/Themes/{2}/Views/ShoppingCart/{0}.cshtml",
                     "~/Plugins/Misc.QixolPromo/Themes/{2}/Views/Customer/{0}.cshtml",
                     "~/Plugins/Misc.QixolPromo/Themes/{2}/Views/Shared/{0}.cshtml",
@@ -33,6 +34,7 @@ namespace Qixol.Plugin.Misc.Promo.ViewEngines
                     // default
                     "~/Plugins/Misc.QixolPromo/Views/Order/{0}.cshtml",
                     "~/Plugins/Misc.QixolPromo/Views/Checkout/{0}.cshtml",
+                    "~/Plugins/Misc.QixolPromo/Views/MissedPromotions/{0}.cshtml",
                     "~/Plugins/Misc.QixolPromo/Views/ShoppingCart/{0}.cshtml",
                     "~/Plugins/Misc.QixolPromo/Views/Customer/{0}.cshtml",
                     "~/Plugins/Misc.QixolPromo/Views/Shared/{0}.cshtml",
@@ -51,6 +53,7 @@ namespace Qixol.Plugin.Misc.Promo.ViewEngines
                     // themes
                     "~/Plugins/Misc.QixolPromo/Themes/{2}/Views/Order/{0}.cshtml",
                     "~/Plugins/Misc.QixolPromo/Themes/{2}/Views/Checkout/{0}.cshtml",
+                    "~/Plugins/Misc.QixolPromo/Themes/{2}/Views/MissedPromotions/{0}.cshtml",
                     "~/Plugins/Misc.QixolPromo/Themes/{2}/Views/ShoppingCart/{0}.cshtml",
                     "~/Plugins/Misc.QixolPromo/Themes/{2}/Views/Customer/{0}.cshtml",
                     "~/Plugins/Misc.QixolPromo/Themes/{2}/Views/Shared/{0}.cshtml",
@@ -59,6 +62,7 @@ namespace Qixol.Plugin.Misc.Promo.ViewEngines
                     // default
                     "~/Plugins/Misc.QixolPromo/Views/Order/{0}.cshtml",
                     "~/Plugins/Misc.QixolPromo/Views/Checkout/{0}.cshtml",
+                    "~/Plugins/Misc.QixolPromo/Views/MissedPromotions/{0}.cshtml",
                     "~/Plugins/Misc.QixolPromo/Views/ShoppingCart/{0}.cshtml",
                     "~/Plugins/Misc.QixolPromo/Views/Customer/{0}.cshtml",
                     "~/Plugins/Misc.QixolPromo/Views/Shared/{0}.cshtml",

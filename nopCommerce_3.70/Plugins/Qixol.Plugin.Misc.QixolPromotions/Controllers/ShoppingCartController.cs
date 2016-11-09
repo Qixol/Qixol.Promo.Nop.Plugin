@@ -230,6 +230,11 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
 
         #region Utilities
 
+        public PictureModel PrepareCartItemPictureModel(ShoppingCartItem shoppingCartItem, string productName)
+        {
+            return base.PrepareCartItemPictureModel(shoppingCartItem, _mediaSettings.CartThumbPictureSize, true, productName);
+        }
+
         /// <summary>
         /// Prepare shopping cart model
         /// </summary>
@@ -374,7 +379,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             }
 
             //return RedirectToRoute("MissedPromotions");
-            return RedirectToAction("MissedPromotions");
+            return RedirectToAction("MissedPromotions", "MissedPromotions");
         }
 
         [ChildActionOnly]
@@ -382,216 +387,6 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
         {
             return base.OrderSummary(prepareAndDisplayOrderReviewData);
         }
-
-        #endregion
-
-        #region Missed Promotions
-
-        public ActionResult MissedPromotions()
-        {
-            #region copied from Checkout/Index (except for call to PromoService)
-
-            var currentCustomer = _workContext.CurrentCustomer;
-
-            var cart = currentCustomer.ShoppingCartItems
-                .Where(sci => sci.ShoppingCartType == ShoppingCartType.ShoppingCart)
-                .LimitPerStore(_storeContext.CurrentStore.Id)
-                .ToList();
-            if (cart.Count == 0)
-                return RedirectToRoute("ShoppingCart");
-
-            if ((currentCustomer.IsGuest() && !_orderSettings.AnonymousCheckoutAllowed))
-                return new HttpUnauthorizedResult();
-
-            //validation (cart)
-            var checkoutAttributesXml = currentCustomer.GetAttribute<string>(SystemCustomerAttributeNames.CheckoutAttributes, _genericAttributeService, _storeContext.CurrentStore.Id);
-            //var scWarnings = _shoppingCartService.GetShoppingCartWarnings(cart, checkoutAttributesXml, true);
-            var scWarnings = _promoService.ProcessShoppingCart(true);
-            if (scWarnings.Count > 0)
-                return RedirectToRoute("ShoppingCart");
-
-            #endregion
-
-            #region missed promotions
-
-            var model = new MissedPromotionsModel();
-
-            var basketResponse = _promoUtilities.GetBasketResponse();
-            if (basketResponse == null || basketResponse.MissedPromotions.Count == 0)
-            {
-                return RedirectToRoute("Checkout");
-            }
-
-            foreach (var missedPromo in basketResponse.MissedPromotions)
-            {
-                // TODO: enum for PromotionType (from integration lib...?)
-                switch (missedPromo.PromotionType)
-                {
-                    case MissedPromotionsModel.PromotionTypeSystemName.BuyOneGetOneFree:
-                        model.MissedPromotions.Add(PrepareMissedPromotionBogofModel(missedPromo, cart));
-                        break;
-                    case MissedPromotionsModel.PromotionTypeSystemName.BuyOneGetOneReduced:
-                        model.MissedPromotions.Add(PrepareMissedPromotionBogorModel(missedPromo, cart));
-                        break;
-                    default:
-                        model.MissedPromotions.Add(PrepareMissedPromotionUnknownModel(missedPromo, cart));
-                        break;
-                }
-            }
-            return View(model);
-
-            #endregion
-        }
-
-        #region helpers
-
-        // TODO: code copied from Product controller, PrepareProductDetailsPageModel method...
-        private ProductDetailsModel.AddToCartModel PrepareAddToCartModel(ShoppingCartItem matchedCartItem)
-        {
-            ProductDetailsModel.AddToCartModel model = new ProductDetailsModel.AddToCartModel();
-            var matchedProduct = _productService.GetProductById(matchedCartItem.ProductId);
-
-            model.ProductId = matchedCartItem.ProductId;
-            model.UpdatedShoppingCartItemId = matchedCartItem.Id;
-
-            //quantity
-            model.EnteredQuantity = matchedCartItem.Quantity;
-            //allowed quantities
-            var allowedQuantities = matchedProduct.ParseAllowedQuantities();
-            foreach (var qty in allowedQuantities)
-            {
-                model.AllowedQuantities.Add(new SelectListItem
-                {
-                    Text = qty.ToString(),
-                    Value = qty.ToString(),
-                    Selected = matchedCartItem != null && matchedCartItem.Quantity == qty
-                });
-            }
-            //minimum quantity notification
-            if (matchedProduct.OrderMinimumQuantity > 1)
-            {
-                model.MinimumQuantityNotification = string.Format(_localizationService.GetResource("Products.MinimumQuantityNotification"), matchedProduct.OrderMinimumQuantity);
-            }
-
-            ////'add to cart', 'add to wishlist' buttons
-            //model.AddToCart.DisableBuyButton = product.DisableBuyButton || !_permissionService.Authorize(StandardPermissionProvider.EnableShoppingCart);
-            //model.AddToCart.DisableWishlistButton = product.DisableWishlistButton || !_permissionService.Authorize(StandardPermissionProvider.EnableWishlist);
-            //if (!_permissionService.Authorize(StandardPermissionProvider.DisplayPrices))
-            //{
-            //    model.AddToCart.DisableBuyButton = true;
-            //    model.AddToCart.DisableWishlistButton = true;
-            //}
-            ////pre-order
-            if (matchedProduct.AvailableForPreOrder)
-            {
-                model.AvailableForPreOrder = !matchedProduct.PreOrderAvailabilityStartDateTimeUtc.HasValue ||
-                    matchedProduct.PreOrderAvailabilityStartDateTimeUtc.Value >= DateTime.UtcNow;
-                model.PreOrderAvailabilityStartDateTimeUtc = matchedProduct.PreOrderAvailabilityStartDateTimeUtc;
-            }
-            //rental
-            model.IsRental = matchedProduct.IsRental;
-
-            //customer entered price
-            model.CustomerEntersPrice = matchedProduct.CustomerEntersPrice;
-            if (model.CustomerEntersPrice)
-            {
-                decimal minimumCustomerEnteredPrice = _currencyService.ConvertFromPrimaryStoreCurrency(matchedProduct.MinimumCustomerEnteredPrice, _workContext.WorkingCurrency);
-                decimal maximumCustomerEnteredPrice = _currencyService.ConvertFromPrimaryStoreCurrency(matchedProduct.MaximumCustomerEnteredPrice, _workContext.WorkingCurrency);
-
-                model.CustomerEnteredPrice = matchedCartItem.CustomerEnteredPrice;
-                model.CustomerEnteredPriceRange = string.Format(_localizationService.GetResource("Products.EnterProductPrice.Range"),
-                    _priceFormatter.FormatPrice(minimumCustomerEnteredPrice, false, false),
-                    _priceFormatter.FormatPrice(maximumCustomerEnteredPrice, false, false));
-            }
-
-            return model;
-        }
-
-        private MissedPromotionBogofModel PrepareMissedPromotionBogofModel(BasketResponseMissedPromotion missedPromo, List<ShoppingCartItem> cart)
-        {
-            var missedBogofModel = new MissedPromotionBogofModel()
-            {
-                PromotionName = missedPromo.DisplayText
-            };
-            // TODO: It's a BOGOF - there can be only one...
-            foreach (var ci in missedPromo.Criteria.CriteriaItems)
-            {
-                foreach (var item in ci.Items)
-                {
-                    item.MatchedLineIds.ForEach(i =>
-                    {
-                        ShoppingCartItem matchedCartItem = (from c in cart where c.Id == i select c).FirstOrDefault();
-                        if (matchedCartItem != null)
-                        {
-                            var cartItemModel = new ShoppingCartModel.ShoppingCartItemModel
-                            {
-                                Id = matchedCartItem.Id,
-                                Sku = matchedCartItem.Product.FormatSku(matchedCartItem.AttributesXml, _productAttributeParser),
-                                ProductId = matchedCartItem.Product.Id,
-                                ProductName = matchedCartItem.Product.GetLocalized(x => x.Name),
-                                ProductSeName = matchedCartItem.Product.GetSeName(),
-                                Quantity = matchedCartItem.Quantity,
-                                AttributeInfo = _productAttributeFormatter.FormatAttributes(matchedCartItem.Product, matchedCartItem.AttributesXml),
-                            };
-                            cartItemModel.Picture = PrepareCartItemPictureModel(matchedCartItem, _mediaSettings.CartThumbPictureSize, true, cartItemModel.ProductName);
-                            missedBogofModel.MatchedCartItemModels.Add(cartItemModel);
-                            missedBogofModel.AddToCartModel = PrepareAddToCartModel(matchedCartItem);
-                        }
-                    });
-                }
-            }
-            return missedBogofModel;
-        }
-
-        private MissedPromotionBogorModel PrepareMissedPromotionBogorModel(BasketResponseMissedPromotion missedPromo, List<ShoppingCartItem> cart)
-        {
-            var missedBogorModel = new MissedPromotionBogorModel()
-            {
-                PromotionName = missedPromo.DisplayText
-            };
-            // TODO: It's a BOGOR - there can be only one...
-            foreach (var ci in missedPromo.Criteria.CriteriaItems)
-            {
-                foreach (var item in ci.Items)
-                {
-                    item.MatchedLineIds.ForEach(i =>
-                    {
-                        ShoppingCartItem matchedCartItem = (from c in cart where c.Id == i select c).FirstOrDefault();
-                        if (matchedCartItem != null)
-                        {
-                            var cartItemModel = new ShoppingCartModel.ShoppingCartItemModel
-                            {
-                                Id = matchedCartItem.Id,
-                                Sku = matchedCartItem.Product.FormatSku(matchedCartItem.AttributesXml, _productAttributeParser),
-                                ProductId = matchedCartItem.Product.Id,
-                                ProductName = matchedCartItem.Product.GetLocalized(x => x.Name),
-                                ProductSeName = matchedCartItem.Product.GetSeName(),
-                                Quantity = matchedCartItem.Quantity,
-                                AttributeInfo = _productAttributeFormatter.FormatAttributes(matchedCartItem.Product, matchedCartItem.AttributesXml),
-                            };
-                            cartItemModel.Picture = PrepareCartItemPictureModel(matchedCartItem, _mediaSettings.CartThumbPictureSize, true, cartItemModel.ProductName);
-                            missedBogorModel.MatchedCartItemModels.Add(cartItemModel);
-                            missedBogorModel.AddToCartModel = PrepareAddToCartModel(matchedCartItem);
-                        }
-                    });
-                }
-            }
-
-            return missedBogorModel;
-        }
-
-        private MissedPromotionUnknownModel PrepareMissedPromotionUnknownModel(BasketResponseMissedPromotion missedPromo, List<ShoppingCartItem> cart)
-        {
-            var missedUnknownPromo = new MissedPromotionUnknownModel()
-            {
-                PromotionName = missedPromo.DisplayText,
-                PromotionImageUrl = "/Plugins/Misc.QixolPromo/Content/Images/default-missedpromotion.png",
-                SaveFrom = _priceFormatter.FormatPrice(missedPromo.Action.SaveFrom)
-            };
-            return missedUnknownPromo;
-        }
-
-        #endregion
 
         #endregion
     }
