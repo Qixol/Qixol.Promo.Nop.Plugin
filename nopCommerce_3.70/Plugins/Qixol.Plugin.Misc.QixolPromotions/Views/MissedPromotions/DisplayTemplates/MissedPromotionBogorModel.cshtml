@@ -37,7 +37,7 @@
         {
             <div class="promotion-item">BOGOF</div>
         }
-        @if (Model.AddToCartModel != null)
+        @if (Model.AddToCartModel != null && matchedCartItemModel != null)
         {
             var dataDictAddToCart = new ViewDataDictionary();
             dataDictAddToCart.TemplateInfo.HtmlFieldPrefix = string.Format("addtocart_{0}", matchedCartItemModel.Id);

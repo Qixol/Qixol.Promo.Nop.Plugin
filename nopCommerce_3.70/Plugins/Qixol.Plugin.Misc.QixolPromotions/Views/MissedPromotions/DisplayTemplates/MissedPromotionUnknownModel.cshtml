@@ -12,6 +12,9 @@
     </td>
     <td class="product">
         <div class="promotion-item">@Model.PromotionName</div>
+        @if (!string.IsNullOrEmpty(Model.SaveFrom))
+        {
         <div>Save from: @Model.SaveFrom</div>
+        }
     </td>
 </tr>

@@ -353,7 +353,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             {
                 PromotionName = missedPromo.DisplayText,
                 PromotionImageUrl = "/Plugins/Misc.QixolPromo/Content/Images/default-missedpromotion.png",
-                SaveFrom = _priceFormatter.FormatPrice(missedPromo.Action.SaveFrom)
+                SaveFrom = missedPromo.Action.SaveFrom > decimal.Zero ? _priceFormatter.FormatPrice(missedPromo.Action.SaveFrom) : string.Empty
             };
             return missedUnknownPromo;
         }
