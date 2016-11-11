@@ -13,6 +13,7 @@
     var themeName = EngineContext.Current.Resolve<IThemeContext>().WorkingThemeName;
 
     Html.AppendCssFileParts(string.Format("~/Plugins/Misc.QixolPromo/Themes/{0}/Content/css/styles.css", themeName));
+
 }
 
 @* inline style temporarily until able to add css from one page checkout *@
@@ -80,7 +81,7 @@
             @if (true)
             {
                 <div class="checkout-buttons">
-                    <button type="button" id="checkout" name="checkout" value="checkout" class="button-1 checkout-button" onclick="window.location = '/checkout';">
+                    <button type="button" id="checkout" name="checkout" value="checkout" class="button-1 checkout-button" onclick="window.location = '@Html.Action("CheckoutUrl")';">
                         @T("Checkout.Button")
                     </button>
                 </div>

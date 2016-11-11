@@ -58,7 +58,7 @@ var promoAjaxCart = {
                 }
             }
         }
-        location.href = '/missedpromotions';
+        location.href = '/checkout/missedpromotions';
         return true;
     }
 };

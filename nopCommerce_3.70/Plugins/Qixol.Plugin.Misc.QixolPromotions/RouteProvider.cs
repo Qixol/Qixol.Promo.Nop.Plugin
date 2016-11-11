@@ -45,6 +45,14 @@ namespace Qixol.Plugin.Misc.Promo
             routes.Remove(promosShoppingCartRoute);
             routes.Insert(0, promosShoppingCartRoute);
 
+            var promosCheckoutRoute = routes.MapRoute("PromosCheckout",
+                    "checkout",
+                    new { controller = "Checkout", action = "PromoIndex" },
+                    new[] { "Qixol.Plugin.Misc.Promo.Controllers" }
+                    );
+            routes.Remove(promosCheckoutRoute);
+            routes.Insert(0, promosCheckoutRoute);
+
             var promosCheckoutShippingMethodRoute = routes.MapRoute("PromosCheckoutShippingMethod",
                     "checkout/shippingmethod",
                     new { controller = "Checkout", action = "ShippingMethod" },
@@ -70,22 +78,13 @@ namespace Qixol.Plugin.Misc.Promo
             routes.Insert(0, promosCheckoutOnePageRoute);
 
             var missedPromotionsRoute = routes.MapRoute("MissedPromotions",
-                    "missedpromotions/",
+                    "checkout/missedpromotions",
                     new { controller = "MissedPromotions", action = "MissedPromotions" },
                     new[] { "Qixol.Plugin.Misc.Promo.Controllers" }
                     );
-            // not strictly necessary as this is not superseding a base nop route
-            routes.Remove(missedPromotionsRoute);
-            routes.Insert(0, missedPromotionsRoute);
-
-            //login page for checkout as guest
-            var loginMissedPromotionsAsGuestRoute = routes.MapRoute("LoginMissedPromotionsAsGuest",
-                            "login/missedpromotionsasguest",
-                            new { controller = "Customer", action = "Login", checkoutAsGuest = true },
-                            new[] { "Qixol.Plugin.Misc.Promo.Controllers" });
-            // not strictly necessary as this is not superseding a base nop route
-            routes.Remove(loginMissedPromotionsAsGuestRoute);
-            routes.Insert(0, loginMissedPromotionsAsGuestRoute);
+            // do NOT remove and reinsert - loses name
+            //routes.Remove(missedPromotionsRoute);
+            //routes.Insert(0, missedPromotionsRoute);
 
             #endregion
         }

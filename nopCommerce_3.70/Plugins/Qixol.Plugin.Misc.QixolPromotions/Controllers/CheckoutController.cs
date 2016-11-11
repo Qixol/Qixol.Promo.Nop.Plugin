@@ -167,6 +167,52 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
 
         #endregion
 
+        public new ActionResult PromoIndex()
+        {
+            var cart = _workContext.CurrentCustomer.ShoppingCartItems
+                .Where(sci => sci.ShoppingCartType == ShoppingCartType.ShoppingCart)
+                .LimitPerStore(_storeContext.CurrentStore.Id)
+                .ToList();
+            if (cart.Count == 0)
+                return RedirectToRoute("ShoppingCart");
+
+            if ((_workContext.CurrentCustomer.IsGuest() && !_orderSettings.AnonymousCheckoutAllowed))
+                return new HttpUnauthorizedResult();
+
+            //reset checkout data
+            _customerService.ResetCheckoutData(_workContext.CurrentCustomer, _storeContext.CurrentStore.Id);
+
+            //validation (cart)
+            var checkoutAttributesXml = _workContext.CurrentCustomer.GetAttribute<string>(SystemCustomerAttributeNames.CheckoutAttributes, _genericAttributeService, _storeContext.CurrentStore.Id);
+            //var scWarnings = _shoppingCartService.GetShoppingCartWarnings(cart, checkoutAttributesXml, true);
+            var scPromoWarnings = _promoService.ProcessShoppingCart(true);
+            if (scPromoWarnings.Count > 0)
+                return RedirectToRoute("ShoppingCart");
+
+            // TODO: Native nop cart validation - is this still required?
+            var scWarnings = _shoppingCartService.GetShoppingCartWarnings(cart, checkoutAttributesXml, true);
+            if (scWarnings.Count > 0)
+                return RedirectToRoute("ShoppingCart");
+            //validation (each shopping cart item)
+            foreach (ShoppingCartItem sci in cart)
+            {
+                var sciWarnings = _shoppingCartService.GetShoppingCartItemWarnings(_workContext.CurrentCustomer,
+                    sci.ShoppingCartType,
+                    sci.Product,
+                    sci.StoreId,
+                    sci.AttributesXml,
+                    sci.CustomerEnteredPrice,
+                    sci.RentalStartDateUtc,
+                    sci.RentalEndDateUtc,
+                    sci.Quantity,
+                    false);
+                if (sciWarnings.Count > 0)
+                    return RedirectToRoute("ShoppingCart");
+            }
+
+            return RedirectToRoute("MissedPromotions");
+        }
+
         [NonAction]
         protected override CheckoutShippingMethodModel PrepareShippingMethodModel(IList<ShoppingCartItem> cart, Address shippingAddress)
         {

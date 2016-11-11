@@ -364,30 +364,16 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
 
         public ActionResult MissedPromotions()
         {
-            #region copied from Checkout/Index (except for call to PromoService)
-
-            var currentCustomer = _workContext.CurrentCustomer;
-
-            var cart = currentCustomer.ShoppingCartItems
+            var cart = _workContext.CurrentCustomer.ShoppingCartItems
                 .Where(sci => sci.ShoppingCartType == ShoppingCartType.ShoppingCart)
                 .LimitPerStore(_storeContext.CurrentStore.Id)
                 .ToList();
             if (cart.Count == 0)
                 return RedirectToRoute("ShoppingCart");
 
-            if ((currentCustomer.IsGuest() && !_orderSettings.AnonymousCheckoutAllowed))
-                return new HttpUnauthorizedResult();
-
-            //validation (cart)
-            var checkoutAttributesXml = currentCustomer.GetAttribute<string>(SystemCustomerAttributeNames.CheckoutAttributes, _genericAttributeService, _storeContext.CurrentStore.Id);
-            //var scWarnings = _shoppingCartService.GetShoppingCartWarnings(cart, checkoutAttributesXml, true);
             var scWarnings = _promoService.ProcessShoppingCart(true);
             if (scWarnings.Count > 0)
                 return RedirectToRoute("ShoppingCart");
-
-            #endregion
-
-            #region missed promotions
 
             var model = new MissedPromotionsModel();
 
@@ -414,8 +400,14 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                 }
             }
             return View(model);
+        }
 
-            #endregion
+        public string CheckoutUrl()
+        {
+            if (_orderSettings.OnePageCheckoutEnabled)
+                return Url.RouteUrl("CheckoutOnePage");
+
+            return Url.RouteUrl("CheckoutBillingAddress");
         }
 
         #endregion
