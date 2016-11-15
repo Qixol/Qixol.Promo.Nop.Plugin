@@ -37,6 +37,12 @@ namespace Qixol.Plugin.Misc.Promo
 
             #region website routes
 
+            routes.MapRoute("PromoContinueShopping",
+                "checkout/continueshopping",
+                new { controller = "PromoCheckout", action = "ContinueShopping" },
+                new[] { "Qixol.Plugin.Misc.Promo.Controllers" }
+                );
+
             var promosShoppingCartRoute = routes.MapRoute("PromosShoppingCart",
                     "cart/",
                     new { controller = "ShoppingCart", action = "Cart" },
@@ -45,46 +51,44 @@ namespace Qixol.Plugin.Misc.Promo
             routes.Remove(promosShoppingCartRoute);
             routes.Insert(0, promosShoppingCartRoute);
 
-            var promosCheckoutRoute = routes.MapRoute("PromosCheckout",
+            var promosCheckoutRoute = routes.MapRoute("PromoCheckout",
                     "checkout",
-                    new { controller = "Checkout", action = "PromoIndex" },
+                    new { controller = "PromoCheckout", action = "PromoIndex" },
                     new[] { "Qixol.Plugin.Misc.Promo.Controllers" }
                     );
             routes.Remove(promosCheckoutRoute);
             routes.Insert(0, promosCheckoutRoute);
 
-            var promosCheckoutShippingMethodRoute = routes.MapRoute("PromosCheckoutShippingMethod",
+            var promosCheckoutShippingMethodRoute = routes.MapRoute("PromoCheckoutShippingMethod",
                     "checkout/shippingmethod",
-                    new { controller = "Checkout", action = "ShippingMethod" },
+                    new { controller = "PromoCheckout", action = "ShippingMethod" },
                     new[] { "Qixol.Plugin.Misc.Promo.Controllers" }
                     );
             routes.Remove(promosCheckoutShippingMethodRoute);
             routes.Insert(0, promosCheckoutShippingMethodRoute);
 
-            var promosCheckoutOpcSaveShippingRoute = routes.MapRoute("PromosCheckoutOpcSaveShipping",
+            var promosCheckoutOpcSaveShippingRoute = routes.MapRoute("PromoCheckoutOpcSaveShipping",
                     "checkout/OpcSaveShipping",
-                    new { controller = "Checkout", action = "OpcSaveShipping" },
+                    new { controller = "PromoCheckout", action = "OpcSaveShipping" },
                     new[] { "Qixol.Plugin.Misc.Promo.Controllers" }
                     );
             routes.Remove(promosCheckoutOpcSaveShippingRoute);
             routes.Insert(0, promosCheckoutOpcSaveShippingRoute);
 
-            var promosCheckoutOnePageRoute = routes.MapRoute("PromosCheckoutOnePage",
+            var promosCheckoutOnePageRoute = routes.MapRoute("PromoCheckoutOnePage",
                     "onepagecheckout/",
-                    new { controller = "Checkout", action = "OnePageCheckout" },
+                    new { controller = "PromoCheckout", action = "PromoOnePageCheckout" },
                     new[] { "Qixol.Plugin.Misc.Promo.Controllers" }
                     );
-            routes.Remove(promosCheckoutOnePageRoute);
-            routes.Insert(0, promosCheckoutOnePageRoute);
+            //routes.Remove(promosCheckoutOnePageRoute);
+            //routes.Insert(0, promosCheckoutOnePageRoute);
 
-            var missedPromotionsRoute = routes.MapRoute("MissedPromotions",
+            var missedPromotionsRoute = routes.MapRoute("PromoCheckoutMissedPromotions",
                     "checkout/missedpromotions",
-                    new { controller = "MissedPromotions", action = "MissedPromotions" },
+                    new { controller = "PromoCheckout", action = "MissedPromotions" },
                     new[] { "Qixol.Plugin.Misc.Promo.Controllers" }
                     );
             // do NOT remove and reinsert - loses name
-            //routes.Remove(missedPromotionsRoute);
-            //routes.Insert(0, missedPromotionsRoute);
 
             #endregion
         }

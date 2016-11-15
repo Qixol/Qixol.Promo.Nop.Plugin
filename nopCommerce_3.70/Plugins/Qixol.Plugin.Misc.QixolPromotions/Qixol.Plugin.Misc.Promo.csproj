@@ -131,9 +131,8 @@
     <Compile Include="Consumers\ShippingMethodEventConsumer.cs" />
     <Compile Include="Consumers\StoreEventConsumer.cs" />
     <Compile Include="Controllers\BaseActionFilter.cs" />
-    <Compile Include="Controllers\CheckoutController.cs" />
+    <Compile Include="Controllers\PromoCheckoutController.cs" />
     <Compile Include="Controllers\PromoCouponController.cs" />
-    <Compile Include="Controllers\MissedPromotionsController.cs" />
     <Compile Include="Controllers\ShoppingCartController.cs" />
     <Compile Include="Controllers\PromoOrderController.cs" />
     <Compile Include="Controllers\PromoAdminController.cs" />
@@ -143,44 +142,47 @@
     <Compile Include="Controllers\ShoppingCartActionFilter.cs" />
     <Compile Include="DependencyRegistrar.cs" />
     <Compile Include="Extensions\MappingExtensions\ProductAttributeConfigItemExtensions.cs" />
+    <Compile Include="Models\Checkout\PromoCheckoutProgressModel.cs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Compile>
     <Compile Include="Models\IntegrationCodeItemModel.cs" />
-    <Compile Include="Models\MissedPromotions\MissedPromotionBasketReductionModel.cs">
+    <Compile Include="Models\Checkout\MissedPromotionBasketReductionModel.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="Models\MissedPromotions\MissedPromotionBogorModel.cs">
+    <Compile Include="Models\Checkout\MissedPromotionBogorModel.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="Models\MissedPromotions\MissedPromotionDealModel.cs">
+    <Compile Include="Models\Checkout\MissedPromotionDealModel.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="Models\MissedPromotions\MissedPromotionDeliveryModel.cs">
+    <Compile Include="Models\Checkout\MissedPromotionDeliveryModel.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="Models\MissedPromotions\MissedPromotionIssueCouponCodeModel.cs">
+    <Compile Include="Models\Checkout\MissedPromotionIssueCouponCodeModel.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="Models\MissedPromotions\MissedPromotionIssuePointsModel.cs">
+    <Compile Include="Models\Checkout\MissedPromotionIssuePointsModel.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="Models\MissedPromotions\MissedPromotionProductReductionModel.cs">
+    <Compile Include="Models\Checkout\MissedPromotionProductReductionModel.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="Models\MissedPromotions\MissedPromotionUnknownModel.cs">
+    <Compile Include="Models\Checkout\MissedPromotionUnknownModel.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="Models\MissedPromotions\MissedPromotionBogofModel.cs">
+    <Compile Include="Models\Checkout\MissedPromotionBogofModel.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="Models\MissedPromotions\MissedPromotionBundleModel.cs">
+    <Compile Include="Models\Checkout\MissedPromotionBundleModel.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="Models\MissedPromotions\MissedPromotionBaseModel.cs">
+    <Compile Include="Models\Checkout\MissedPromotionBaseModel.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="Models\MissedPromotions\MissedPromotionFreeProductModel.cs">
+    <Compile Include="Models\Checkout\MissedPromotionFreeProductModel.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="Models\MissedPromotions\MissedPromotionsModel.cs">
+    <Compile Include="Models\Checkout\MissedPromotionsModel.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
     <Compile Include="Models\IssuedCouponsModel.cs">
@@ -196,6 +198,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\Images\default-missedpromotion.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Scripts\promo.onepagecheckout.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Scripts\promo.ajaxcart.js">
@@ -229,16 +234,25 @@
     <None Include="Views\Admin\_ProductAttributesList.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <Content Include="Views\MissedPromotions\DisplayTemplates\MissedPromotionBogofModel.cshtml">
+    <Content Include="Views\Checkout\DisplayTemplates\MissedPromotionBogofModel.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Views\MissedPromotions\DisplayTemplates\MissedPromotionUnknownModel.cshtml">
+    <Content Include="Views\Checkout\DisplayTemplates\MissedPromotionUnknownModel.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <None Include="Views\MissedPromotions\DisplayTemplates\MissedPromotionBogorModel.cshtml">
+    <Content Include="Views\Checkout\PromoCheckoutProgress.cshtml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <None Include="Views\Checkout\OpcMissedPromotions.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="Views\MissedPromotions\MissedPromotions.cshtml">
+    <None Include="Views\Checkout\OnePageCheckout.cshtml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Views\Checkout\DisplayTemplates\MissedPromotionBogorModel.cshtml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Views\Checkout\MissedPromotions.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="Views\Order\Details.cshtml">
@@ -247,7 +261,7 @@
     <None Include="Views\ShoppingCart\IssuedCoupons.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <Content Include="Views\MissedPromotions\MissedPromotionsSummary.cshtml">
+    <Content Include="Views\Checkout\MissedPromotionsSummary.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <None Include="Views\ShoppingCart\OrderSummary.cshtml">
@@ -260,7 +274,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Views\MissedPromotions\" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Libraries\Qixol.Nop.Promo.Core\Qixol.Nop.Promo.Core.csproj">
       <Project>{913636af-4223-4af2-b425-255340ab51f5}</Project>

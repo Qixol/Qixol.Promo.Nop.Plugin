@@ -1,6 +1,6 @@
 ﻿@model MissedPromotionsModel
 
-@using Qixol.Plugin.Misc.Promo.Models.MissedPromotions;
+@using Qixol.Plugin.Misc.Promo.Models.Checkout;
 @using global::Nop.Web.Models.Catalog;
 @using global::Nop.Core.Domain.Tax;
 @using global::Nop.Core;
@@ -13,6 +13,7 @@
     var themeName = EngineContext.Current.Resolve<IThemeContext>().WorkingThemeName;
 
     Html.AppendCssFileParts(string.Format("~/Plugins/Misc.QixolPromo/Themes/{0}/Content/css/styles.css", themeName));
+    Html.AddScriptParts(ResourceLocation.Head, "~/Plugins/Misc.QixolPromo/Scripts/promo.ajaxcart.js");
 
 }
 
@@ -50,9 +51,6 @@
 </style>
 
 <div class="order-summary-content">
-    @*@Html.Widget("order_summary_content_before")*@
-    @*@Html.Partial("_OrderReviewData", Model.OrderReviewData)*@
-    @*we add enctype = "multipart/form-data" because "File upload" attribute control type requires it*@
     <div class="table-wrapper">
         <table class="cart">
             <colgroup>
@@ -71,26 +69,15 @@
                 </tr>
             </thead>
             <tbody>
-                @Html.DisplayFor(mp => Model.MissedPromotions)
+                @if (Model.MissedPromotions.Count == 0)
+                {
+                    <tr><td></td><td>There are no missed promotions</td></tr>
+                }
+                else
+                {
+                    @Html.DisplayFor(mp => Model.MissedPromotions);
+                }
             </tbody>
         </table>
     </div>
-    <div class="cart-footer">
-
-        <div class="totals">
-            @if (true)
-            {
-                <div class="checkout-buttons">
-                    <button type="button" id="checkout" name="checkout" value="checkout" class="button-1 checkout-button" onclick="window.location = '@Html.Action("CheckoutUrl")';">
-                        @T("Checkout.Button")
-                    </button>
-                </div>
-                    <div class="addon-buttons">
-                        @*Payment method buttons (e.g. GoogleCheckoutButton, Paypal Express)*@
-                        @*@Html.Partial("_ButtonPaymentMethod", Model)*@
-                    </div>
-            }
-        </div>
-    </div>
-    @*@Html.Widget("order_summary_content_after")*@
 </div>

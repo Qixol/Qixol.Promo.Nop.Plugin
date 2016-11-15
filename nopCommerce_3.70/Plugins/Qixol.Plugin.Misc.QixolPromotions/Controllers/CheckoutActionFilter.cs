@@ -24,6 +24,7 @@ using System.Web.Routing;
 using Nop.Core.Domain.Shipping;
 using Qixol.Nop.Promo.Core.Domain;
 using Qixol.Nop.Promo.Services.Promo;
+using Qixol.Plugin.Misc.Promo.Models.Checkout;
 
 namespace Qixol.Plugin.Misc.Promo.Controllers
 {
@@ -33,7 +34,8 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
         {
             if (controllerContext.Controller is global::Nop.Web.Controllers.CheckoutController)
             {
-                if (actionDescriptor.ActionName.Equals("OpcSaveShippingMethod", StringComparison.InvariantCultureIgnoreCase)
+                if (actionDescriptor.ActionName.Equals("CheckoutProgress", StringComparison.InvariantCultureIgnoreCase)
+                    || actionDescriptor.ActionName.Equals("OpcSaveShippingMethod", StringComparison.InvariantCultureIgnoreCase)
                     || actionDescriptor.ActionName.Equals("ShippingMethod", StringComparison.InvariantCultureIgnoreCase)
                     || actionDescriptor.ActionName.Equals("Completed", StringComparison.InvariantCultureIgnoreCase))
                 {
@@ -41,6 +43,51 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                 }
             }
             return new List<Filter>();
+        }
+
+        public override void OnActionExecuting(ActionExecutingContext filterContext)
+        {
+            if (filterContext == null || filterContext.HttpContext == null)
+                return;
+
+            HttpRequestBase request = filterContext.HttpContext.Request;
+            if (request == null)
+                return;
+
+            string actionName = filterContext.ActionDescriptor.ActionName;
+            if (String.IsNullOrEmpty(actionName))
+                return;
+
+            string controllerName = filterContext.Controller.ToString();
+            if (String.IsNullOrEmpty(controllerName))
+                return;
+
+            if (!DataSettingsHelper.DatabaseIsInstalled())
+                return;
+
+            var promoSettings = EngineContext.Current.Resolve<PromoSettings>();
+            if (!promoSettings.Enabled)
+                return;
+
+            if (filterContext.Controller is global::Nop.Web.Controllers.CheckoutController)
+            {
+                if (actionName.Equals("CheckoutProgress", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    var step = PromoCheckoutProgressStep.Cart;
+                    if (filterContext.RequestContext.HttpContext.Request.QueryString.AllKeys.Contains("step"))
+                    {
+                        int promoStep = 0;
+                        int.TryParse(filterContext.RequestContext.HttpContext.Request.QueryString["step"].ToString(), out promoStep);
+                        step = (PromoCheckoutProgressStep) promoStep;
+                    }
+                    var promoCheckoutController = EngineContext.Current.Resolve<Qixol.Plugin.Misc.Promo.Controllers.PromoCheckoutController>();
+                    filterContext.Result = promoCheckoutController.PromoCheckoutProgress(step);
+                }
+                else
+                {
+                    base.OnActionExecuting(filterContext);
+                }
+            }
         }
 
         public override void OnActionExecuted(ActionExecutedContext filterContext)

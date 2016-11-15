@@ -1,0 +1,41 @@
+﻿@model MissedPromotionsModel
+
+@{
+    Layout = "~/Views/Shared/_ColumnsOne.cshtml";
+
+    //title
+    Html.AddTitleParts(T("Plugins.Misc.QixolPromo.MissedPromotions.PageTitle").Text);
+
+}
+
+<div class="page checkout-page missed-promotions-page">
+    @Html.Action("PromoCheckoutProgress", "Checkout", new { step = PromoCheckoutProgressStep.MissedPromotions })
+    <div class="page-title">
+        <h1>@T("Plugins.Misc.QixolPromo.MissedPromotions.PageTitle")</h1>
+    </div>
+    <div class="page-body checkout-data">
+        @Html.Partial("MissedPromotionsSummary", Model)
+        <div class="cart-footer">
+
+            <div class="totals">
+                @if (true)
+            {
+                    <div class="checkout-buttons">
+                        <button type="button" id="checkout" name="checkout" value="checkout" class="button-1 checkout-button" onclick="window.location = '@Url.RouteUrl("CheckoutBillingAddress")';">
+                            @T("Checkout.Button")
+                        </button>
+                    </div>
+                    <div class="addon-buttons">
+                        @*Payment method buttons (e.g. GoogleCheckoutButton, Paypal Express)*@
+                        @*@Html.Partial("_ButtonPaymentMethod", Model)*@
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    $(document).ready(function () {
+        promoAjaxCart.init();
+    });
+</script>

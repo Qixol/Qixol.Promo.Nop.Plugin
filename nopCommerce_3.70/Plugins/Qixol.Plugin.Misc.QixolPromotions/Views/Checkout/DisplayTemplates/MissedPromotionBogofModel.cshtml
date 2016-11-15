@@ -1,6 +1,6 @@
 ﻿@model MissedPromotionBogofModel
 
-@using Qixol.Plugin.Misc.Promo.Models.MissedPromotions;
+@using Qixol.Plugin.Misc.Promo.Models.Checkout;
 @using global::Nop.Web.Models.Catalog;
 @using global::Nop.Core.Domain.Orders;
 
@@ -48,7 +48,7 @@
             {
                 <div class="promotion-item">BOGOF</div>
             }
-            @if (Model.AddToCartModel != null)
+            @if (Model.AddToCartModel != null && matchedCartItemModel != null)
             {
                 var dataDictAddToCart = new ViewDataDictionary();
                 dataDictAddToCart.TemplateInfo.HtmlFieldPrefix = string.Format("addtocart_{0}", matchedCartItemModel.Id);

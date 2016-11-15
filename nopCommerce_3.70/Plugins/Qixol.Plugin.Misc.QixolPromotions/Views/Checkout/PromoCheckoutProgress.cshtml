@@ -1,0 +1,66 @@
+﻿@model PromoCheckoutProgressModel
+
+<div class="order-progress">
+    <ul>
+        @Html.Widget("checkout_progress_before")
+        <li class="active-step">
+            <a @(Model.PromoCheckoutProgressStep != PromoCheckoutProgressStep.Complete ?
+                    @Html.Raw(string.Format(" href=\"{0}\"", Url.RouteUrl("ShoppingCart"))) :
+                    null)>@T("Checkout.Progress.Cart")</a>
+        </li>
+        <li @(Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.MissedPromotions || 
+            Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.Address || 
+            Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.Shipping || 
+            Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.Payment || 
+            Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.Confirm || 
+            Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.Complete ? @Html.Raw(" class=\"active-step\"") : @Html.Raw(" class=\"inactive-step\""))>
+            <a @(Model.PromoCheckoutProgressStep != PromoCheckoutProgressStep.Cart && Model.PromoCheckoutProgressStep != PromoCheckoutProgressStep.Complete ?
+                @Html.Raw(string.Format(" href=\"{0}\"", Url.RouteUrl("PromoCheckoutMissedPromotions"))) :
+                null)>@T("Checkout.Progress.MissedPromotions")</a>
+        </li>
+        <li @(Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.Address ||
+            Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.Shipping ||
+            Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.Payment ||
+            Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.Confirm ||
+            Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.Complete ? @Html.Raw(" class=\"active-step\"") : @Html.Raw(" class=\"inactive-step\""))>
+            <a @(Model.PromoCheckoutProgressStep != PromoCheckoutProgressStep.Cart &&
+                Model.PromoCheckoutProgressStep != PromoCheckoutProgressStep.Complete ?
+                    @Html.Raw(string.Format(" href=\"{0}\"", Url.RouteUrl("PromoCheckoutBillingAddress"))) :
+                    null)>@T("Checkout.Progress.Address")</a>
+        </li>
+        <li @(Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.Shipping ||
+            Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.Payment ||
+            Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.Confirm ||
+            Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.Complete ? @Html.Raw(" class=\"active-step\"") : @Html.Raw(" class=\"inactive-step\""))>
+            <a @(Model.PromoCheckoutProgressStep != PromoCheckoutProgressStep.Cart &&
+                Model.PromoCheckoutProgressStep != PromoCheckoutProgressStep.Address &&
+                Model.PromoCheckoutProgressStep != PromoCheckoutProgressStep.Complete ?
+                    @Html.Raw(string.Format(" href=\"{0}\"", Url.RouteUrl("PromoCheckoutShippingMethod"))) :
+                    null)>@T("Checkout.Progress.Shipping")</a>
+        </li>
+        <li @(Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.Payment ||
+            Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.Confirm ||
+            Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.Complete ? @Html.Raw(" class=\"active-step\"") : @Html.Raw(" class=\"inactive-step\""))>
+            <a @(Model.PromoCheckoutProgressStep != PromoCheckoutProgressStep.Cart &&
+                Model.PromoCheckoutProgressStep != PromoCheckoutProgressStep.Address &&
+                Model.PromoCheckoutProgressStep != PromoCheckoutProgressStep.Shipping &&
+                Model.PromoCheckoutProgressStep != PromoCheckoutProgressStep.Complete ?
+                    @Html.Raw(string.Format(" href=\"{0}\"", Url.RouteUrl("CheckoutPaymentMethod"))) :
+                    null)>@T("Checkout.Progress.Payment")</a>
+        </li>
+        <li @(Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.Confirm ||
+            Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.Complete ? @Html.Raw(" class=\"active-step\"") : @Html.Raw(" class=\"inactive-step\""))>
+            <a @(Model.PromoCheckoutProgressStep != PromoCheckoutProgressStep.Cart &&
+                Model.PromoCheckoutProgressStep != PromoCheckoutProgressStep.Address &&
+                Model.PromoCheckoutProgressStep != PromoCheckoutProgressStep.Shipping &&
+                Model.PromoCheckoutProgressStep != PromoCheckoutProgressStep.Payment &&
+                Model.PromoCheckoutProgressStep != PromoCheckoutProgressStep.Complete ?
+                    @Html.Raw(string.Format(" href=\"{0}\"", Url.RouteUrl("CheckoutConfirm"))) :
+                    null)>@T("Checkout.Progress.Confirm")</a>
+        </li>
+        <li @(Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.Complete ? @Html.Raw(" class=\"active-step\"") : @Html.Raw(" class=\"inactive-step\""))>
+            <a>@T("Checkout.Progress.Complete")</a>
+        </li>
+        @Html.Widget("checkout_progress_after")
+    </ul>
+</div>

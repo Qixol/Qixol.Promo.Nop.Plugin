@@ -36,9 +36,8 @@ namespace Qixol.Plugin.Misc.Promo
     {
         public virtual void Register(ContainerBuilder builder, ITypeFinder typeFinder, global::Nop.Core.Configuration.NopConfig config)
         {
-            builder.RegisterType<MissedPromotionsController>().WithParameter(ResolvedParameter.ForNamed<ICacheManager>("nop_cache_static"));
             builder.RegisterType<ShoppingCartController>().WithParameter(ResolvedParameter.ForNamed<ICacheManager>("nop_cache_static"));
-            builder.RegisterType<CheckoutController>().WithParameter(ResolvedParameter.ForNamed<ICacheManager>("nop_cache_static"));
+            builder.RegisterType<PromoCheckoutController>().WithParameter(ResolvedParameter.ForNamed<ICacheManager>("nop_cache_static"));
 
             builder.RegisterType<CheckoutAttributeFormatter>().As<global::Nop.Services.Orders.ICheckoutAttributeFormatter>().InstancePerLifetimeScope();
             builder.RegisterType<promoService>().As<IPromoService>().InstancePerLifetimeScope();

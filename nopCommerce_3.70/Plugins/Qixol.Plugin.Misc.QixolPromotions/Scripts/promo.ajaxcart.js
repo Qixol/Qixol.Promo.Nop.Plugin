@@ -17,7 +17,7 @@ var promoAjaxCart = {
         this.loadWaiting = display;
     },
 
-    //add a product to the cart from the missed promotions page
+    //add a product to the cart from the missed promotions page / panel
     addproducttocart_missedPromotions: function (urladd) {
         if (this.loadWaiting != false) {
             return;

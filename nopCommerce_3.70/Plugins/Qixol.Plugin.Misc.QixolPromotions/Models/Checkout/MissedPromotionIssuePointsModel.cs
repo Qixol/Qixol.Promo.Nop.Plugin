@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Qixol.Plugin.Misc.Promo.Models.MissedPromotions
+namespace Qixol.Plugin.Misc.Promo.Models.Checkout
 {
     public partial class MissedPromotionIssuePointsModel : MissedPromotionBaseModel
     {
