@@ -421,7 +421,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             return model;
         }
 
-        private MissedPromotionBogofModel PrepareMissedPromotionBogofModel(BasketResponseMissedPromotion missedPromo, List<ShoppingCartItem> cart)
+        private MissedPromotionBogofModel PrepareMissedPromotionBogofModel(BasketResponseMissedPromotion missedPromo, List<ShoppingCartItem> cart, BasketResponse basketResponse)
         {
             var missedBogofModel = new MissedPromotionBogofModel()
             {
@@ -430,35 +430,36 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             // TODO: It's a BOGOF - there can be only one...
             foreach (var ci in missedPromo.Criteria.CriteriaItems)
             {
-                foreach (var item in ci.Items)
+                var basketResponseItem = (from bri in basketResponse.Items where bri.Id == ci.Items.FirstOrDefault().MatchedLineIds.FirstOrDefault() select bri).FirstOrDefault();
+                if (basketResponseItem == null)
+                    throw new ArgumentOutOfRangeException("Missed Promotion Matched Item Line not found in basketResponse");
+
+                int originalCartItemId = basketResponseItem.Generated ? basketResponseItem.SplitFromLineId : basketResponseItem.Id;
+                ShoppingCartItem matchedCartItem = (from c in cart where c.Id == originalCartItemId select c).FirstOrDefault();
+                if (matchedCartItem == null)
                 {
-                    item.MatchedLineIds.ForEach(i =>
-                    {
-                        ShoppingCartItem matchedCartItem = (from c in cart where c.Id == i select c).FirstOrDefault();
-                        if (matchedCartItem != null)
-                        {
-                            var cartItemModel = new ShoppingCartModel.ShoppingCartItemModel
-                            {
-                                Id = matchedCartItem.Id,
-                                Sku = matchedCartItem.Product.FormatSku(matchedCartItem.AttributesXml, _productAttributeParser),
-                                ProductId = matchedCartItem.Product.Id,
-                                ProductName = matchedCartItem.Product.GetLocalized(x => x.Name),
-                                ProductSeName = matchedCartItem.Product.GetSeName(),
-                                Quantity = matchedCartItem.Quantity,
-                                AttributeInfo = _productAttributeFormatter.FormatAttributes(matchedCartItem.Product, matchedCartItem.AttributesXml),
-                            };
-                            var shoppingCartController = DependencyResolver.Current.GetService<Qixol.Plugin.Misc.Promo.Controllers.ShoppingCartController>();
-                            cartItemModel.Picture = shoppingCartController.PrepareCartItemPictureModel(matchedCartItem, cartItemModel.ProductName);
-                            missedBogofModel.MatchedCartItemModels.Add(cartItemModel);
-                            missedBogofModel.AddToCartModel = PrepareAddToCartModel(matchedCartItem);
-                        }
-                    });
+                    throw new ArgumentOutOfRangeException("Missed Promotion Matched Item Line not found in cart");
                 }
+
+                var cartItemModel = new ShoppingCartModel.ShoppingCartItemModel
+                {
+                    Id = matchedCartItem.Id,
+                    Sku = matchedCartItem.Product.FormatSku(matchedCartItem.AttributesXml, _productAttributeParser),
+                    ProductId = matchedCartItem.Product.Id,
+                    ProductName = matchedCartItem.Product.GetLocalized(x => x.Name),
+                    ProductSeName = matchedCartItem.Product.GetSeName(),
+                    Quantity = matchedCartItem.Quantity,
+                    AttributeInfo = _productAttributeFormatter.FormatAttributes(matchedCartItem.Product, matchedCartItem.AttributesXml),
+                };
+                var shoppingCartController = DependencyResolver.Current.GetService<Qixol.Plugin.Misc.Promo.Controllers.ShoppingCartController>();
+                cartItemModel.Picture = shoppingCartController.PrepareCartItemPictureModel(matchedCartItem, cartItemModel.ProductName);
+                missedBogofModel.MatchedCartItemModels.Add(cartItemModel);
+                missedBogofModel.AddToCartModel = PrepareAddToCartModel(matchedCartItem);
             }
             return missedBogofModel;
         }
 
-        private MissedPromotionBogorModel PrepareMissedPromotionBogorModel(BasketResponseMissedPromotion missedPromo, List<ShoppingCartItem> cart)
+        private MissedPromotionBogorModel PrepareMissedPromotionBogorModel(BasketResponseMissedPromotion missedPromo, List<ShoppingCartItem> cart, BasketResponse basketResponse)
         {
             var missedBogorModel = new MissedPromotionBogorModel()
             {
@@ -467,30 +468,31 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             // TODO: It's a BOGOR - there can be only one...
             foreach (var ci in missedPromo.Criteria.CriteriaItems)
             {
-                foreach (var item in ci.Items)
+                var basketResponseItem = (from bri in basketResponse.Items where bri.Id == ci.Items.FirstOrDefault().MatchedLineIds.FirstOrDefault() select bri).FirstOrDefault();
+                if (basketResponseItem == null)
+                    throw new ArgumentOutOfRangeException("Missed Promotion Matched Item Line not found in basketResponse");
+
+                int originalCartItemId = basketResponseItem.Generated ? basketResponseItem.SplitFromLineId : basketResponseItem.Id;
+                ShoppingCartItem matchedCartItem = (from c in cart where c.Id == originalCartItemId select c).FirstOrDefault();
+                if (matchedCartItem == null)
                 {
-                    item.MatchedLineIds.ForEach(i =>
-                    {
-                        ShoppingCartItem matchedCartItem = (from c in cart where c.Id == i select c).FirstOrDefault();
-                        if (matchedCartItem != null)
-                        {
-                            var cartItemModel = new ShoppingCartModel.ShoppingCartItemModel
-                            {
-                                Id = matchedCartItem.Id,
-                                Sku = matchedCartItem.Product.FormatSku(matchedCartItem.AttributesXml, _productAttributeParser),
-                                ProductId = matchedCartItem.Product.Id,
-                                ProductName = matchedCartItem.Product.GetLocalized(x => x.Name),
-                                ProductSeName = matchedCartItem.Product.GetSeName(),
-                                Quantity = matchedCartItem.Quantity,
-                                AttributeInfo = _productAttributeFormatter.FormatAttributes(matchedCartItem.Product, matchedCartItem.AttributesXml),
-                            };
-                            var shoppingCartController = DependencyResolver.Current.GetService<Qixol.Plugin.Misc.Promo.Controllers.ShoppingCartController>();
-                            cartItemModel.Picture = shoppingCartController.PrepareCartItemPictureModel(matchedCartItem, cartItemModel.ProductName);
-                            missedBogorModel.MatchedCartItemModels.Add(cartItemModel);
-                            missedBogorModel.AddToCartModel = PrepareAddToCartModel(matchedCartItem);
-                        }
-                    });
+                    throw new ArgumentOutOfRangeException("Missed Promotion Matched Item Line not found in cart");
                 }
+
+                var cartItemModel = new ShoppingCartModel.ShoppingCartItemModel
+                {
+                    Id = matchedCartItem.Id,
+                    Sku = matchedCartItem.Product.FormatSku(matchedCartItem.AttributesXml, _productAttributeParser),
+                    ProductId = matchedCartItem.Product.Id,
+                    ProductName = matchedCartItem.Product.GetLocalized(x => x.Name),
+                    ProductSeName = matchedCartItem.Product.GetSeName(),
+                    Quantity = matchedCartItem.Quantity,
+                    AttributeInfo = _productAttributeFormatter.FormatAttributes(matchedCartItem.Product, matchedCartItem.AttributesXml),
+                };
+                var shoppingCartController = DependencyResolver.Current.GetService<Qixol.Plugin.Misc.Promo.Controllers.ShoppingCartController>();
+                cartItemModel.Picture = shoppingCartController.PrepareCartItemPictureModel(matchedCartItem, cartItemModel.ProductName);
+                missedBogorModel.MatchedCartItemModels.Add(cartItemModel);
+                missedBogorModel.AddToCartModel = PrepareAddToCartModel(matchedCartItem);
             }
 
             return missedBogorModel;
@@ -576,10 +578,10 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                 switch (missedPromo.PromotionType)
                 {
                     case MissedPromotionsModel.PromotionTypeSystemName.BuyOneGetOneFree:
-                        model.MissedPromotions.Add(PrepareMissedPromotionBogofModel(missedPromo, cart));
+                        model.MissedPromotions.Add(PrepareMissedPromotionBogofModel(missedPromo, cart, basketResponse));
                         break;
                     case MissedPromotionsModel.PromotionTypeSystemName.BuyOneGetOneReduced:
-                        model.MissedPromotions.Add(PrepareMissedPromotionBogorModel(missedPromo, cart));
+                        model.MissedPromotions.Add(PrepareMissedPromotionBogorModel(missedPromo, cart, basketResponse));
                         break;
                     default:
                         model.MissedPromotions.Add(PrepareMissedPromotionUnknownModel(missedPromo, cart));
