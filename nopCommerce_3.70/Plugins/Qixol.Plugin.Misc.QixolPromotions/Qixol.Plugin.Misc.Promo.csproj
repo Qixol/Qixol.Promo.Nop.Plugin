@@ -77,7 +77,7 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="Qixol.Promo.Integration.Lib, Version=2.0.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Qixol.Promo.Integration.Lib.2.0.1.7-alpha\lib\net45\Qixol.Promo.Integration.Lib.dll</HintPath>
+      <HintPath>..\..\packages\Qixol.Promo.Integration.Lib.2.0.2\lib\net45\Qixol.Promo.Integration.Lib.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -240,7 +240,7 @@
     <Content Include="Views\Checkout\DisplayTemplates\MissedPromotionUnknownModel.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Views\Checkout\PromoCheckoutProgress.cshtml">
+    <Content Include="Views\Checkout\CheckoutProgress.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <None Include="Views\Checkout\OpcMissedPromotions.cshtml">

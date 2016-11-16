@@ -60,8 +60,8 @@
                         MissedPromotions.init('#co-missed-promotions-form', '@Url.RouteUrl("PromoContinueShopping")');
                     </script>
                     <div class="buttons" id="missed-promotions-buttons-container">
-                        <input type="button" name="continueshopping" value="@T("ShoppingCart.ContinueShopping")" onclick="MissedPromotions.continueShopping();" class="button-1 continue-shopping-button" />
-                        <input type="button" title="@T("Common.Continue")" class="button-1 missed-promotions-next-step-button" onclick="MissedPromotions.next();" style="width: 221px;" value="@T("Common.Continue")" />
+                        <input type="button" title="@T("ShoppingCart.ContinueShopping")" value="@T("ShoppingCart.ContinueShopping")" onclick="MissedPromotions.continueShopping();" class="button-1 continue-shopping-button" />
+                        <input type="button" title="@T("Plugins.Misc.QixolPromo.ContinueCheckout")" class="button-1 missed-promotions-next-step-button" onclick="MissedPromotions.next();" style="width: 221px;" value="@T("Plugins.Misc.QixolPromo.ContinueCheckout")" />
                         <span class="please-wait" id="missed-promotions-please-wait" style="display: none;">@T("Common.LoadingNextStep")</span>
                     </div>
                 </div>

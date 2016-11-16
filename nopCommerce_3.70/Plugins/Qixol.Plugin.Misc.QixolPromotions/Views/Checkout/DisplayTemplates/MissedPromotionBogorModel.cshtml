@@ -41,7 +41,7 @@
         {
             var dataDictAddToCart = new ViewDataDictionary();
             dataDictAddToCart.TemplateInfo.HtmlFieldPrefix = string.Format("addtocart_{0}", matchedCartItemModel.Id);
-            <div class="add-to-cart-panel">
+            <div class="add-to-cart-panel" style="float: right;">
                 <script type="text/javascript">
                     function addToCart_@(matchedCartItemModel.ProductId)() {
                         promoAjaxCart.addproducttocart_missedPromotions('@Url.RouteUrl("AddProductToCart-Details", new { productId = matchedCartItemModel.ProductId, shoppingCartTypeId = (int)ShoppingCartType.ShoppingCart })');

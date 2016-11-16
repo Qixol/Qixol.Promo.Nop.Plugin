@@ -9,28 +9,25 @@
 }
 
 <div class="page checkout-page missed-promotions-page">
-    @Html.Action("PromoCheckoutProgress", "Checkout", new { step = PromoCheckoutProgressStep.MissedPromotions })
+    @Html.Action("PromoCheckoutProgress", "PromoCheckout", new { step = PromoCheckoutProgressStep.MissedPromotions })
     <div class="page-title">
         <h1>@T("Plugins.Misc.QixolPromo.MissedPromotions.PageTitle")</h1>
     </div>
     <div class="page-body checkout-data">
-        @Html.Partial("MissedPromotionsSummary", Model)
-        <div class="cart-footer">
-
-            <div class="totals">
-                @if (true)
+        <div class="section missed-promotions">
+            @Html.Partial("MissedPromotionsSummary", Model)
+        </div>
+        @if (true)
             {
-                    <div class="checkout-buttons">
-                        <button type="button" id="checkout" name="checkout" value="checkout" class="button-1 checkout-button" onclick="window.location = '@Url.RouteUrl("CheckoutBillingAddress")';">
-                            @T("Checkout.Button")
-                        </button>
-                    </div>
-                    <div class="addon-buttons">
-                        @*Payment method buttons (e.g. GoogleCheckoutButton, Paypal Express)*@
-                        @*@Html.Partial("_ButtonPaymentMethod", Model)*@
-                    </div>
-                }
+                <div class="buttons">
+                    <input type="button" name="nextstep" value="@T("Checkout.NextButton")" class="button-1 missed-promotions-next-step-button" onclick="window.location='@Url.RouteUrl("CheckoutBillingAddress")';" />
+                </div>
+            }
+        <div class="section order-summary">
+            <div class="title">
+                <strong>@T("Checkout.OrderSummary")</strong>
             </div>
+            @Html.Action("OrderSummary", "ShoppingCart")
         </div>
     </div>
 </div>

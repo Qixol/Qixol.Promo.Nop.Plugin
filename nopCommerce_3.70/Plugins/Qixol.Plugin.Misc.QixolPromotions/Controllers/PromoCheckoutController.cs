@@ -261,7 +261,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
         public ActionResult PromoCheckoutProgress(PromoCheckoutProgressStep step)
         {
             var model = new Models.Checkout.PromoCheckoutProgressModel { PromoCheckoutProgressStep = step };
-            return PartialView(model);
+            return PartialView("CheckoutProgress", model);
         }
 
         [NonAction]

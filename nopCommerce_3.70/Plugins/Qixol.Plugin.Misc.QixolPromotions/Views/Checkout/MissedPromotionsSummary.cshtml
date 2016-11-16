@@ -50,34 +50,32 @@
         }
 </style>
 
-<div class="order-summary-content">
-    <div class="table-wrapper">
-        <table class="cart">
-            <colgroup>
-                <col width="1" />
-                <col />
-                <col width="1" />
-            </colgroup>
-            <thead>
-                <tr>
-                    <th class="product-picture">
-                        @T("ShoppingCart.Image")
-                    </th>
-                    <th class="product">
-                        @T("Plugins.Misc.QixolPromo.MissedPromotion(s)")
-                    </th>
-                </tr>
-            </thead>
-            <tbody>
-                @if (Model.MissedPromotions.Count == 0)
-                {
-                    <tr><td></td><td>There are no missed promotions</td></tr>
-                }
-                else
-                {
-                    @Html.DisplayFor(mp => Model.MissedPromotions);
-                }
-            </tbody>
-        </table>
-    </div>
+<div class="table-wrapper">
+    <table class="cart">
+        <colgroup>
+            <col width="1" />
+            <col />
+            <col width="1" />
+        </colgroup>
+        <thead>
+            <tr>
+                <th class="product-picture">
+                    @T("ShoppingCart.Image")
+                </th>
+                <th class="product">
+                    @T("Plugins.Misc.QixolPromo.MissedPromotion(s)")
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.MissedPromotions.Count == 0)
+            {
+                <tr><td></td><td>There are no missed promotions</td></tr>
+            }
+            else
+            {
+                @Html.DisplayFor(mp => Model.MissedPromotions);
+            }
+        </tbody>
+    </table>
 </div>

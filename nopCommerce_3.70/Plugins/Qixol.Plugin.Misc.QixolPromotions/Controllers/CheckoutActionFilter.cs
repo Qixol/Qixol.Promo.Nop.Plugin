@@ -69,24 +69,24 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             if (!promoSettings.Enabled)
                 return;
 
-            if (filterContext.Controller is global::Nop.Web.Controllers.CheckoutController)
+            if (actionName.Equals("CheckoutProgress", StringComparison.InvariantCultureIgnoreCase))
             {
-                if (actionName.Equals("CheckoutProgress", StringComparison.InvariantCultureIgnoreCase))
+                PromoCheckoutProgressStep checkoutProgressStep = PromoCheckoutProgressStep.Cart;
+                if (filterContext.ActionParameters.ContainsKey("step"))
                 {
-                    var step = PromoCheckoutProgressStep.Cart;
-                    if (filterContext.RequestContext.HttpContext.Request.QueryString.AllKeys.Contains("step"))
-                    {
-                        int promoStep = 0;
-                        int.TryParse(filterContext.RequestContext.HttpContext.Request.QueryString["step"].ToString(), out promoStep);
-                        step = (PromoCheckoutProgressStep) promoStep;
-                    }
-                    var promoCheckoutController = EngineContext.Current.Resolve<Qixol.Plugin.Misc.Promo.Controllers.PromoCheckoutController>();
-                    filterContext.Result = promoCheckoutController.PromoCheckoutProgress(step);
+                    string stepEnum = filterContext.ActionParameters["step"].ToString();
+                    checkoutProgressStep = (PromoCheckoutProgressStep) Enum.Parse(typeof(PromoCheckoutProgressStep), stepEnum, true);
                 }
-                else
-                {
-                    base.OnActionExecuting(filterContext);
-                }
+                var rvd = new RouteValueDictionary()
+                    { {
+                        "step", checkoutProgressStep
+                    }};
+                var promoCheckoutController = EngineContext.Current.Resolve<Qixol.Plugin.Misc.Promo.Controllers.PromoCheckoutController>();
+                filterContext.Result = promoCheckoutController.PromoCheckoutProgress(checkoutProgressStep);
+            }
+            else
+            {
+                base.OnActionExecuting(filterContext);
             }
         }
 
