@@ -132,6 +132,7 @@
     <Compile Include="Consumers\StoreEventConsumer.cs" />
     <Compile Include="Controllers\BaseActionFilter.cs" />
     <Compile Include="Controllers\PromoCheckoutController.cs" />
+    <Compile Include="Controllers\CheckoutController.cs" />
     <Compile Include="Controllers\PromoCouponController.cs" />
     <Compile Include="Controllers\ShoppingCartController.cs" />
     <Compile Include="Controllers\PromoOrderController.cs" />
@@ -142,6 +143,9 @@
     <Compile Include="Controllers\ShoppingCartActionFilter.cs" />
     <Compile Include="DependencyRegistrar.cs" />
     <Compile Include="Extensions\MappingExtensions\ProductAttributeConfigItemExtensions.cs" />
+    <Compile Include="Models\Checkout\PromoOnePageCheckoutModel.cs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Compile>
     <Compile Include="Models\Checkout\PromoCheckoutProgressModel.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>

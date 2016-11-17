@@ -1,4 +1,4 @@
-﻿@model OnePageCheckoutModel
+﻿@model PromoOnePageCheckoutModel
 @using Nop.Web.Models.Checkout;
 @using Nop.Core.Infrastructure;
 @{
@@ -22,6 +22,15 @@
     int paymentMethodStepNumber = 5;
     int paymentInfoStepNumber = 6;
     int confirmOrderStepNumber = 7;
+    if (!Model.ShowMissedPromotions)
+    {
+        billingAddressStepNumber--;
+        shippingAddressStepNumber--;
+        shippingMethodStepNumber--;
+        paymentMethodStepNumber--;
+        paymentInfoStepNumber--;
+        confirmOrderStepNumber--;
+    }
     if (!Model.ShippingRequired)
     {
         paymentMethodStepNumber = paymentMethodStepNumber - 2;
@@ -57,7 +66,7 @@
                         </div>
                     </form>
                     <script type="text/javascript">
-                        MissedPromotions.init('#co-missed-promotions-form', '@Url.RouteUrl("PromoContinueShopping")');
+                        MissedPromotions.init('#co-missed-promotions-form', '@Url.RouteUrl("PromoContinueShopping")', @Model.ShowMissedPromotions.ToString().ToLower());
                     </script>
                     <div class="buttons" id="missed-promotions-buttons-container">
                         <input type="button" title="@T("ShoppingCart.ContinueShopping")" value="@T("ShoppingCart.ContinueShopping")" onclick="MissedPromotions.continueShopping();" class="button-1 continue-shopping-button" />
@@ -220,6 +229,11 @@
         Accordion.closeSection('#opc-billing');
         Accordion.openSection('#opc-missed-promotions');
         Checkout.init('@(storeLocation)cart/');
+        if (!MissedPromotions.showMissedPromotionsStep)
+        {
+            Accordion.hideSection("#opc-missed-promotions");
+            MissedPromotions.next();
+        }
         if (Billing.disableBillingAddressCheckoutStep)
         {
             Accordion.hideSection('#opc-billing');

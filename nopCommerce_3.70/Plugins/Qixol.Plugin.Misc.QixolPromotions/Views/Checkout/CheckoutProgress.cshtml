@@ -8,16 +8,19 @@
                     @Html.Raw(string.Format(" href=\"{0}\"", Url.RouteUrl("ShoppingCart"))) :
                     null)>@T("Checkout.Progress.Cart")</a>
         </li>
-        <li @(Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.MissedPromotions || 
-            Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.Address || 
-            Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.Shipping || 
-            Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.Payment || 
-            Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.Confirm || 
-            Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.Complete ? @Html.Raw(" class=\"active-step\"") : @Html.Raw(" class=\"inactive-step\""))>
+        @if (Model.ShowMissedPromotions)
+        {
+        <li @(Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.MissedPromotions ||
+                Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.Address ||
+                Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.Shipping ||
+                Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.Payment ||
+                Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.Confirm ||
+                Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.Complete ? @Html.Raw(" class=\"active-step\"") : @Html.Raw(" class=\"inactive-step\""))>
             <a @(Model.PromoCheckoutProgressStep != PromoCheckoutProgressStep.Cart && Model.PromoCheckoutProgressStep != PromoCheckoutProgressStep.Complete ?
-                @Html.Raw(string.Format(" href=\"{0}\"", Url.RouteUrl("PromoCheckoutMissedPromotions"))) :
-                null)>@T("Plugins.Misc.QixolPromo.MissedPromotion(s)")</a>
+                 @Html.Raw(string.Format(" href=\"{0}\"", Url.RouteUrl("PromoCheckoutMissedPromotions"))) :
+                 null)>@T("Plugins.Misc.QixolPromo.MissedPromotion(s)")</a>
         </li>
+        }
         <li @(Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.Address ||
             Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.Shipping ||
             Model.PromoCheckoutProgressStep == PromoCheckoutProgressStep.Payment ||

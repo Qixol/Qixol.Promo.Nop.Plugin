@@ -1,10 +1,12 @@
 ﻿var MissedPromotions = {
     form: false,
     continueShoppingUrl: '',
+    showMissedPromotionsStep: true,
 
-    init: function (form, continueShoppingUrl) {
+    init: function (form, continueShoppingUrl, showMissedPromotionsStep) {
         this.form = form,
-        this.continueShoppingUrl = continueShoppingUrl
+        this.continueShoppingUrl = continueShoppingUrl,
+        this.showMissedPromotionsStep = showMissedPromotionsStep
     },
 
     continueShopping: function() {
@@ -19,7 +21,6 @@
     },
 
     success_process: function (response) {
-        console.log(response);
         window.location = response.continue_shopping_url;
     },
 

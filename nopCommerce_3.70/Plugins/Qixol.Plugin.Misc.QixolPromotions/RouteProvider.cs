@@ -39,7 +39,7 @@ namespace Qixol.Plugin.Misc.Promo
 
             routes.MapRoute("PromoContinueShopping",
                 "checkout/continueshopping",
-                new { controller = "PromoCheckout", action = "ContinueShopping" },
+                new { controller = "Checkout", action = "ContinueShopping" },
                 new[] { "Qixol.Plugin.Misc.Promo.Controllers" }
                 );
 
@@ -61,7 +61,7 @@ namespace Qixol.Plugin.Misc.Promo
 
             var promosCheckoutShippingMethodRoute = routes.MapRoute("PromoCheckoutShippingMethod",
                     "checkout/shippingmethod",
-                    new { controller = "PromoCheckout", action = "ShippingMethod" },
+                    new { controller = "Checkout", action = "ShippingMethod" },
                     new[] { "Qixol.Plugin.Misc.Promo.Controllers" }
                     );
             routes.Remove(promosCheckoutShippingMethodRoute);
@@ -69,7 +69,7 @@ namespace Qixol.Plugin.Misc.Promo
 
             var promosCheckoutOpcSaveShippingRoute = routes.MapRoute("PromoCheckoutOpcSaveShipping",
                     "checkout/OpcSaveShipping",
-                    new { controller = "PromoCheckout", action = "OpcSaveShipping" },
+                    new { controller = "Checkout", action = "OpcSaveShipping" },
                     new[] { "Qixol.Plugin.Misc.Promo.Controllers" }
                     );
             routes.Remove(promosCheckoutOpcSaveShippingRoute);
@@ -77,7 +77,7 @@ namespace Qixol.Plugin.Misc.Promo
 
             var promosCheckoutOnePageRoute = routes.MapRoute("PromoCheckoutOnePage",
                     "onepagecheckout/",
-                    new { controller = "PromoCheckout", action = "PromoOnePageCheckout" },
+                    new { controller = "Checkout", action = "PromoOnePageCheckout" },
                     new[] { "Qixol.Plugin.Misc.Promo.Controllers" }
                     );
             //routes.Remove(promosCheckoutOnePageRoute);

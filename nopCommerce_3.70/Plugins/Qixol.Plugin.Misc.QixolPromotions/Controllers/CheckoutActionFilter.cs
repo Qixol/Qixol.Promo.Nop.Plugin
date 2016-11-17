@@ -66,23 +66,20 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                 return;
 
             var promoSettings = EngineContext.Current.Resolve<PromoSettings>();
-            if (!promoSettings.Enabled)
-                return;
 
             if (actionName.Equals("CheckoutProgress", StringComparison.InvariantCultureIgnoreCase))
             {
                 PromoCheckoutProgressStep checkoutProgressStep = PromoCheckoutProgressStep.Cart;
-                if (filterContext.ActionParameters.ContainsKey("step"))
+                if (filterContext.ActionParameters.ContainsKey("step") && filterContext.ActionParameters["step"] != null)
                 {
                     string stepEnum = filterContext.ActionParameters["step"].ToString();
                     checkoutProgressStep = (PromoCheckoutProgressStep) Enum.Parse(typeof(PromoCheckoutProgressStep), stepEnum, true);
                 }
-                var rvd = new RouteValueDictionary()
-                    { {
-                        "step", checkoutProgressStep
-                    }};
+
+                bool showMissedPromotions = promoSettings.Enabled && promoSettings.ShowMissedPromotions;
+
                 var promoCheckoutController = EngineContext.Current.Resolve<Qixol.Plugin.Misc.Promo.Controllers.PromoCheckoutController>();
-                filterContext.Result = promoCheckoutController.PromoCheckoutProgress(checkoutProgressStep);
+                filterContext.Result = promoCheckoutController.PromoCheckoutProgress(checkoutProgressStep, showMissedPromotions);
             }
             else
             {

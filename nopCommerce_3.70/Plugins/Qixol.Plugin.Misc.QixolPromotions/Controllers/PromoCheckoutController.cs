@@ -180,6 +180,8 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
 
         #endregion
 
+        #region public action methods
+
         public ActionResult PromoIndex()
         {
             var cart = _workContext.CurrentCustomer.ShoppingCartItems
@@ -195,74 +197,108 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             //reset checkout data
             _customerService.ResetCheckoutData(_workContext.CurrentCustomer, _storeContext.CurrentStore.Id);
 
-            if (_orderSettings.OnePageCheckoutEnabled)
-                return RedirectToRoute("PromoCheckoutOnePage");
-
-            //validation (cart)
-            var checkoutAttributesXml = _workContext.CurrentCustomer.GetAttribute<string>(SystemCustomerAttributeNames.CheckoutAttributes, _genericAttributeService, _storeContext.CurrentStore.Id);
-            //var scWarnings = _shoppingCartService.GetShoppingCartWarnings(cart, checkoutAttributesXml, true);
-            var scPromoWarnings = _promoService.ProcessShoppingCart(true);
-            if (scPromoWarnings.Count > 0)
-                return RedirectToRoute("ShoppingCart");
-
-            // TODO: Native nop cart validation - is this still required?
-            var scWarnings = _shoppingCartService.GetShoppingCartWarnings(cart, checkoutAttributesXml, true);
-            if (scWarnings.Count > 0)
-                return RedirectToRoute("ShoppingCart");
-            //validation (each shopping cart item)
-            foreach (ShoppingCartItem sci in cart)
+            if (!_promoSettings.Enabled || !_promoSettings.ShowMissedPromotions)
             {
-                var sciWarnings = _shoppingCartService.GetShoppingCartItemWarnings(_workContext.CurrentCustomer,
-                    sci.ShoppingCartType,
-                    sci.Product,
-                    sci.StoreId,
-                    sci.AttributesXml,
-                    sci.CustomerEnteredPrice,
-                    sci.RentalStartDateUtc,
-                    sci.RentalEndDateUtc,
-                    sci.Quantity,
-                    false);
-                if (sciWarnings.Count > 0)
-                    return RedirectToRoute("ShoppingCart");
+                if (_orderSettings.OnePageCheckoutEnabled)
+                {
+                    return RedirectToRoute("CheckoutOnePage");
+                }
+                else
+                {
+                    return RedirectToRoute("CheckoutBillingAddress");
+                }
+            }
+            else
+            {
+                if (_orderSettings.OnePageCheckoutEnabled)
+                {
+                    return RedirectToRoute("PromoCheckoutOnePage");
+                }
+                else
+                {
+                    return RedirectToRoute("PromoCheckoutMissedPromotions");
+                }
             }
 
-            return RedirectToRoute("PromoCheckoutMissedPromotions");
+            ////validation (cart)
+            //var checkoutAttributesXml = _workContext.CurrentCustomer.GetAttribute<string>(SystemCustomerAttributeNames.CheckoutAttributes, _genericAttributeService, _storeContext.CurrentStore.Id);
+            ////var scWarnings = _shoppingCartService.GetShoppingCartWarnings(cart, checkoutAttributesXml, true);
+            //var scPromoWarnings = _promoService.ProcessShoppingCart(true);
+            //if (scPromoWarnings.Count > 0)
+            //    return RedirectToRoute("ShoppingCart");
+
+            //// TODO: Native nop cart validation - is this still required?
+            //var scWarnings = _shoppingCartService.GetShoppingCartWarnings(cart, checkoutAttributesXml, true);
+            //if (scWarnings.Count > 0)
+            //    return RedirectToRoute("ShoppingCart");
+            ////validation (each shopping cart item)
+            //foreach (ShoppingCartItem sci in cart)
+            //{
+            //    var sciWarnings = _shoppingCartService.GetShoppingCartItemWarnings(_workContext.CurrentCustomer,
+            //        sci.ShoppingCartType,
+            //        sci.Product,
+            //        sci.StoreId,
+            //        sci.AttributesXml,
+            //        sci.CustomerEnteredPrice,
+            //        sci.RentalStartDateUtc,
+            //        sci.RentalEndDateUtc,
+            //        sci.Quantity,
+            //        false);
+            //    if (sciWarnings.Count > 0)
+            //        return RedirectToRoute("ShoppingCart");
+            //}
+
+            //return RedirectToRoute("PromoCheckoutMissedPromotions");
         }
 
-        public ActionResult PromoOnePageCheckout()
+        public ActionResult MissedPromotions()
         {
-            //validation
             var cart = _workContext.CurrentCustomer.ShoppingCartItems
                 .Where(sci => sci.ShoppingCartType == ShoppingCartType.ShoppingCart)
                 .LimitPerStore(_storeContext.CurrentStore.Id)
                 .ToList();
+
             if (cart.Count == 0)
                 return RedirectToRoute("ShoppingCart");
 
-            if (!_orderSettings.OnePageCheckoutEnabled)
-                return RedirectToRoute("Checkout");
+            if (_orderSettings.OnePageCheckoutEnabled)
+                return RedirectToRoute("CheckoutOnePage");
+
+            if (!_promoSettings.Enabled || !_promoSettings.ShowMissedPromotions)
+                return RedirectToRoute("CheckoutBillingAddress");
 
             if ((_workContext.CurrentCustomer.IsGuest() && !_orderSettings.AnonymousCheckoutAllowed))
                 return new HttpUnauthorizedResult();
 
-            var scPromoWarnings = _promoService.ProcessShoppingCart(true);
-            if (scPromoWarnings.Count > 0)
+            var scWarnings = _promoService.ProcessShoppingCart(true);
+            if (scWarnings.Count > 0)
                 return RedirectToRoute("ShoppingCart");
 
-            var model = new OnePageCheckoutModel
-            {
-                ShippingRequired = cart.RequiresShipping(),
-                DisableBillingAddressCheckoutStep = _orderSettings.DisableBillingAddressCheckoutStep
-            };
-            return View("OnePageCheckout", model);
+            var model = PrepareMissedPromotionsModel();
+
+            if (model == null || model.MissedPromotions.Count == 0)
+                return RedirectToRoute("CheckoutBillingAddress");
+
+            return View(model);
         }
 
         [ChildActionOnly]
-        public ActionResult PromoCheckoutProgress(PromoCheckoutProgressStep step)
+        public ActionResult PromoCheckoutProgress(PromoCheckoutProgressStep step, bool showMissedPromotions)
         {
-            var model = new Models.Checkout.PromoCheckoutProgressModel { PromoCheckoutProgressStep = step };
+            var model = new Models.Checkout.PromoCheckoutProgressModel { PromoCheckoutProgressStep = step,  ShowMissedPromotions = showMissedPromotions };
             return PartialView("CheckoutProgress", model);
         }
+
+        [ChildActionOnly]
+        public ActionResult OpcMissedPromotionsForm()
+        {
+            var missedPromotionsModel = PrepareMissedPromotionsModel();
+            return PartialView("OpcMissedPromotions", missedPromotionsModel);
+        }
+
+        #endregion
+
+        #region Utilities
 
         [NonAction]
         protected override CheckoutShippingMethodModel PrepareShippingMethodModel(IList<ShoppingCartItem> cart, Address shippingAddress)
@@ -305,7 +341,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                         var deliveryPromo = basketResponse.DeliveryPromo();
                         if (deliveryPromo != null)
                         {
-                            shippingTotal = basketResponse.DeliveryPrice; 
+                            shippingTotal = basketResponse.DeliveryPrice;
                         }
                     }
 
@@ -357,7 +393,6 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
 
             return model;
         }
-        #region Utilities
 
         // TODO: code copied from Product controller, PrepareProductDetailsPageModel method...
         private ProductDetailsModel.AddToCartModel PrepareAddToCartModel(ShoppingCartItem matchedCartItem)
@@ -507,45 +542,6 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                 SaveFrom = missedPromo.Action.SaveFrom > decimal.Zero ? _priceFormatter.FormatPrice(missedPromo.Action.SaveFrom) : string.Empty
             };
             return missedUnknownPromo;
-        }
-
-        #endregion
-
-        #region Missed Promotions
-
-        public ActionResult MissedPromotions()
-        {
-            var cart = _workContext.CurrentCustomer.ShoppingCartItems
-                .Where(sci => sci.ShoppingCartType == ShoppingCartType.ShoppingCart)
-                .LimitPerStore(_storeContext.CurrentStore.Id)
-                .ToList();
-
-            if (cart.Count == 0)
-                return RedirectToRoute("ShoppingCart");
-
-            if (_orderSettings.OnePageCheckoutEnabled)
-                return RedirectToRoute("CheckoutOnePage");
-
-            if ((_workContext.CurrentCustomer.IsGuest() && !_orderSettings.AnonymousCheckoutAllowed))
-                return new HttpUnauthorizedResult();
-
-            var scWarnings = _promoService.ProcessShoppingCart(true);
-            if (scWarnings.Count > 0)
-                return RedirectToRoute("ShoppingCart");
-
-            var model = PrepareMissedPromotionsModel();
-
-            if (model == null || model.MissedPromotions.Count == 0)
-                return RedirectToRoute("CheckoutBillingAddress");
-
-            return View(model);
-        }
-
-        [ChildActionOnly]
-        public ActionResult OpcMissedPromotionsForm()
-        {
-            var missedPromotionsModel = PrepareMissedPromotionsModel();
-            return PartialView("OpcMissedPromotions", missedPromotionsModel);
         }
 
         private MissedPromotionsModel PrepareMissedPromotionsModel()

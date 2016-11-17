@@ -9,7 +9,7 @@
 }
 
 <div class="page checkout-page missed-promotions-page">
-    @Html.Action("PromoCheckoutProgress", "PromoCheckout", new { step = PromoCheckoutProgressStep.MissedPromotions })
+    @Html.Action("PromoCheckoutProgress", "PromoCheckout", new { step = PromoCheckoutProgressStep.MissedPromotions, ShowMissedPromotions = true })
     <div class="page-title">
         <h1>@T("Plugins.Misc.QixolPromo.MissedPromotions.PageTitle")</h1>
     </div>
@@ -20,7 +20,8 @@
         @if (true)
             {
                 <div class="buttons">
-                    <input type="button" name="nextstep" value="@T("Checkout.NextButton")" class="button-1 missed-promotions-next-step-button" onclick="window.location='@Url.RouteUrl("CheckoutBillingAddress")';" />
+                    <input type="button" title="@T("ShoppingCart.ContinueShopping")" value="@T("ShoppingCart.ContinueShopping")" onclick="continueShopping();" class="button-1 continue-shopping-button" />
+                    <input type="button" name="nextstep" value="@T("Checkout.NextButton")" class="button-1 missed-promotions-next-step-button" style="width: 221px;" onclick="window.location='@Url.RouteUrl("CheckoutBillingAddress")';" />
                 </div>
             }
         <div class="section order-summary">
@@ -35,4 +36,16 @@
     $(document).ready(function () {
         promoAjaxCart.init();
     });
+
+    function continueShopping() {
+        $.ajax({
+            cache: false,
+            url: '@Url.RouteUrl("PromoContinueShopping")',
+            type: 'post',
+            success: function(response) { window.location = response.continue_shopping_url; },
+            complete: function() { window.location = '@Url.RouteUrl("HomePage")'},
+            error: function () { window.location = '@Url.RouteUrl("HomePage")' }
+        });
+    }
+
 </script>
