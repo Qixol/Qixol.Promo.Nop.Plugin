@@ -1,10 +1,8 @@
 ﻿var MissedPromotions = {
-    form: false,
     continueShoppingUrl: '',
     showMissedPromotionsStep: true,
 
-    init: function (form, continueShoppingUrl, showMissedPromotionsStep) {
-        this.form = form,
+    init: function (continueShoppingUrl, showMissedPromotionsStep) {
         this.continueShoppingUrl = continueShoppingUrl,
         this.showMissedPromotionsStep = showMissedPromotionsStep
     },

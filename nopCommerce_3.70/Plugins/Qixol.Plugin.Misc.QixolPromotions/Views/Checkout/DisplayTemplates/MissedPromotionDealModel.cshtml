@@ -1,0 +1,96 @@
+﻿@model MissedPromotionDealModel
+
+@using Qixol.Plugin.Misc.Promo.Models.Checkout;
+@using global::Nop.Web.Models.Catalog;
+@using global::Nop.Core.Domain.Orders;
+@using global::Nop.Web.Models.Media;
+
+@{
+    Layout = null;
+}
+<style>
+    .product.missed-promotion .add-to-cart-button {
+        min-width: 160px;
+        border: none;
+        background-color: #4ab2f1;
+        padding: 10px 20px;
+        font-size: 16px;
+        color: #fff;
+        text-transform: uppercase;
+    }
+</style>
+<tr>
+    <td class="product-picture">
+        @{
+            var matchedCartItemModel = Model.MatchedCartItemModels.FirstOrDefault();
+            if (matchedCartItemModel != null)
+            {
+                <div><a href="@Url.RouteUrl("Product", new { SeName = matchedCartItemModel.ProductSeName })"><img alt="@matchedCartItemModel.Picture.AlternateText" src="@matchedCartItemModel.Picture.ImageUrl" title="@matchedCartItemModel.Picture.Title" /></a></div>
+            }
+        }
+    </td>
+    <td class="product missed-promotion">
+        <div style="display: inline-block; width: 100%;">
+            @if (matchedCartItemModel != null)
+            {
+                <a href="@Url.RouteUrl("Product", new { SeName = matchedCartItemModel.ProductSeName })" class="product-name">@matchedCartItemModel.ProductName</a>
+                if (!String.IsNullOrEmpty(matchedCartItemModel.AttributeInfo))
+                {
+                    <div class="attributes">
+                        @Html.Raw(matchedCartItemModel.AttributeInfo)
+                    </div>
+                }
+            }
+            @if (!string.IsNullOrEmpty(@Model.PromotionName))
+            {
+                <div class="promotion-item">@Model.PromotionName</div>
+            }
+            else
+            {
+                <div class="promotion-item">Deal</div>
+            }
+            @if (Model.UnmatchedProductDetailsModels != null && Model.UnmatchedProductDetailsModels.Count > 0)
+            {
+                <table>
+                    @foreach (var missedPromoProductDetailsModel in Model.UnmatchedProductDetailsModels)
+                    {
+                        PictureModel pictureModel = null;
+                        if (missedPromoProductDetailsModel.ProductDetailsModel.PictureModels != null && missedPromoProductDetailsModel.ProductDetailsModel.PictureModels.Count > 0)
+                        {
+                            pictureModel = missedPromoProductDetailsModel.ProductDetailsModel.PictureModels.First();
+                        }
+                    <tr>
+                        <td>
+                            @if (pictureModel != null)
+                            {
+                                <img alt="@pictureModel.AlternateText" src="@pictureModel.ImageUrl" title="@pictureModel.Title" />
+                            }
+                        </td>
+                        <td>@missedPromoProductDetailsModel.ProductDetailsModel.Name</td>
+                        <td>
+                            @if (missedPromoProductDetailsModel.ProductDetailsModel.AddToCart != null)
+                            {
+                                var dataDictAddToCart = new ViewDataDictionary();
+                                dataDictAddToCart.TemplateInfo.HtmlFieldPrefix = string.Format("addtocart_{0}", missedPromoProductDetailsModel.ProductDetailsModel.AddToCart.ProductId);
+                                <div class="add-to-cart-panel" style="float: right;">
+                                    <script type="text/javascript">
+                                        function addToCart_@(missedPromoProductDetailsModel.ProductDetailsModel.AddToCart.ProductId)() {
+                                            promoAjaxCart.addproducttocart_missedPromotions('@Url.RouteUrl("AddProductToCart-Details", new { productId = missedPromoProductDetailsModel.ProductDetailsModel.AddToCart.ProductId, shoppingCartTypeId = (int) ShoppingCartType.ShoppingCart })');
+                                        }
+                                    </script>
+
+                                    @{
+                                        var addToCartText = "";
+                                        addToCartText = T("ShoppingCart.AddToCart").Text;
+                                    }
+                                    <input type="button" id="add-to-cart-button-@matchedCartItemModel.ProductId" class="button-1 add-to-cart-button" value="@addToCartText" data-productid="@missedPromoProductDetailsModel.ProductDetailsModel.AddToCart.ProductId" onclick="addToCart_@(missedPromoProductDetailsModel.ProductDetailsModel.AddToCart.ProductId)();" />
+                                </div>
+                                        }
+                        </td>
+                    </tr>
+                                        }
+                </table>
+                                        }
+            </div>
+        </td>
+</tr>

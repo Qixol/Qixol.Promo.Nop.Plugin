@@ -11,7 +11,7 @@ namespace Qixol.Plugin.Misc.Promo.Models.Checkout
     {
         private IList<MissedPromotionCriteriaModel> _criteria;
         private IList<ShoppingCartModel.ShoppingCartItemModel> _matchedCartItemModels;
-        private global::Nop.Web.Models.Catalog.ProductDetailsModel.AddToCartModel _addToCartModel;
+        private IList<PromoProductDetailsModel> _unmatchedProductDetailsModels;
 
         public string PromotionImageUrl { get; set; }
         public string SaveFrom { get; set; }
@@ -42,22 +42,20 @@ namespace Qixol.Plugin.Misc.Promo.Models.Checkout
             }
         }
 
-        public global::Nop.Web.Models.Catalog.ProductDetailsModel.AddToCartModel AddToCartModel
+        public IList<PromoProductDetailsModel> UnmatchedProductDetailsModels
         {
             get
             {
-                return _addToCartModel ?? (_addToCartModel = new global::Nop.Web.Models.Catalog.ProductDetailsModel.AddToCartModel());
+                return _unmatchedProductDetailsModels ?? (_unmatchedProductDetailsModels = new List<PromoProductDetailsModel>());
             }
             set
             {
-                _addToCartModel = value;
+                _unmatchedProductDetailsModels = value;
             }
         }
 
         public partial class MissedPromotionCriteriaModel
         {
-
         }
     }
-
 }

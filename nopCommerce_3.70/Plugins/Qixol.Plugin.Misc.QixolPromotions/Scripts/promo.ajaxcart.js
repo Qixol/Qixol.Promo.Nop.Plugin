@@ -18,15 +18,20 @@ var promoAjaxCart = {
     },
 
     //add a product to the cart from the missed promotions page / panel
-    addproducttocart_missedPromotions: function (urladd) {
+    addproducttocart_missedPromotions: function (urladd, formselector) {
         if (this.loadWaiting != false) {
             return;
         }
         this.setLoadWaiting(true);
 
+        console.log(formselector);
+
+        console.log($(formselector).serialize());
+
         $.ajax({
             cache: false,
             url: urladd,
+            data: $(formselector).serialize(),
             type: 'post',
             success: this.success_process,
             complete: this.resetLoadWaiting,

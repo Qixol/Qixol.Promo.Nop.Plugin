@@ -22,6 +22,8 @@
     <td class="product-picture">
         @{
             var matchedCartItemModel = Model.MatchedCartItemModels.FirstOrDefault();
+            var unmatchedPromoProductDetailsModel = Model.UnmatchedProductDetailsModels.FirstOrDefault();
+            var addToCartModel = unmatchedPromoProductDetailsModel.ProductDetailsModel.AddToCart;
             if (matchedCartItemModel != null)
             {
                 <div><a href="@Url.RouteUrl("Product", new { SeName = matchedCartItemModel.ProductSeName })"><img alt="@matchedCartItemModel.Picture.AlternateText" src="@matchedCartItemModel.Picture.ImageUrl" title="@matchedCartItemModel.Picture.Title" /></a></div>
@@ -48,33 +50,32 @@
             {
                 <div class="promotion-item">BOGOF</div>
             }
-            @if (Model.AddToCartModel != null && matchedCartItemModel != null)
+            @if (addToCartModel != null)
             {
-                var dataDictAddToCart = new ViewDataDictionary();
-                dataDictAddToCart.TemplateInfo.HtmlFieldPrefix = string.Format("addtocart_{0}", matchedCartItemModel.Id);
-                <div class="add-to-cart-panel" style="float: right;">
-                    <script type="text/javascript">
-                        function addToCart_@(matchedCartItemModel.ProductId)() {
-                            promoAjaxCart.addproducttocart_missedPromotions('@Url.RouteUrl("AddProductToCart-Details", new { productId = matchedCartItemModel.ProductId, shoppingCartTypeId = (int)ShoppingCartType.ShoppingCart })');
-                            //window.location = '@(Url.Action("MissedPromotions"))';
-                        }
-                    </script>
-
-                    @{
-                        var addToCartText = "";
-                        addToCartText = T("ShoppingCart.AddToCart").Text;
-                    }
-                    <input type="button" id="add-to-cart-button-@matchedCartItemModel.ProductId" class="button-1 add-to-cart-button" value="@addToCartText" data-productid="@matchedCartItemModel.ProductId" onclick="addToCart_@(matchedCartItemModel.ProductId)();" />
-                </div>
-                        }
-                        @*@if (matchedCartItemModel != null)
+                var addToCartFormId = "addToCartForm_" + addToCartModel.UpdatedShoppingCartItemId;
+                <form id="@addToCartFormId" method="post">
+                    <div class="add-to-cart-panel" style="float: right;">
+                        @foreach (KeyValuePair<string, string> kvp in unmatchedPromoProductDetailsModel.Attributes)
                         {
-                            var editCartItemUrl = Url.RouteUrl("Product", new { SeName = matchedCartItemModel.ProductSeName });
-                            editCartItemUrl = webHelper.ModifyQueryString(editCartItemUrl, "updatecartitemid=" + matchedCartItemModel.Id, null);
-                            <div class="edit-item">
-                                <a href="@editCartItemUrl">@T("Common.Edit")</a>
-                            </div>
-                        }*@
+                            <input id="product_attribute_@(kvp.Key)" name="product_attribute_@(kvp.Key)" type="hidden" value="@(kvp.Value)">
+                        }
+                        <input id="addtocart_@(addToCartModel.ProductId).EnteredQuantity" name="addtocart_@(addToCartModel.ProductId).EnteredQuantity" type="hidden" value="1" />
+                        <script type="text/javascript">
+                            function addToCart_@(addToCartModel.UpdatedShoppingCartItemId)() {
+                                var addUrl = '@Url.RouteUrl("AddProductToCart-Details", new { productId = addToCartModel.ProductId, shoppingCartTypeId = (int) ShoppingCartType.ShoppingCart })';
+                                var formSelector = '#@(addToCartFormId)';
+                                promoAjaxCart.addproducttocart_missedPromotions(addUrl, formSelector);
+                            }
+                        </script>
+
+                        @{
+                            var addToCartText = "";
+                            addToCartText = T("ShoppingCart.AddToCart").Text;
+                        }
+                        <input type="button" id="add-to-cart-button-@addToCartModel.UpdatedShoppingCartItemId" class="button-1 add-to-cart-button" value="@addToCartText" data-productid="@addToCartModel.ProductId" onclick="addToCart_@(addToCartModel.UpdatedShoppingCartItemId)();" />
                     </div>
-                    </td>
-            </tr>
+                </form>
+            }
+        </div>
+    </td>
+</tr>
