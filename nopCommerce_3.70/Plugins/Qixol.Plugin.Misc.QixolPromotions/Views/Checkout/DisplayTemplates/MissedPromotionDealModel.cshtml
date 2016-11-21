@@ -70,8 +70,6 @@
                         <td>
                             @if (missedPromoProductDetailsModel.ProductDetailsModel.AddToCart != null)
                             {
-                                var dataDictAddToCart = new ViewDataDictionary();
-                                dataDictAddToCart.TemplateInfo.HtmlFieldPrefix = string.Format("addtocart_{0}", missedPromoProductDetailsModel.ProductDetailsModel.AddToCart.ProductId);
                                 <div class="add-to-cart-panel" style="float: right;">
                                     <script type="text/javascript">
                                         function addToCart_@(missedPromoProductDetailsModel.ProductDetailsModel.AddToCart.ProductId)() {
