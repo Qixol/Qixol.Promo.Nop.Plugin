@@ -464,6 +464,8 @@ namespace Qixol.Plugin.Misc.Promo
             this.InsertStringResource("Plugins.Misc.QixolPromo.MissedPromotion(s)", "Missed Promotion(s)");
             this.InsertStringResource("Plugins.Misc.QixolPromo.ContinueCheckout", "Continue Checkout");
             this.InsertStringResource("Plugins.Misc.QixolPromo.Product(s)", "Product(s)");
+            this.InsertStringResource("Plugins.Misc.QixolPromo.SaveFrom", "Save from");
+            this.InsertStringResource("Plugins.Misc.QixolPromo.Save", "Save");
 
             #endregion
         }

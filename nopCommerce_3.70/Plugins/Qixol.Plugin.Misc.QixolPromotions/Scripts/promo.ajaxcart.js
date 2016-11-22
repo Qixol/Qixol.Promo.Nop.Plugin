@@ -3,9 +3,10 @@
 */
 
 
-var promoAjaxCart = {
+var PromoAjaxCart = {
     loadWaiting: false,
     usepopupnotifications: false,
+    original_success_process: false,
 
     init: function (usepopupnotifications) {
         this.usepopupnotifications;
@@ -24,14 +25,26 @@ var promoAjaxCart = {
         }
         this.setLoadWaiting(true);
 
-        console.log(formselector);
-
-        console.log($(formselector).serialize());
-
         $.ajax({
             cache: false,
             url: urladd,
             data: $(formselector).serialize(),
+            type: 'post',
+            success: this.success_process,
+            complete: this.resetLoadWaiting,
+            error: this.ajaxFailure
+        });
+    },
+
+    addproducttocart_catalog: function (urladd) {
+        if (this.loadWaiting != false) {
+            return;
+        }
+        this.setLoadWaiting(true);
+
+        $.ajax({
+            cache: false,
+            url: urladd,
             type: 'post',
             success: this.success_process,
             complete: this.resetLoadWaiting,
@@ -63,7 +76,11 @@ var promoAjaxCart = {
                 }
             }
         }
-        location.href = '/checkout/missedpromotions';
+        if (response.redirect) {
+            location.href = response.redirect;
+        } else {
+            location.href = '/checkout/missedpromotions';
+        }
         return true;
     }
 };

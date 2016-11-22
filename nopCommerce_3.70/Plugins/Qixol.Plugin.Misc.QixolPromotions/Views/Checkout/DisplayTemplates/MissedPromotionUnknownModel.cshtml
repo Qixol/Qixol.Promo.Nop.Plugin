@@ -14,7 +14,7 @@
         <div class="promotion-item">@Model.PromotionName</div>
         @if (!string.IsNullOrEmpty(Model.SaveFrom))
         {
-        <div>Save from: @Model.SaveFrom</div>
+        <div>@T("Plugins.Misc.QixolPromo.SaveFrom")&nbsp;@Model.SaveFrom</div>
         }
     </td>
 </tr>

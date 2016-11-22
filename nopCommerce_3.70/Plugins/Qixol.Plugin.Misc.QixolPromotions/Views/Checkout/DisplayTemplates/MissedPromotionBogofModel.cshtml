@@ -50,6 +50,10 @@
             {
                 <div class="promotion-item">BOGOF</div>
             }
+            @if (!string.IsNullOrEmpty(Model.SaveFrom))
+            {
+                <div>@T("Plugins.Misc.QixolPromo.Save")&nbsp;@Model.SaveFrom</div>
+            }
             @if (addToCartModel != null)
             {
                 var addToCartFormId = "addToCartForm_" + addToCartModel.UpdatedShoppingCartItemId;
@@ -64,7 +68,7 @@
                             function addToCart_@(addToCartModel.UpdatedShoppingCartItemId)() {
                                 var addUrl = '@Url.RouteUrl("AddProductToCart-Details", new { productId = addToCartModel.ProductId, shoppingCartTypeId = (int) ShoppingCartType.ShoppingCart })';
                                 var formSelector = '#@(addToCartFormId)';
-                                promoAjaxCart.addproducttocart_missedPromotions(addUrl, formSelector);
+                                PromoAjaxCart.addproducttocart_missedPromotions(addUrl, formSelector);
                             }
                         </script>
 
