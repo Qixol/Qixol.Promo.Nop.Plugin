@@ -447,14 +447,37 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             return model;
         }
 
-        private MissedPromotionBaseModel PrepareMissedPromotionModel(BasketResponseMissedPromotion missedPromo, List<ShoppingCartItem> cart, BasketResponse basketResponse, MissedPromotionBaseModel missedPromotionModel)
+        private MissedPromotionBaseModel PrepareMissedPromotionModel(BasketResponseMissedPromotion missedPromotion, List<ShoppingCartItem> cart, BasketResponse basketResponse, MissedPromotionBaseModel missedPromotionModel)
         {
-            missedPromotionModel.PromotionName = missedPromo.DisplayText;
-            missedPromotionModel.PromotionImageUrl = "/Plugins/Misc.QixolPromo/Content/Images/default-missedpromotion.png";
-            missedPromotionModel.SaveFrom = missedPromo.Action.SaveFrom > decimal.Zero ? _priceFormatter.FormatPrice(missedPromo.Action.SaveFrom) : string.Empty;
+            string promoDisplayDetails = string.Empty;
+            switch (_promoSettings.ShowPromotionDetailsInBasket)
+            {
+                case PromotionDetailsDisplayOptions.ShowEndUserText:
+                    // The display text is not mandatory, so default it to the promotion type if there is no text.
+                    if (!string.IsNullOrEmpty(missedPromotion.DisplayText))
+                        promoDisplayDetails = missedPromotion.DisplayText;
+                    else
+                        promoDisplayDetails = missedPromotion.PromotionTypeDisplay;
+                    break;
 
-            var fullyMatchedCriteria = (from mc in missedPromo.Criteria.CriteriaItems where mc.FullyMatched select mc).ToList();
-            var partiallyMatchedCriteria = (from mc in missedPromo.Criteria.CriteriaItems where !mc.FullyMatched select mc).ToList();
+                case PromotionDetailsDisplayOptions.ShowPromotionName:
+                    promoDisplayDetails = missedPromotion.PromotionName;
+                    break;
+
+                case PromotionDetailsDisplayOptions.ShowNoText:
+                    promoDisplayDetails = string.Empty;
+                    break;
+
+                default:
+                    promoDisplayDetails = missedPromotion.PromotionTypeDisplay;
+                    break;
+            }
+            missedPromotionModel.PromotionName = promoDisplayDetails;
+            missedPromotionModel.PromotionImageUrl = "/Plugins/Misc.QixolPromo/Content/Images/default-missedpromotion.png";
+            missedPromotionModel.SaveFrom = missedPromotion.Action.SaveFrom > decimal.Zero ? _priceFormatter.FormatPrice(missedPromotion.Action.SaveFrom) : string.Empty;
+
+            var fullyMatchedCriteria = (from mc in missedPromotion.Criteria.CriteriaItems where mc.FullyMatched select mc).ToList();
+            var partiallyMatchedCriteria = (from mc in missedPromotion.Criteria.CriteriaItems where !mc.FullyMatched select mc).ToList();
 
             var shoppingCartController = DependencyResolver.Current.GetService<Qixol.Plugin.Misc.Promo.Controllers.ShoppingCartController>();
 

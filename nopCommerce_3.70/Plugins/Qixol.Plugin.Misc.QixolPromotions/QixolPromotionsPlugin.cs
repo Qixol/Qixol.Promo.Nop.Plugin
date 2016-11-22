@@ -463,6 +463,7 @@ namespace Qixol.Plugin.Misc.Promo
             this.InsertStringResource("Plugins.Misc.QixolPromo.ShowMissedPromotions.Hint", "When stepping from the cart to checkout show the missed promotions page.");
             this.InsertStringResource("Plugins.Misc.QixolPromo.MissedPromotion(s)", "Missed Promotion(s)");
             this.InsertStringResource("Plugins.Misc.QixolPromo.ContinueCheckout", "Continue Checkout");
+            this.InsertStringResource("Plugins.Misc.QixolPromo.Product(s)", "Product(s)");
 
             #endregion
         }
