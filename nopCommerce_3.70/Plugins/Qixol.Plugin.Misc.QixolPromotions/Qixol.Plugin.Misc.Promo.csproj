@@ -231,6 +231,9 @@
     <Content Include="Views\Checkout\DisplayTemplates\MissedPromotionDealModel.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="Views\Checkout\DisplayTemplates\MissedPromotionBundleModel.cshtml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <None Include="Views\Checkout\OpcMissedPromotions.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

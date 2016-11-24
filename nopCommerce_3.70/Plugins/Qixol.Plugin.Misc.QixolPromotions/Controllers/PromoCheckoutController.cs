@@ -443,6 +443,10 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                         MissedPromotionDealModel missedPromotionDealModel = new MissedPromotionDealModel();
                         model.MissedPromotions.Add(PrepareMissedPromotionModel(missedPromo, cart, basketResponse, missedPromotionDealModel));
                         break;
+                    case MissedPromotionsModel.PromotionTypeSystemName.BundlePrice:
+                        MissedPromotionBundleModel missedPromotionBundleModel = new MissedPromotionBundleModel();
+                        model.MissedPromotions.Add(PrepareMissedPromotionModel(missedPromo, cart, basketResponse, missedPromotionBundleModel));
+                        break;
                     default:
                         MissedPromotionUnknownModel missedPromotionUnknownModel = new MissedPromotionUnknownModel();
                         model.MissedPromotions.Add(PrepareMissedPromotionModel(missedPromo, cart, basketResponse, missedPromotionUnknownModel));
