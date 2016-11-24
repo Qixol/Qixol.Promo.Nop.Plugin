@@ -75,7 +75,7 @@ namespace Qixol.Nop.Promo.Core.Domain.Products
             {
                 ProductImportRequestAttributeItem gtinAttributeItem = new ProductImportRequestAttributeItem()
                 {
-                    Name = "gtin",
+                    Name = ProductAttributeConfigSystemNames.GTIN,
                     Value = gtinAttributeValue
                 };
                 returnList.Add(gtinAttributeItem);
@@ -177,7 +177,7 @@ namespace Qixol.Nop.Promo.Core.Domain.Products
                                                               });
                     break;
 
-                case ProductAttributeConfigSystemNames.SHIP_SEPERATELY:
+                case ProductAttributeConfigSystemNames.SHIP_SEPARATELY:
                     returnItems.Add(new ProductImportRequestAttributeItem() { Name = item.SystemName, Value = product.ShipSeparately.ToString() });
                     break;
 

@@ -1,4 +1,5 @@
-﻿using Nop.Web.Models.ShoppingCart;
+﻿using Nop.Web.Models.Catalog;
+using Nop.Web.Models.ShoppingCart;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,11 +13,11 @@ namespace Qixol.Plugin.Misc.Promo.Models.Checkout
         private IList<MissedPromotionCriteriaModel> _criteria;
         private IList<ShoppingCartModel.ShoppingCartItemModel> _matchedCartItemModels;
         private IList<PromoProductDetailsModel> _unmatchedProductDetailsModels;
+        private IList<CategorySimpleModel> _categorySimpleModels;
 
         public string PromotionImageUrl { get; set; }
         public string SaveFrom { get; set; }
         public string PromotionName { get; set; }
-        public string Category { get; set; }
 
         public IList<MissedPromotionCriteriaModel> Criteria
         {
@@ -51,6 +52,18 @@ namespace Qixol.Plugin.Misc.Promo.Models.Checkout
             set
             {
                 _unmatchedProductDetailsModels = value;
+            }
+        }
+
+        public IList<CategorySimpleModel> CategorySimpleModels
+        {
+            get
+            {
+                return _categorySimpleModels ?? (_categorySimpleModels = new List<CategorySimpleModel>());
+            }
+            set
+            {
+                _categorySimpleModels = value;
             }
         }
 

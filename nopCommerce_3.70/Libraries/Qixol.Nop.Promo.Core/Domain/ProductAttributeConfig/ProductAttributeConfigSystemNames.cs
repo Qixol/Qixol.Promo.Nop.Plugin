@@ -8,26 +8,27 @@ namespace Qixol.Nop.Promo.Core.Domain.ProductAttributeConfig
 {
     public class ProductAttributeConfigSystemNames
     {
-        public const string VENDOR = "Vendor";
-        public const string SKU = "SKU";
-        public const string CATEGORY = "Category";
-        public const string MANUFACTURER = "Manufacturer";
-        public const string CATEGORY_BREADCRUMBS = "CategoryBreadcrumbs";
-        public const string MANUFACTURER_PART_NO = "ManufacturerPartNumber";
-        public const string GTIN = "GTIN";
-        public const string DISABLE_BUY_BUTTON = "DisableBuyButton";
-        public const string AVAILABLE_FOR_PREORDER = "AvailableForPreorder";
-        public const string CALL_FOR_PRICE = "CallForPrice";
-        public const string CUSTOMER_ENTERS_PRICE = "CustomerEntersPrice";
-        public const string IS_GIFT_CARD = "IsGiftCard";
-        public const string GIFT_CARD_TYPE = "GiftCardType";
-        public const string DOWNLOADABLE_PRODUCT = "DownloadableProduct";
-        public const string IS_RENTAL = "IsRental";
-        public const string SHIPPING_ENABLED = "ShippingEnabled";
-        public const string FREE_SHIPPING = "FreeShipping";
-        public const string SHIP_SEPERATELY = "ShipSeperately";
-        public const string TAX_EXCEMPT = "TaxExempt";
-        public const string TAX_CATEGORY = "TaxCategory";
-        public const string PRODUCT_SPECIFICATION_ATTRIBS = "SpecificationAttributes";
+        // These all need to be lower case as the XML tokens are passed to/from the Promo Engine in lower case
+        public const string VENDOR = "vendor";
+        public const string SKU = "sku";
+        public const string CATEGORY = "category";
+        public const string MANUFACTURER = "manufacturer";
+        public const string CATEGORY_BREADCRUMBS = "categorybreadcrumbs";
+        public const string MANUFACTURER_PART_NO = "manufacturerpartnumber";
+        public const string GTIN = "gtin";
+        public const string DISABLE_BUY_BUTTON = "disablebuybutton";
+        public const string AVAILABLE_FOR_PREORDER = "availableforpreorder";
+        public const string CALL_FOR_PRICE = "callforprice";
+        public const string CUSTOMER_ENTERS_PRICE = "customerentersprice";
+        public const string IS_GIFT_CARD = "isgiftcard";
+        public const string GIFT_CARD_TYPE = "giftcardtype";
+        public const string DOWNLOADABLE_PRODUCT = "downloadableproduct";
+        public const string IS_RENTAL = "isrental";
+        public const string SHIPPING_ENABLED = "shippingenabled";
+        public const string FREE_SHIPPING = "freeshipping";
+        public const string SHIP_SEPARATELY = "shipseparately";
+        public const string TAX_EXCEMPT = "taxexempt";
+        public const string TAX_CATEGORY = "taxcategory";
+        public const string PRODUCT_SPECIFICATION_ATTRIBS = "specificationattributes";
     }
 }

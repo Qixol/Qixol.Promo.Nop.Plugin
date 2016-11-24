@@ -10,3 +10,7 @@
 .cart-promotion-row td {
     line-height: 15px !important;
 }
+
+.promo-product-picture {
+    vertical-align: top;
+}

@@ -25,9 +25,13 @@
         color: #fff;
         text-transform: uppercase;
     }
+
+    .promo-product-picture {
+        vertical-align: top;
+    }
 </style>
 <tr>
-    <td class="product-picture">
+    <td class="promo-product-picture">
         @{
             var matchedCartItemModel = Model.MatchedCartItemModels.FirstOrDefault();
             if (matchedCartItemModel != null)
@@ -105,6 +109,20 @@
                         }
                     </tbody>
                 </table>
+            }
+            @if (Model.CategorySimpleModels.Count > 0)
+            {
+                <div>@T("Plugins.Misc.QixolPromo.ToCompleteThePromotion")</div>
+            foreach(var simpleCategoryModel in Model.CategorySimpleModels)
+            {
+                <div><a href="@Url.RouteUrl("Category", new { SeName = simpleCategoryModel.SeName })">
+                    @simpleCategoryModel.Name
+                @if (simpleCategoryModel.NumberOfProducts.HasValue)
+                {
+                    @T("Categories.TotalProducts", simpleCategoryModel.NumberOfProducts.Value)<text>&nbsp;&minus;&nbsp;</text>@T("Plugins.Misc.QixolPromo.Product(s)")
+                }
+            </a></div>
+            }
             }
         </div>
     </td>

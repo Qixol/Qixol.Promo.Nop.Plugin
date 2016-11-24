@@ -11,6 +11,8 @@ namespace Qixol.Plugin.Misc.Promo.Models
     {
         private IDictionary<string, string> _attributes;
 
+        public decimal AdditionalQuantityNeededToTriggerPromotion { get; set; }
+
         public ProductDetailsModel ProductDetailsModel { get; set; }
 
         public IDictionary<string, string> Attributes

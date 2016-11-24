@@ -17,9 +17,13 @@
         color: #fff;
         text-transform: uppercase;
     }
+
+    .promo-product-picture {
+        vertical-align: top;
+    }
 </style>
 <tr>
-    <td class="product-picture">
+    <td class="promo-product-picture">
         @{
             var matchedCartItemModel = Model.MatchedCartItemModels.FirstOrDefault();
             var unmatchedPromoProductDetailsModel = Model.UnmatchedProductDetailsModels.FirstOrDefault();

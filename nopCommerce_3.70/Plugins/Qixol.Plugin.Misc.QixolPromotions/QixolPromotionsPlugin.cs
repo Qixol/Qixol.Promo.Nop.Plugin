@@ -267,7 +267,7 @@ namespace Qixol.Plugin.Misc.Promo
             _productAttributeConfigService.Insert(new ProductAttributeConfigItem() { SystemName = ProductAttributeConfigSystemNames.IS_RENTAL, NameResource = "Admin.Catalog.Products.Fields.IsRental", Enabled = false });
             _productAttributeConfigService.Insert(new ProductAttributeConfigItem() { SystemName = ProductAttributeConfigSystemNames.SHIPPING_ENABLED, NameResource = "Admin.Catalog.Products.Fields.IsShipEnabled", Enabled = false });
             _productAttributeConfigService.Insert(new ProductAttributeConfigItem() { SystemName = ProductAttributeConfigSystemNames.FREE_SHIPPING, NameResource = "Admin.Catalog.Products.Fields.IsFreeShipping", Enabled = false });
-            _productAttributeConfigService.Insert(new ProductAttributeConfigItem() { SystemName = ProductAttributeConfigSystemNames.SHIP_SEPERATELY, NameResource = "Admin.Catalog.Products.Fields.ShipSeparately", Enabled = false });
+            _productAttributeConfigService.Insert(new ProductAttributeConfigItem() { SystemName = ProductAttributeConfigSystemNames.SHIP_SEPARATELY, NameResource = "Admin.Catalog.Products.Fields.ShipSeparately", Enabled = false });
             _productAttributeConfigService.Insert(new ProductAttributeConfigItem() { SystemName = ProductAttributeConfigSystemNames.TAX_EXCEMPT, NameResource = "Admin.Catalog.Products.Fields.IsTaxExempt", Enabled = false });
             _productAttributeConfigService.Insert(new ProductAttributeConfigItem() { SystemName = ProductAttributeConfigSystemNames.TAX_CATEGORY, NameResource = "Admin.Catalog.Products.Fields.TaxCategory", Enabled = false });
             _productAttributeConfigService.Insert(new ProductAttributeConfigItem() { SystemName = ProductAttributeConfigSystemNames.PRODUCT_SPECIFICATION_ATTRIBS, NameResource = "Plugins.Misc.QixolPromo.ProductAttributes.SpecificationAttributes", Enabled = true });
@@ -466,6 +466,7 @@ namespace Qixol.Plugin.Misc.Promo
             this.InsertStringResource("Plugins.Misc.QixolPromo.Product(s)", "Product(s)");
             this.InsertStringResource("Plugins.Misc.QixolPromo.SaveFrom", "Save from");
             this.InsertStringResource("Plugins.Misc.QixolPromo.Save", "Save");
+            this.InsertStringResource("Plugins.Misc.QixolPromo.ToCompleteThePromotion", "To complete the promotion add products from");
 
             #endregion
         }

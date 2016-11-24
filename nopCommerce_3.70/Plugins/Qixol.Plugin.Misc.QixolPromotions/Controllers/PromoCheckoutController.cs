@@ -39,6 +39,9 @@ using Nop.Services.Media;
 using Qixol.Plugin.Misc.Promo.Models.Checkout;
 using global::Nop.Web.Models.Catalog;
 using System.Xml.Linq;
+using Qixol.Nop.Promo.Core.Domain.ProductAttributeConfig;
+using Nop.Core.Domain.Catalog;
+using Nop.Core.Infrastructure;
 
 namespace Qixol.Plugin.Misc.Promo.Controllers
 {
@@ -87,6 +90,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
         private readonly IProductAttributeFormatter _productAttributeFormatter;
         private readonly IProductAttributeParser _productAttributeParser;
         private readonly IProductService _productService;
+        private readonly ICategoryService _categoryService;
 
         #endregion
 
@@ -127,7 +131,8 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             IPromoUtilities promoUtilities,
             IProductAttributeFormatter productAttributeFormatter,
             IProductAttributeParser productAttributeParser,
-            IProductService productService)
+            IProductService productService,
+            ICategoryService categoryService)
             : base (workContext, storeContext, storeMappingService,
                     shoppingCartService, localizationService, taxService, currencyService,
                     priceFormatter, orderProcessingService, customerService,
@@ -177,6 +182,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             this._productAttributeFormatter = productAttributeFormatter;
             this._productAttributeParser = productAttributeParser;
             this._productService = productService;
+            this._categoryService = categoryService;
         }
 
         #endregion
@@ -519,52 +525,55 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             var promoProductController = DependencyResolver.Current.GetService<PromoProductController>();
             foreach (var partiallyMatchedCriterium in partiallyMatchedCriteria)
             {
-                foreach (var i in partiallyMatchedCriterium.Items)
+                foreach (var i in partiallyMatchedCriterium.Items.Where(i => !i.Exclude).ToList())
                 {
-                    #region shopping cart items
+                    //if (i.IsMatched) // TODO: check how we need to use this
+                    //{
+                        #region shopping cart items
 
-                    var basketResponseItem = (from bri in basketResponse.Items where bri.Id == partiallyMatchedCriterium.Items.FirstOrDefault().MatchedLineIds.FirstOrDefault() select bri).FirstOrDefault();
+                        var basketResponseItem = (from bri in basketResponse.Items where bri.Id == partiallyMatchedCriterium.Items.FirstOrDefault().MatchedLineIds.FirstOrDefault() select bri).FirstOrDefault();
 
-                    if (basketResponseItem != null)
-                    {
-                        int originalCartItemId = basketResponseItem.Generated ? basketResponseItem.SplitFromLineId : basketResponseItem.Id;
-                        ShoppingCartItem matchedCartItem = (from c in cart where c.Id == originalCartItemId select c).FirstOrDefault();
-                        if (matchedCartItem == null)
+                        if (basketResponseItem != null)
                         {
-                            throw new ArgumentOutOfRangeException("Missed Promotion Matched Item Line not found in cart");
-                        }
-
-                        var cartItemModel = new ShoppingCartModel.ShoppingCartItemModel
-                        {
-                            Id = matchedCartItem.Id,
-                            Sku = matchedCartItem.Product.FormatSku(matchedCartItem.AttributesXml, _productAttributeParser),
-                            ProductId = matchedCartItem.Product.Id,
-                            ProductName = matchedCartItem.Product.GetLocalized(x => x.Name),
-                            ProductSeName = matchedCartItem.Product.GetSeName(),
-                            Quantity = matchedCartItem.Quantity,
-                            AttributeInfo = _productAttributeFormatter.FormatAttributes(matchedCartItem.Product, matchedCartItem.AttributesXml),
-                        };
-                        cartItemModel.Picture = shoppingCartController.PrepareCartItemPictureModel(matchedCartItem, cartItemModel.ProductName);
-                        missedPromotionModel.MatchedCartItemModels.Add(cartItemModel);
-
-                        if (missedPromotionModel.GetType() == typeof(MissedPromotionBogofModel) || missedPromotionModel.GetType() == typeof(MissedPromotionBogorModel))
-                        {
-                            var product = _productService.GetProductById(cartItemModel.ProductId);
-
-                            if (product != null && matchedCartItem != null)
+                            int originalCartItemId = basketResponseItem.Generated ? basketResponseItem.SplitFromLineId : basketResponseItem.Id;
+                            ShoppingCartItem matchedCartItem = (from c in cart where c.Id == originalCartItemId select c).FirstOrDefault();
+                            if (matchedCartItem == null)
                             {
-                                var productDetailsModel = promoProductController.PromoPrepareProductDetailsModel(product);
-                                productDetailsModel.ProductDetailsModel.AddToCart.UpdatedShoppingCartItemId = cartItemModel.Id;
-                                productDetailsModel.ProductDetailsModel.AddToCart.AllowedQuantities = new List<SelectListItem>() { new SelectListItem() { Text = "1", Selected = true, Value = "1" } };
-                                productDetailsModel.Attributes = ParseAttributeXml(matchedCartItem.AttributesXml);
+                                throw new ArgumentOutOfRangeException("Missed Promotion Matched Item Line not found in cart");
+                            }
 
-                                missedPromotionModel.UnmatchedProductDetailsModels.Add(productDetailsModel);
+                            var cartItemModel = new ShoppingCartModel.ShoppingCartItemModel
+                            {
+                                Id = matchedCartItem.Id,
+                                Sku = matchedCartItem.Product.FormatSku(matchedCartItem.AttributesXml, _productAttributeParser),
+                                ProductId = matchedCartItem.Product.Id,
+                                ProductName = matchedCartItem.Product.GetLocalized(x => x.Name),
+                                ProductSeName = matchedCartItem.Product.GetSeName(),
+                                Quantity = matchedCartItem.Quantity,
+                                AttributeInfo = _productAttributeFormatter.FormatAttributes(matchedCartItem.Product, matchedCartItem.AttributesXml),
+                            };
+                            cartItemModel.Picture = shoppingCartController.PrepareCartItemPictureModel(matchedCartItem, cartItemModel.ProductName);
+                            missedPromotionModel.MatchedCartItemModels.Add(cartItemModel);
+
+                            if (missedPromotionModel.GetType() == typeof(MissedPromotionBogofModel) || missedPromotionModel.GetType() == typeof(MissedPromotionBogorModel))
+                            {
+                                var product = _productService.GetProductById(cartItemModel.ProductId);
+
+                                if (product != null && matchedCartItem != null)
+                                {
+                                    var productDetailsModel = promoProductController.PromoPrepareProductDetailsModel(product);
+                                    productDetailsModel.ProductDetailsModel.AddToCart.UpdatedShoppingCartItemId = cartItemModel.Id;
+                                    productDetailsModel.ProductDetailsModel.AddToCart.AllowedQuantities = new List<SelectListItem>() { new SelectListItem() { Text = "1", Selected = true, Value = "1" } };
+                                    productDetailsModel.Attributes = ParseAttributeXml(matchedCartItem.AttributesXml);
+
+                                    missedPromotionModel.UnmatchedProductDetailsModels.Add(productDetailsModel);
+                                }
                             }
                         }
-                    }
 
-                    #endregion
-
+                        #endregion
+                    //}
+                    
                     #region missed product details
 
                     int productId = 0;
@@ -577,7 +586,35 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                         if (product != null)
                         {
                             var productDetailsModel = promoProductController.PromoPrepareProductDetailsModel(product);
+                            productDetailsModel.AdditionalQuantityNeededToTriggerPromotion = partiallyMatchedCriterium.AdditionalQuantity;
                             missedPromotionModel.UnmatchedProductDetailsModels.Add(productDetailsModel);
+                        }
+                    }
+
+                    #endregion
+
+                    #region AttributeTokens
+
+                    // TODO: model.CategorySimpleModel should be a list + update VIEW
+                    if (!string.IsNullOrEmpty(i.AttributeToken) && !string.IsNullOrEmpty(i.AttributeValue))
+                    {
+                        var catalogController = EngineContext.Current.Resolve<Qixol.Plugin.Misc.Promo.Controllers.CatalogController>();
+                        switch (i.AttributeToken)
+                        {
+                            case ProductAttributeConfigSystemNames.CATEGORY_BREADCRUMBS:
+                                var breadCrumbCategory = GetCategoryFromBreadcrumb(i.AttributeValue);
+                                var breadCrumbcategories = catalogController.PromoPrepareCategorySimpleModels(breadCrumbCategory.ParentCategoryId, breadCrumbCategory).ToList();
+                                breadCrumbcategories.ForEach(c => missedPromotionModel.CategorySimpleModels.Add(c));
+                                break;
+
+                            case ProductAttributeConfigSystemNames.CATEGORY:
+                                var category = GetCategoryFromCategoryName(i.AttributeValue);
+                                var categories = catalogController.PromoPrepareCategorySimpleModels(category.ParentCategoryId, category).ToList();
+                                categories.ForEach(c => missedPromotionModel.CategorySimpleModels.Add(c));
+                                break;
+
+                            default:
+                                break;
                         }
                     }
 
@@ -586,6 +623,48 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             }
 
             return missedPromotionModel;
+        }
+
+        // TODO: handle multipe categories with the same name
+        private Category GetCategoryFromCategoryName(string attributeValue)
+        {
+            var categories = _categoryService.GetAllCategories(showHidden: true);
+            Category matchedCategory = null;
+
+            foreach (var category in categories)
+            {
+                if (string.Compare(category.Name, attributeValue, StringComparison.InvariantCultureIgnoreCase) == 0)
+                {
+                    matchedCategory = category;
+                    continue;
+                }
+            }
+
+            return matchedCategory;
+        }
+
+        private Category GetCategoryFromBreadcrumb(string attributeValue)
+        {
+            var categories = _categoryService.GetAllCategories(showHidden: true);
+            Category matchedCategory = null;
+            // TODO: store this in cache to speed up the process
+            //var categoryBreadcrumbs = new Dictionary<string, Category>();
+            //foreach (var c in categories)
+            //{
+            //    categoryBreadcrumbs.Add(c.GetFormattedBreadCrumb(categories), c);
+            //}
+
+            foreach(var category in categories)
+            {
+                string breadcrumb = category.GetFormattedBreadCrumb(categories);
+                if (string.Compare(breadcrumb, attributeValue, StringComparison.InvariantCultureIgnoreCase) == 0)
+                {
+                    matchedCategory = category;
+                    continue;
+                }
+            }
+
+            return matchedCategory;
         }
 
         private IDictionary<string, string> ParseAttributeXml(string attributeXml)
