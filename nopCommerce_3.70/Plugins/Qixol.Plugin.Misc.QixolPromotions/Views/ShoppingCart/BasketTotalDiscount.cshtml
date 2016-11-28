@@ -1,0 +1,18 @@
+﻿@model BasketTotalDiscountModel
+
+@using Qixol.Plugin.Misc.Promo.Models.ShoppingCart;
+
+<style>
+    .cart-total .basket-total-discount {
+	font-style: italic;
+}
+</style>
+
+<tr class="basket-total-discount">
+    <td class="cart-total-left">
+        <label>@T("Plugins.Misc.QixolPromo.BasketTotalDiscountDescription"):</label>
+    </td>
+    <td class="cart-total-right">
+        <span class="value-summary">@Model.BasketTotalDiscount</span>
+    </td>
+</tr>

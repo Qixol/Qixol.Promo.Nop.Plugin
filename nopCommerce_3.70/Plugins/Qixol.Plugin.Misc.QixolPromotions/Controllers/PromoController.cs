@@ -27,6 +27,7 @@ using Qixol.Nop.Promo.Core.Domain;
 using Qixol.Plugin.Misc.Promo.Extensions.MappingExtensions;
 using Nop.Services.Localization;
 using Qixol.Nop.Promo.Services.Localization;
+using Qixol.Plugin.Misc.Promo.Models.ShoppingCart;
 
 namespace Qixol.Plugin.Misc.Promo.Controllers
 {
@@ -192,6 +193,18 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                 return new EmptyResult();
         }
 
+        public ActionResult BasketTotalDiscount()
+        {
+            var basketResponse = _promoUtilities.GetBasketResponse();
+            var currentCustomer = _workContext.CurrentCustomer;
+
+            var model = new BasketTotalDiscountModel()
+            {
+                BasketTotalDiscount = _priceFormatter.FormatPrice(basketResponse.TotalDiscount, true, _workContext.WorkingCurrency.CurrencyCode, false, _workContext.WorkingLanguage)
+            };
+
+            return View(model);
+        }
         #endregion
     }
 }

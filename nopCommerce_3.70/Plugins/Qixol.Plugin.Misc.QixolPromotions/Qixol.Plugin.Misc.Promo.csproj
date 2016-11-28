@@ -175,6 +175,7 @@
     </Compile>
     <Compile Include="Models\ProductAttributeConfigItemModel.cs" />
     <Compile Include="Models\PromotionsConfigureModel.cs" />
+    <Compile Include="Models\ShoppingCart\BasketTotalDiscountModel.cs" />
     <Compile Include="Models\StatusUpdateJsonModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Tasks\DataFeedTask.cs" />
@@ -258,9 +259,12 @@
     <None Include="Views\ShoppingCart\OrderSummary.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="Views\ShoppingCart\OrderTotals.cshtml">
+    <Content Include="Views\ShoppingCart\BasketTotalDiscount.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    </Content>
+    <Content Include="Views\ShoppingCart\OrderTotals.cshtml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <None Include="Views\web.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
