@@ -33,8 +33,7 @@
 <tr>
     <td class="promo-product-picture">
         @{
-            var matchedCartItemModel = Model.MatchedCartItemModels.FirstOrDefault();
-            if (matchedCartItemModel != null)
+            foreach (var matchedCartItemModel in Model.MatchedCartItemModels)
             {
                 <div><a href="@Url.RouteUrl("Product", new { SeName = matchedCartItemModel.ProductSeName })"><img alt="@matchedCartItemModel.Picture.AlternateText" src="@matchedCartItemModel.Picture.ImageUrl" title="@matchedCartItemModel.Picture.Title" /></a></div>
             }
@@ -42,15 +41,17 @@
     </td>
     <td class="product missed-promotion">
         <div style="display: inline-block; width: 100%;">
-            @if (matchedCartItemModel != null)
+            @foreach (var matchedCartItemModel in Model.MatchedCartItemModels)
             {
-                <a href="@Url.RouteUrl("Product", new { SeName = matchedCartItemModel.ProductSeName })" class="product-name">@matchedCartItemModel.ProductName</a>
-                if (!String.IsNullOrEmpty(matchedCartItemModel.AttributeInfo))
-                {
+                <div>
+                    <a href="@Url.RouteUrl("Product", new { SeName = matchedCartItemModel.ProductSeName })" class="product-name">@matchedCartItemModel.ProductName</a>
+                    @if (!String.IsNullOrEmpty(matchedCartItemModel.AttributeInfo))
+                    {
                     <div class="attributes">
                         @Html.Raw(matchedCartItemModel.AttributeInfo)
                     </div>
-                }
+                    }
+                </div>
             }
             @if (!string.IsNullOrEmpty(@Model.PromotionName))
             {

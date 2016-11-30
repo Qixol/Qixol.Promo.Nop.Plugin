@@ -432,11 +432,11 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                 {
                     case MissedPromotionsModel.PromotionTypeSystemName.BuyOneGetOneFree:
                         MissedPromotionBogofModel missedPromotionBogofModel = new MissedPromotionBogofModel();
-                        model.MissedPromotions.Add(PrepareMissedPromotionBogofModel(missedPromo, cart, basketResponse, missedPromotionBogofModel));
+                        model.MissedPromotions.Add(PrepareMissedPromotionModel(missedPromo, cart, basketResponse, missedPromotionBogofModel));
                         break;
                     case MissedPromotionsModel.PromotionTypeSystemName.BuyOneGetOneReduced:
                         MissedPromotionBogorModel missedPromotionBogorModel = new MissedPromotionBogorModel();
-                        model.MissedPromotions.Add(PrepareMissedPromotionBogorModel(missedPromo, cart, basketResponse, missedPromotionBogorModel));
+                        model.MissedPromotions.Add(PrepareMissedPromotionModel(missedPromo, cart, basketResponse, missedPromotionBogorModel));
                         break;
                     case MissedPromotionsModel.PromotionTypeSystemName.DealPrice:
                         MissedPromotionDealModel missedPromotionDealModel = new MissedPromotionDealModel();
@@ -454,82 +454,6 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             }
 
             return model;
-        }
-
-        private MissedPromotionBaseModel PrepareMissedPromotionBogofModel(BasketResponseMissedPromotion missedPromotion, List<ShoppingCartItem> cart, BasketResponse basketResponse, MissedPromotionBaseModel missedPromotionModel)
-        {
-            var bogofModel = PrepareMissedPromotionModel(missedPromotion, cart, basketResponse, missedPromotionModel);
-
-            var partiallyMatchedCriteria = (from mc in missedPromotion.Criteria.CriteriaItems where !mc.FullyMatched select mc).ToList();
-            var promoProductController = DependencyResolver.Current.GetService<PromoProductController>();
-
-            foreach (var partiallyMatchedCriterium in partiallyMatchedCriteria)
-            {
-                var matchedItems = (from fmc in partiallyMatchedCriterium.Items where fmc.IsMatched select fmc).ToList();
-                if (matchedItems != null)
-                {
-                    foreach (BasketResponseMissedPromotionCriteriaListItem matchedItem in matchedItems)
-                    {
-                        ShoppingCartItem matchedCartItem = getMatchedCartItem(basketResponse, cart, matchedItem);
-
-                        if (matchedCartItem != null)
-                        {
-                            int productId = matchedCartItem.Product.Id;
-                            var product = _productService.GetProductById(productId);
-
-                            if (product != null)
-                            {
-                                var productDetailsModel = promoProductController.PromoPrepareProductDetailsModel(product);
-                                productDetailsModel.ProductDetailsModel.AddToCart.UpdatedShoppingCartItemId = matchedCartItem.Id;
-                                productDetailsModel.ProductDetailsModel.AddToCart.AllowedQuantities = new List<SelectListItem>() { new SelectListItem() { Text = "1", Selected = true, Value = "1" } };
-                                productDetailsModel.Attributes = ParseAttributeXml(matchedCartItem.AttributesXml);
-
-                                bogofModel.UnmatchedProductDetailsModels.Add(productDetailsModel);
-                            }
-                        }
-                    }
-                }
-            }
-
-            return bogofModel as MissedPromotionBaseModel;
-        }
-
-        private MissedPromotionBaseModel PrepareMissedPromotionBogorModel(BasketResponseMissedPromotion missedPromotion, List<ShoppingCartItem> cart, BasketResponse basketResponse, MissedPromotionBaseModel missedPromotionModel)
-        {
-            var bogorModel = PrepareMissedPromotionModel(missedPromotion, cart, basketResponse, missedPromotionModel);
-
-            var partiallyMatchedCriteria = (from mc in missedPromotion.Criteria.CriteriaItems where !mc.FullyMatched select mc).ToList();
-            var promoProductController = DependencyResolver.Current.GetService<PromoProductController>();
-
-            foreach (var partiallyMatchedCriterium in partiallyMatchedCriteria)
-            {
-                var matchedItems = (from fmc in partiallyMatchedCriterium.Items where fmc.IsMatched select fmc).ToList();
-                if (matchedItems != null)
-                {
-                    foreach (BasketResponseMissedPromotionCriteriaListItem matchedItem in matchedItems)
-                    {
-                        ShoppingCartItem matchedCartItem = getMatchedCartItem(basketResponse, cart, matchedItem);
-
-                        if (matchedCartItem != null)
-                        {
-                            int productId = matchedCartItem.Product.Id;
-                            var product = _productService.GetProductById(productId);
-
-                            if (product != null)
-                            {
-                                var productDetailsModel = promoProductController.PromoPrepareProductDetailsModel(product);
-                                productDetailsModel.ProductDetailsModel.AddToCart.UpdatedShoppingCartItemId = matchedCartItem.Id;
-                                productDetailsModel.ProductDetailsModel.AddToCart.AllowedQuantities = new List<SelectListItem>() { new SelectListItem() { Text = "1", Selected = true, Value = "1" } };
-                                productDetailsModel.Attributes = ParseAttributeXml(matchedCartItem.AttributesXml);
-
-                                bogorModel.UnmatchedProductDetailsModels.Add(productDetailsModel);
-                            }
-                        }
-                    }
-                }
-            }
-
-            return bogorModel as MissedPromotionBaseModel;
         }
 
         private MissedPromotionBaseModel PrepareMissedPromotionModel(BasketResponseMissedPromotion missedPromotion, List<ShoppingCartItem> cart, BasketResponse basketResponse, MissedPromotionBaseModel missedPromotionModel)
@@ -571,9 +495,13 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                 {
                     foreach (BasketResponseMissedPromotionCriteriaListItem matchedItem in matchedItems)
                     {
-                        ShoppingCartModel.ShoppingCartItemModel cartItemModel = getMatchedCartItemModel(basketResponse, cart, matchedItem);
-                        if (cartItemModel != null)
-                            missedPromotionModel.MatchedCartItemModels.Add(cartItemModel);
+                        List<ShoppingCartModel.ShoppingCartItemModel> cartItemModels = getMatchedCartItemModels(basketResponse, cart, matchedItem);
+                        if (cartItemModels != null)
+                        {
+                            var promoMatchedCartItemModels = missedPromotionModel.MatchedCartItemModels.ToList();
+                            promoMatchedCartItemModels.AddRange(cartItemModels);
+                            missedPromotionModel.MatchedCartItemModels = promoMatchedCartItemModels;
+                        }
                     }
                 }
             }
@@ -586,9 +514,42 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
 
                 foreach (var matchedItem in matchedItems)
                 {
-                    ShoppingCartModel.ShoppingCartItemModel cartItemModel = getMatchedCartItemModel(basketResponse, cart, matchedItem);
-                    if (cartItemModel != null)
-                        missedPromotionModel.MatchedCartItemModels.Add(cartItemModel);
+                    List<ShoppingCartModel.ShoppingCartItemModel> cartItemModels = getMatchedCartItemModels(basketResponse, cart, matchedItem);
+                    if (cartItemModels != null)
+                    {
+                        var promoMatchedCartItemModels = missedPromotionModel.MatchedCartItemModels.ToList();
+                        promoMatchedCartItemModels.AddRange(cartItemModels);
+                        missedPromotionModel.MatchedCartItemModels = promoMatchedCartItemModels;
+                    }
+
+                    if (partiallyMatchedCriterium.AdditionalQuantity > 0)
+                    {
+                        if (partiallyMatchedCriterium.OnlyMatchedItems)
+                        {
+                            List<ShoppingCartItem> matchedCartItems = getMatchedCartItems(basketResponse, cart, matchedItem);
+
+                            foreach(var matchedCartItem in matchedCartItems)
+                            {
+                                int productId = matchedCartItem.Product.Id;
+                                var product = _productService.GetProductById(productId);
+
+                                if (product != null)
+                                {
+                                    var productDetailsModel = promoProductController.PromoPrepareProductDetailsModel(product);
+                                    productDetailsModel.ProductDetailsModel.AddToCart.UpdatedShoppingCartItemId = matchedCartItem.Id;
+                                    string additionalQuantity = partiallyMatchedCriterium.AdditionalQuantity.ToString();
+                                    productDetailsModel.ProductDetailsModel.AddToCart.AllowedQuantities = new List<SelectListItem>() { new SelectListItem() { Text = additionalQuantity, Selected = true, Value = additionalQuantity } };
+                                    productDetailsModel.Attributes = ParseAttributeXml(matchedCartItem.AttributesXml);
+
+                                    missedPromotionModel.UnmatchedProductDetailsModels.Add(productDetailsModel);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            missedPromotionModel.CategorySimpleModels = getCategoryAttributes(matchedItem);
+                        }
+                    }
                 }
 
                 foreach (var unmatchedProduct in unmatchedProducts)
@@ -612,57 +573,71 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
 
                     #endregion
 
-                    #region AttributeTokens
-
-                    // TODO: model.CategorySimpleModel should be a list + update VIEW
-                    if (!string.IsNullOrEmpty(unmatchedProduct.AttributeToken) && !string.IsNullOrEmpty(unmatchedProduct.AttributeValue))
-                    {
-                        var catalogController = EngineContext.Current.Resolve<Qixol.Plugin.Misc.Promo.Controllers.CatalogController>();
-                        switch (unmatchedProduct.AttributeToken)
-                        {
-                            case ProductAttributeConfigSystemNames.CATEGORY_BREADCRUMBS:
-                                var breadCrumbCategory = GetCategoryFromBreadcrumb(unmatchedProduct.AttributeValue);
-                                var breadCrumbcategories = catalogController.PromoPrepareCategorySimpleModels(breadCrumbCategory.ParentCategoryId, breadCrumbCategory).ToList();
-                                breadCrumbcategories.ForEach(c => missedPromotionModel.CategorySimpleModels.Add(c));
-                                break;
-
-                            case ProductAttributeConfigSystemNames.CATEGORY:
-                                var category = GetCategoryFromCategoryName(unmatchedProduct.AttributeValue);
-                                var categories = catalogController.PromoPrepareCategorySimpleModels(category.ParentCategoryId, category).ToList();
-                                categories.ForEach(c => missedPromotionModel.CategorySimpleModels.Add(c));
-                                break;
-
-                            default:
-                                break;
-                        }
-                    }
-
-                    #endregion
+                    var promoCategorySimpleModels = missedPromotionModel.CategorySimpleModels.ToList();
+                    promoCategorySimpleModels.AddRange(getCategoryAttributes(unmatchedProduct));
+                    missedPromotionModel.CategorySimpleModels = promoCategorySimpleModels;
                 }
             }
 
             return missedPromotionModel;
         }
 
-        private ShoppingCartItem getMatchedCartItem(BasketResponse basketResponse, List<ShoppingCartItem> cart, BasketResponseMissedPromotionCriteriaListItem matchedItem)
+        private List<CategorySimpleModel> getCategoryAttributes(BasketResponseMissedPromotionCriteriaListItem item)
         {
-            var basketResponseItem = (from bri in basketResponse.Items where bri.Id == matchedItem.MatchedLineIds.FirstOrDefault() select bri).FirstOrDefault();
+            List<CategorySimpleModel> categoryList = new List<CategorySimpleModel>();
 
-            int originalCartItemId = basketResponseItem.Generated ? basketResponseItem.SplitFromLineId : basketResponseItem.Id;
-            ShoppingCartItem matchedCartItem = (from c in cart where c.Id == originalCartItemId select c).FirstOrDefault();
+            if (!string.IsNullOrEmpty(item.AttributeToken) && !string.IsNullOrEmpty(item.AttributeValue))
+            {
+                var catalogController = EngineContext.Current.Resolve<Qixol.Plugin.Misc.Promo.Controllers.CatalogController>();
+                switch (item.AttributeToken)
+                {
+                    case ProductAttributeConfigSystemNames.CATEGORY_BREADCRUMBS:
+                        var breadCrumbCategory = GetCategoryFromBreadcrumb(item.AttributeValue);
+                        var breadCrumbcategories = catalogController.PromoPrepareCategorySimpleModels(breadCrumbCategory.ParentCategoryId, breadCrumbCategory).ToList();
+                        breadCrumbcategories.ForEach(c => categoryList.Add(c));
+                        break;
 
-            return matchedCartItem;
+                    case ProductAttributeConfigSystemNames.CATEGORY:
+                        var category = GetCategoryFromCategoryName(item.AttributeValue);
+                        var categories = catalogController.PromoPrepareCategorySimpleModels(category.ParentCategoryId, category).ToList();
+                        categories.ForEach(c => categoryList.Add(c));
+                        break;
+
+                    default:
+                        break;
+                }
+            }
+            return categoryList;
+        }
+
+        private List<ShoppingCartItem> getMatchedCartItems(BasketResponse basketResponse, List<ShoppingCartItem> cart, BasketResponseMissedPromotionCriteriaListItem matchedItem)
+        {
+            List<ShoppingCartItem> matchedCartItems = new List<ShoppingCartItem>();
+            matchedItem.MatchedLineIds.ForEach(matchedLineId =>
+                {
+                    var basketResponseItems = (from bri in basketResponse.Items where bri.Id == matchedLineId select bri).ToList();
+
+                    foreach (var basketResponseItem in basketResponseItems)
+                    {
+                        int originalCartItemId = basketResponseItem.Generated ? basketResponseItem.SplitFromLineId : basketResponseItem.Id;
+                        var items = (from c in cart where c.Id == originalCartItemId select c).ToList();
+                        if (items != null)
+                            matchedCartItems.AddRange(items);
+                    }
+                });
+
+            return matchedCartItems;
         }
 
         // TODO: handle multiple line matches (does this ever occur...?)
-        private ShoppingCartModel.ShoppingCartItemModel getMatchedCartItemModel(BasketResponse basketResponse, List<ShoppingCartItem> cart, BasketResponseMissedPromotionCriteriaListItem matchedItem)
+        private List<ShoppingCartModel.ShoppingCartItemModel> getMatchedCartItemModels(BasketResponse basketResponse, List<ShoppingCartItem> cart, BasketResponseMissedPromotionCriteriaListItem matchedItem)
         {
-            ShoppingCartModel.ShoppingCartItemModel cartItemModel = null;
-            ShoppingCartItem matchedCartItem = getMatchedCartItem(basketResponse, cart, matchedItem);
+            List<ShoppingCartModel.ShoppingCartItemModel> cartItemModels = new List<ShoppingCartModel.ShoppingCartItemModel>();
+            List<ShoppingCartItem> matchedCartItems = getMatchedCartItems(basketResponse, cart, matchedItem);
 
-            if (matchedCartItem != null)
+            foreach(var matchedCartItem in matchedCartItems)
             {
-                cartItemModel = new ShoppingCartModel.ShoppingCartItemModel()
+                ShoppingCartModel.ShoppingCartItemModel cartItemModel = new ShoppingCartModel.ShoppingCartItemModel()
                 {
                     Id = matchedCartItem.Id,
                     Sku = matchedCartItem.Product.FormatSku(matchedCartItem.AttributesXml, _productAttributeParser),
@@ -675,9 +650,11 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
 
                 var shoppingCartController = DependencyResolver.Current.GetService<Qixol.Plugin.Misc.Promo.Controllers.ShoppingCartController>();
                 cartItemModel.Picture = shoppingCartController.PrepareCartItemPictureModel(matchedCartItem, cartItemModel.ProductName);
+
+                cartItemModels.Add(cartItemModel);
             }
 
-            return cartItemModel;
+            return cartItemModels;
         }
 
         // TODO: handle multipe categories with the same name
