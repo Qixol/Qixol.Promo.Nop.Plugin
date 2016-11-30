@@ -1,7 +1,7 @@
 ﻿Group: Qixol Promo
 FriendlyName: Qixol Promo
 SystemName: Misc.QixolPromo
-Version: 3.70.8.3
+Version: 3.70.8.4
 SupportedVersions: 3.70
 Author: Qixol web team
 DisplayOrder: 1
