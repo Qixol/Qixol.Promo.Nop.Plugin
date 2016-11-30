@@ -200,7 +200,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
 
             var model = new BasketTotalDiscountModel();
             
-            if (basketResponse.TotalDiscount > 0M)
+            if (basketResponse != null && basketResponse.TotalDiscount > Decimal.Zero)
             {
                 model.BasketTotalDiscount = _priceFormatter.FormatPrice(basketResponse.TotalDiscount, true, _workContext.WorkingCurrency.CurrencyCode, false, _workContext.WorkingLanguage);
             }
