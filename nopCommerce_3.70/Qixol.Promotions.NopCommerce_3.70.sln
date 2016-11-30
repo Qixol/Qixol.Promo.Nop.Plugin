@@ -47,6 +47,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utilities", "Utilities", "{
 		Utilities\Upgrade_from_3.70.8.2_to_3.70.8.3.sql = Utilities\Upgrade_from_3.70.8.2_to_3.70.8.3.sql
 		Utilities\Upgrade_from_3.70.8.3_to_3.70.8.4.sql = Utilities\Upgrade_from_3.70.8.3_to_3.70.8.4.sql
 		Utilities\Upgrade_from_3.70.8.4_to_3.70.8.5.sql = Utilities\Upgrade_from_3.70.8.4_to_3.70.8.5.sql
+		Utilities\Upgrade_from_3.70.8.5_to_3.70.8.6.sql = Utilities\Upgrade_from_3.70.8.5_to_3.70.8.6.sql
+		Utilities\Upgrade_from_3.70.8.6_to_3.70.8.7.sql = Utilities\Upgrade_from_3.70.8.6_to_3.70.8.7.sql
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Qixol.Nop.Promo.Core", "Libraries\Qixol.Nop.Promo.Core\Qixol.Nop.Promo.Core.csproj", "{913636AF-4223-4AF2-B425-255340AB51F5}"

@@ -94,7 +94,7 @@ namespace Qixol.Nop.Promo.Core.Domain.Products
         private static List<ProductImportRequestAttributeItem> GetValueForConfigItem(ProductAttributeConfigItem item, Product product, List<Vendor> vendors, List<TaxCategory> taxCategories, ICategoryService categoryService)
         {
             var returnItems = new List<ProductImportRequestAttributeItem>();
-            switch (item.SystemName)
+            switch (item.SystemName.ToLower())
             {
                 case ProductAttributeConfigSystemNames.AVAILABLE_FOR_PREORDER:
                     returnItems.Add(new ProductImportRequestAttributeItem() { Name = item.SystemName, Value = product.AvailableForPreOrder.ToString() });
