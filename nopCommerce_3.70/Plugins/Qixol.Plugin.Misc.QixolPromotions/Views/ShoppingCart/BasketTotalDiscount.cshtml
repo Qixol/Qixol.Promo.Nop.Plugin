@@ -2,6 +2,9 @@
 
 @using Qixol.Plugin.Misc.Promo.Models.ShoppingCart;
 
+@if (!string.IsNullOrEmpty(Model.BasketTotalDiscount))
+{
+
 <style>
     .cart-total .basket-total-discount {
 	font-style: italic;
@@ -16,3 +19,4 @@
         <span class="value-summary">@Model.BasketTotalDiscount</span>
     </td>
 </tr>
+}

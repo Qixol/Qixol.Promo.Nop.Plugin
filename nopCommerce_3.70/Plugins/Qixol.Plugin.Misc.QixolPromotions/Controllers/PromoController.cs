@@ -198,10 +198,12 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             var basketResponse = _promoUtilities.GetBasketResponse();
             var currentCustomer = _workContext.CurrentCustomer;
 
-            var model = new BasketTotalDiscountModel()
+            var model = new BasketTotalDiscountModel();
+            
+            if (basketResponse.TotalDiscount > 0M)
             {
-                BasketTotalDiscount = _priceFormatter.FormatPrice(basketResponse.TotalDiscount, true, _workContext.WorkingCurrency.CurrencyCode, false, _workContext.WorkingLanguage)
-            };
+                model.BasketTotalDiscount = _priceFormatter.FormatPrice(basketResponse.TotalDiscount, true, _workContext.WorkingCurrency.CurrencyCode, false, _workContext.WorkingLanguage);
+            }
 
             return View(model);
         }
