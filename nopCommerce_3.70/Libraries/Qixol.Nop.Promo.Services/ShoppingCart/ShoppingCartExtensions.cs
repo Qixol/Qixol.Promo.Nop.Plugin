@@ -421,6 +421,8 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
                 CurrencyCode = _workContext.WorkingCurrency != null ? _workContext.WorkingCurrency.CurrencyCode : string.Empty
             };
 
+            basketRequest.CustomerId = customer.CustomerGuid.ToString();
+
             // DM Cope with baskets in current currency
             // Add a flag to the basket request indicating whether the values have been passed in customer currency or not.
             //  This will be used when we are extracting values from the cached basket response, but may also be useful on the Promo side in the future (i.e.
