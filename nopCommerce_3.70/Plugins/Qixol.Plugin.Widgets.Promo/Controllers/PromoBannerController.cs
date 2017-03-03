@@ -5,6 +5,7 @@ using Nop.Services.Media;
 using Nop.Web.Framework.Controllers;
 using Nop.Web.Framework.Kendoui;
 using Nop.Web.Framework.Mvc;
+using Nop.Web.Framework.Themes;
 using Nop.Web.Infrastructure.Cache;
 using Qixol.Nop.Promo.Core.Domain.Banner;
 using Qixol.Nop.Promo.Services.Banner;
@@ -27,6 +28,7 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
         private readonly ILocalizationService _localizationService;
         private readonly IPictureService _pictureService;
         private readonly IStoreContext _storeContext;
+        private readonly IThemeContext _themeContext;
 
         #endregion
 
@@ -35,12 +37,14 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
         public PromoBannerController(IPromoBannerService promoBannerService,
                                      ILocalizationService localizationService,
                                      IPictureService pictureService,
-                                     IStoreContext storeContext)
+                                     IStoreContext storeContext,
+                                     IThemeContext themeContext)
         {
             this._promoBannerService = promoBannerService;
             this._localizationService = localizationService;
             this._pictureService = pictureService;
             this._storeContext = storeContext;
+            this._themeContext = themeContext;
         }
 
         #endregion
@@ -256,7 +260,7 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
         private void RemoveWidgetZoneFromCache(string widgetZoneName)
         {
             var cacheManager = new MemoryCacheManager();
-            var cacheKey = string.Format(ModelCacheEventConsumer.WIDGET_MODEL_KEY, _storeContext.CurrentStore.Id, widgetZoneName);
+            var cacheKey = string.Format(ModelCacheEventConsumer.WIDGET_MODEL_KEY, _storeContext.CurrentStore.Id, widgetZoneName, _themeContext.WorkingThemeName);
             cacheManager.Remove(cacheKey);
         }
 
