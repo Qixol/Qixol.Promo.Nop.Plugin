@@ -5,5 +5,5 @@
  *
  */
 
--- cope with the promotion xml schema change - these rows are repopulated by the "pull" scheduled task
+-- handle the promotion xml schema change - these rows are repopulated by the "pull" scheduled task
 truncate table PromoPromotion
