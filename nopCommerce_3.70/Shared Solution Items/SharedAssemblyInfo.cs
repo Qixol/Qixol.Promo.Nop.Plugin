@@ -14,7 +14,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyDescription("Qixol Promo nopCommerce Plugin")]
 [assembly: AssemblyCompany("Qixol Ltd.")]
 [assembly: AssemblyProduct("Qixol Promo nopCommerce Plugin")]
-[assembly: AssemblyCopyright("Copyright © Qixol Ltd. 2016")]
+[assembly: AssemblyCopyright("Copyright © Qixol Ltd. 2017")]
 [assembly: AssemblyTrademark("")]
 
 // You can specify all the values or you can default the Revision and Build Numbers 
@@ -22,5 +22,5 @@ using System.Runtime.InteropServices;
 //
 // *** NOTE: Ensure the 'Description.txt' in the Plugin and Widget folders are also updated. ***
 //
-[assembly: AssemblyVersion("3.70.8.9")]
-[assembly: AssemblyFileVersion("3.70.8.9")]
+[assembly: AssemblyVersion("3.70.8.10")]
+[assembly: AssemblyFileVersion("3.70.8.10")]
