@@ -47,6 +47,30 @@
 
 </style>
 
+@* patch fixes for underlying nop shopping cart *@
+<script type="text/javascript">
+    $(document).ready(function () {
+        @* ensure that pressing enter in the coupon text entry box presses the "Apply Coupon" submit button *@
+        $("input[name=discountcouponcode]").keyup(function (event) {
+            if (event.keyCode == 13) {
+                $("input[name=applydiscountcouponcode]").click();
+            }
+        });
+        @* ensure that pressing enter in the gift card entry box presses the "Add Gift Card" submit button *@
+        $("input[name=giftcardcouponcode]").keyup(function (event) {
+            if (event.keyCode == 13) {
+                $("input[name=applygiftcardcouponcode]").click();
+            }
+        });
+        @* ensure that pressing enter in the Zip/postal code entry box presses the "Estimate Shipping" submit button *@
+        $("#ZipPostalCode").keyup(function (event) {
+            if (event.keyCode == 13) {
+                $("input[name=estimateshipping]").click();
+            }
+        });
+    });
+</script>
+
 <div class="order-summary-content">
    @Html.Widget("order_summary_content_before")
    @Html.Partial("_OrderReviewData", Model.OrderReviewData)
