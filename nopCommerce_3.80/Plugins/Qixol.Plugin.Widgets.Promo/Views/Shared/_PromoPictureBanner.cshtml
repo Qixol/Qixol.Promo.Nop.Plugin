@@ -1,0 +1,13 @@
+﻿@model List<PromoBannerDisplayModel>
+
+@{
+    Layout = "";
+
+    Html.AddScriptParts("~/Plugins/Widgets.QixolPromo/Scripts/jquery.nivo.slider.js");
+    Html.AddCssFileParts("~/Plugins/Widgets.QixolPromo/Content/nivoslider/nivo-slider.css");
+    Html.AddCssFileParts("~/Plugins/Widgets.QixolPromo/Content/nivoslider/themes/custom/custom.css");
+    Html.AddCssFileParts("~/Plugins/Widgets.QixolPromo/Content/nivoslider/nivo-slider-promo.css");
+}
+@using Nop.Web.Framework.UI
+
+@Html.DisplayFor(m => Model)

@@ -1,0 +1,8 @@
+﻿Group: Qixol Promo
+FriendlyName: Qixol Promo Widgets
+SystemName: Widgets.QixolPromo
+Version: 3.80.0.1
+SupportedVersions: 3.80
+Author: Qixol web team
+DisplayOrder: 2
+FileName: Qixol.Plugin.Widgets.Promo.dll

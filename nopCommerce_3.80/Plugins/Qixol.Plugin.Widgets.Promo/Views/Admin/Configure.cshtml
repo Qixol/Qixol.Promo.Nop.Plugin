@@ -1,0 +1,105 @@
+﻿@model WidgetConfigModel
+
+@{
+    Layout = "";
+    var selectedTabIndex = Model.SelectedTab;
+}
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        bindBootstrapTabSelectEvent('qixolpromotionsbase-configure');
+
+        $('#@Html.IdFor(m => m.ProductPagePromoDetailsWidgetZone)').prop('disabled', !@Model.ShowPromotionDetailsOnProductPage.ToString().ToLower());
+        $('label[for="@Html.IdFor(m => m.ProductPagePromoDetailsWidgetZone)"]').toggleClass('disabled', !@Model.ShowPromotionDetailsOnProductPage.ToString().ToLower());
+
+        $('#@Html.IdFor(m => m.ShowPromotionDetailsOnProductPage)').change(function() {
+            $('#@Html.IdFor(m => m.ProductPagePromoDetailsWidgetZone)').prop('disabled', !$(this).prop('checked'));
+            $('label[for="@Html.IdFor(m => m.ProductPagePromoDetailsWidgetZone)"]').toggleClass('disabled', !$(this).prop('checked'));
+        });
+    });
+</script>
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    <div id="qixolpromotionsbase-configure" class="nab-tabs-custom">
+        <ul class="nav nav-tabs">
+            @Html.RenderBootstrapTabHeader("tab-general-settings", @T("Plugins.Widgets.QixolPromo.General"), true)
+            @Html.RenderBootstrapTabHeader("tab-stickers", @T("Plugins.Widgets.QixolPromo.Pictures"))
+            @Html.RenderBootstrapTabHeader("tab-banners", @T("Plugins.Widgets.QixolPromo.Banners"))
+        </ul>
+        <div class="tab-content">
+            @Html.RenderBootstrapTabContent("tab-general-settings", @TabGeneralSettings(), true)
+            @Html.RenderBootstrapTabContent("tab-stickers", @TabStickers())
+            @Html.RenderBootstrapTabContent("tab-banners", @TabBanners())
+        </div>
+    </div>
+}
+
+@helper TabGeneralSettings()
+{
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                @T("Plugins.Widgets.QixolPromo.PromoDetails")
+            </div>
+            <div class="panel-body">
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.ShowStickersInCatalogue)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.NopEditorFor(model => model.ShowStickersInCatalogue)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.ShowStickersInProductPage)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.NopEditorFor(model => model.ShowStickersInProductPage)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.ShowPromotionDetailsOnProductPage)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.NopEditorFor(model => model.ShowPromotionDetailsOnProductPage)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.ProductPagePromoDetailsWidgetZone)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.NopDropDownListFor(model => model.ProductPagePromoDetailsWidgetZone, Model.ProductPagePromoDetailsWidgetZonesList)
+                        @Html.ValidationMessageFor(model => model.ProductPagePromoDetailsWidgetZone)
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="col-md-3">
+                        &nbsp;
+                    </div>
+                    <div class="col-md-9">
+                        <input type="submit" name="save" class="btn bg-blue" value="@T("Admin.Common.Save")" />
+                        <a class="btn bg-green" href="http://admin.qixolpromo.com" target="_blank">
+                            <img src="http://admin.qixolpromo.com/Content/imgs/qixol_fav.png" style="vertical-align: middle;" />
+                            @T("Plugins.Misc.QixolPromo.GoToPromo")
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@helper TabStickers()
+{
+    @Html.Partial("_PicturesList", Model.AddPictureModel)
+}
+
+@helper TabBanners()
+{
+    @Html.Partial("_BannersList", Model.AddPromoBannerModel)
+}

@@ -1,0 +1,167 @@
+﻿@model AddPromoBannerWidgetZoneModel
+
+<div class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <div id="promobannerwidgets-grid"></div>
+            @Html.HiddenFor(m => Model.BannerId)
+        </div>
+    </div>
+</div>
+
+<div class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            @T("Plugins.Widgets.QixolPromo.BannerWidgets.AddNewZone")
+        </div>
+        <div class="panel-body">
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.NopLabelFor(model => model.SelectedWidgetZone)
+                </div>
+                <div class="col-md-9">
+                    @Html.NopDropDownListFor(model => model.SelectedWidgetZone, Model.AvailableWidgetZones)
+                    @Html.ValidationMessageFor(model => model.SelectedWidgetZone)
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.NopLabelFor(model => model.CustomWidgetZone)
+                </div>
+                <div class="col-md-9">
+                    @Html.NopEditorFor(model => model.CustomWidgetZone)
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">&nbsp;</div>
+                <div class="col-md-9">
+                    <input type="button" id="addPromoBannerWidgetZone" class="k-button" value="@T("Plugins.Widgets.QixolPromo.BannerWidgets.AddNewZoneButton")" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        $("#promobannerwidgets-grid").kendoGrid({
+            dataSource: {
+                type: "json",
+                transport: {
+                    read: {
+                        url: "/Admin/PromoBanner/Admin/Banner/WidgetZoneList?id=@Model.BannerId",
+                        type: "POST",
+                        dataType: "json"
+                    },
+                    destroy: {
+                        url: "/Admin/PromoBanner/Admin/Banner/DeleteWidgetZone",
+                        type: "POST",
+                        dataType: "json"
+                    }
+                },
+                schema: {
+                    data: "Data",
+                    total: "Total",
+                    errors: "Errors",
+                    model: {
+                        id: "Id",
+                        fields: {
+                            WidgetZone: { editable: false, type: "string" },
+                        }
+                    }
+                },
+                requestEnd: function (e) {
+                    if (e.type == "destroy") {
+                        this.read();
+                    }
+                },
+                error: function (e) {
+                    display_kendoui_grid_error(e);
+                    // Cancel the changes
+                    this.cancelChanges();
+                },
+                serverPaging: true,
+                serverFiltering: true,
+                serverSorting: true
+            },
+            pageable: {
+                refresh: true,
+                numeric: false,
+                previousNext: false,
+                info: false
+            },
+            editable: {
+                confirmation: true,
+                mode: "inline"
+            },
+            scrollable: false,
+            columns: [{
+                field: "WidgetZone",
+                title: "@T("Plugins.Widgets.QixolPromo.BannerWidgets.Zone")",
+            }, {
+                command: [{
+                    name: "destroy",
+                    text: "@T("Admin.Common.Delete")"
+                }],
+                headerAttributes: { style: "text-align:center" },
+                attributes: { style: "text-align:center" },
+                width: 200
+            }]
+        });
+    });
+
+    $(document).ready(function () {
+
+        $('#addPromoBannerWidgetZone').click(function () {
+            var widgetZone = $("#@Html.FieldIdFor(model => model.SelectedWidgetZone)").val();
+            if (widgetZone == 'custom') {
+                widgetZone = $('#@Html.FieldIdFor(model => model.CustomWidgetZone)').val();
+                if (widgetZone.trim() == '') {
+                    alert('@T("Plugins.Widgets.QixolPromo.BannerWidgets.Failure.Msg")');
+                    return false;
+                }
+            }
+            var bannerId = $("#@Html.FieldIdFor(model => model.BannerId)").val();
+
+            $('#addPromoBannerWidgetZone').attr('disabled', true);
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "/Admin/PromoBanner/Admin/Banner/AddWidgetZone",
+                data: { "bannerId": bannerId, "widgetZone": widgetZone },
+                success: function (data) {
+                    var grid = $("#promobannerwidgets-grid");
+                    grid.data('kendoGrid').dataSource.read();
+
+                    $('#addPromoBannerWidgetZone').attr('disabled', false);
+                    $('#@Html.FieldIdFor(model => model.CustomWidgetZone)').val('');
+                    $("#@Html.FieldIdFor(model => model.SelectedWidgetZone)").val("@Model.FirstWidgetZone");
+                    $('#@Html.FieldIdFor(model => model.CustomWidgetZone)').toggleClass('k-state-disabled', true)
+                    $('#@Html.FieldIdFor(model => model.CustomWidgetZone)').prop('disabled', 'disabled');
+                    $('label[for="@Html.FieldIdFor(model => model.CustomWidgetZone)"]').toggleClass('k-state-disabled', true)
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    alert('@T("Plugins.Widgets.QixolPromo.BannerWidgets.Failure.Msg")');
+                    $('#addPromoBannerWidgetZone').attr('disabled', false);
+                }
+            });
+        });
+
+        $('#@Html.FieldIdFor(model => model.SelectedWidgetZone)').change(function () {
+            var customDisabled = true;
+            if ($('#@Html.FieldIdFor(m => m.SelectedWidgetZone) option:selected').val() == 'custom') {
+                customDisabled = false;
+                $('#@Html.FieldIdFor(model => model.CustomWidgetZone)').prop('disabled', '');
+            }
+            else {
+                $('#@Html.FieldIdFor(model => model.CustomWidgetZone)').val('');
+                $('#@Html.FieldIdFor(model => model.CustomWidgetZone)').prop('disabled', 'disabled');
+            }
+            $('#@Html.FieldIdFor(model => model.CustomWidgetZone)').toggleClass('k-state-disabled', customDisabled);
+            $('label[for="@Html.FieldIdFor(model => model.CustomWidgetZone)"]').toggleClass('k-state-disabled', customDisabled);
+        });
+
+        $('label[for="@Html.FieldIdFor(model => model.CustomWidgetZone)"]').toggleClass('k-state-disabled', true);
+
+    });
+</script>

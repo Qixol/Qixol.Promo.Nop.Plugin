@@ -1,0 +1,100 @@
+﻿@model PromoConfigureModel
+
+<table class="adminContent">
+    <tr>    
+        <td>
+
+            <div id="productAttributes-grid"></div>
+
+            <script>
+
+                //local datasource
+                var productAttributes = [
+                    @for (int i = 0; i < Model.ProductConfigItems.Count; i++)
+                    {
+                        var prodConfig = Model.ProductConfigItems[i];
+                    <text>
+                    {
+                        Id: @(prodConfig.Id),
+                        Name: "@(Html.Raw(HttpUtility.JavaScriptStringEncode(prodConfig.NameText)))",
+                        Enabled: @(prodConfig.Enabled.ToString().ToLowerInvariant())
+                        }
+                    </text>
+                        if (i != Model.ProductConfigItems.Count - 1)
+                        {
+                        <text>,</text>
+                        }
+                    }
+                ];
+
+                $(document).ready(function () {
+                    $("#productAttributes-grid").kendoGrid({
+                        dataSource: {
+                            data: productAttributes,
+                            schema: {
+                                model: {
+                                    fields: {
+                                        Id: { type: "number" },
+                                        Name: { type: "string" },
+                                        Enabled: { type: "boolean" }
+                                    }
+                                }
+                            },
+                            error: function (e) {
+                                display_kendoui_grid_error(e);
+                                // Cancel the changes
+                                this.cancelChanges();
+                            }
+                        },
+                        pageable: {
+                            refresh: true,
+                            numeric: false,
+                            previousNext: false,
+                            info: false
+                        },
+                        scrollable: false,
+                        columns: [
+                            {
+                                field: "Name",
+                                title: "@T("Plugins.Misc.QixolPromo.ProductAttributes.Name")",
+                                width: 100
+                            }, {
+                                field: "Enabled",
+                                headerTemplate: "@T("Plugins.Misc.QixolPromo.ProductAttributes.IsEnabled")&nbsp<input id='mastercheckbox' type='checkbox' />",
+                                headerAttributes: { style: "text-align:center" },
+                                attributes: { style: "text-align:center" },
+                                template: "<input name='checkbox_product_attribute' value='#=Id#' type='checkbox' class='checkboxGroups' # if(Enabled) {# checked='checked' #}  # />",
+                                width: 100
+                            }
+                        ]
+                    });
+                });
+
+            </script>
+                
+
+            <script type="text/javascript">
+
+                $(document).ready(function () {
+
+                    updateMasterCheckbox();
+
+                    $('#mastercheckbox').click(function () {
+                        $('.checkboxGroups').attr('checked', $(this).is(':checked')).change();
+                    });
+
+                    //wire up checkboxes.
+                    $('#productAttributes-grid').on('change', 'input[type=checkbox][id!=mastercheckbox]', function (e) {
+                        updateMasterCheckbox();
+                    });
+                });
+
+                function updateMasterCheckbox() {
+                    var numChkBoxes = $('#productAttributes-grid input[type=checkbox][id!=mastercheckbox]').length;
+                    var numChkBoxesChecked = $('#productAttributes-grid input[type=checkbox][checked][id!=mastercheckbox]').length;
+                    $('#mastercheckbox').attr('checked', numChkBoxes == numChkBoxesChecked && numChkBoxes > 0);
+                }
+            </script>    
+            </td>
+    </tr>
+</table>   

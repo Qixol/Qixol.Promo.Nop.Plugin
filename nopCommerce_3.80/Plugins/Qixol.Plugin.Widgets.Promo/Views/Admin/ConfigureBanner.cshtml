@@ -1,0 +1,51 @@
+﻿@model PromoBannerEditModel
+
+@{
+    Layout = "~/Administration/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = T("Plugins.Widgets.QixolPromo.Banner.Title").Text;
+
+    string backToConfig = T("Plugins.Widgets.QixolPromo.Banner.BackToConfig").ToString();
+}
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        bindBootstrapTabSelectEvent('qixolpromotionsbase-configurebanner');
+    });
+
+</script>
+
+<div class="content-header clearfix">
+    <h1 class="pull-left">
+        @T("Plugins.Widgets.QixolPromo.Banner.Header") @Model.BannerName
+
+        <small>
+            <i class="fa fa-arrow-circle-left"></i>
+            @Html.ActionLink(backToConfig, "ConfigureWidget", "Widget", new { systemName = "Widgets.QixolPromo", selectTab = 2 }, null)
+        </small>
+    </h1>
+</div>
+
+<div class="content">
+    <div class="form-horizontal">
+        <div id="qixolpromotionsbase-configurebanner" class="nav-tabs-custom">
+            <ul class="nav nav-tabs">
+                @Html.RenderBootstrapTabHeader("tab-banner-pictures", @T("Plugins.Widgets.QixolPromo.Banner.Pictures"), true)
+                @Html.RenderBootstrapTabHeader("tab-banner-widget-zones", @T("Plugins.Widgets.QixolPromo.Banner.WidgetZones"))
+            </ul>
+            <div class="tab-content">
+                @Html.RenderBootstrapTabContent("tab-banner-pictures", @TabBannerPictures(), true)
+                @Html.RenderBootstrapTabContent("tab-banner-widget-zones", @TabBannerWidgetZones())
+            </div>
+        </div>
+    </div>
+</div>
+
+@helper TabBannerPictures()
+{
+    @Html.Partial("_BannerPicturesList", Model.AddPromoBannerPictureModel)
+}
+
+@helper TabBannerWidgetZones()
+{
+    @Html.Partial("_BannerWidgetZonesList", Model.AddPromoBannerWidgetZoneModel)
+}

@@ -1,0 +1,116 @@
+﻿@model PromoConfigureModel
+
+<style>
+    .company-logo {
+        max-height: 40px;
+    }
+
+    .list-without-bullet-points {
+        list-style: none;
+    }
+
+    .qixol-promo-about {
+        float: right;
+    }
+
+    .product-title {
+        font-weight: bold;
+    }
+</style>
+
+<div class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            @T("Plugins.Misc.QixolPromo.Help.Title")
+        </div>
+        <div class="panel-body">
+            <div class="form-group">
+                <div class="col-md-3">
+                    <img class="company-logo" src="http://www.qixol.com/wp-content/uploads/2013/06/quixolLogoWebMed1.png">
+                </div>
+            </div>
+            <div>
+                <div>@T("Plugins.Misc.QixolPromo.Help.Steps.Title")</div>
+                <ul class="list-without-bullet-points">
+                    <li>@T("Plugins.Misc.QixolPromo.Help.Steps.1.a")<a href="http://admin.qixolpromo.com/account/register?companyType=2" target="_blank">@T("Plugins.Misc.QixolPromo.Help.Steps.1.b")</a>@T("Plugins.Misc.QixolPromo.Help.Steps.1.c")</li>
+                    <li>@T("Plugins.Misc.QixolPromo.Help.Steps.2")</li>
+                    <li>@T("Plugins.Misc.QixolPromo.Help.Steps.3")</li>
+                    <li>
+                        @T("Plugins.Misc.QixolPromo.Help.Steps.4.a")
+                        <ul class="list-without-bullet-points">
+                            <li>@T("Plugins.Misc.QixolPromo.Help.Steps.4.b")</li>
+                            <li>@T("Plugins.Misc.QixolPromo.Help.Steps.4.c")</li>
+                            <li>@T("Plugins.Misc.QixolPromo.Help.Steps.4.d")</li>
+                        </ul>
+                    </li>
+                    <li>
+                        @T("Plugins.Misc.QixolPromo.Help.Steps.5.a")
+                        <ul class="list-without-bullet-points">
+                            <li>@T("Plugins.Misc.QixolPromo.Help.Steps.5.b")</li>
+                            <li>@T("Plugins.Misc.QixolPromo.Help.Steps.5.c")</li>
+                        </ul>
+                    </li>
+                    <li>
+                        @T("Plugins.Misc.QixolPromo.Help.Steps.6.a")
+                        <ul class="list-without-bullet-points">
+                            <li>@T("Plugins.Misc.QixolPromo.Help.Steps.6.b")</li>
+                            <li>@T("Plugins.Misc.QixolPromo.Help.Steps.6.c")</li>
+                            <li>@T("Plugins.Misc.QixolPromo.Help.Steps.6.d")</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            @T("Plugins.Misc.QixolPromo.Help.Resources.Title")
+        </div>
+        <div class="panel-body">
+            <ul class="list-without-bullet-points">
+                <li><a href="http://help.qixolpromo.com" target="_blank">@T("Plugins.Misc.QixolPromo.Help.Resources.HelpGuide")</a></link>
+                <li><a href="https://vimeo.com/channels/qixolpromo" target="_blank">@T("Plugins.Misc.QixolPromo.Help.Resources.Tutorials")</a></li>
+                <li><a href="http://www.qixolpromo.com" target="_blank">@T("Plugins.Misc.QixolPromo.Help.Resources.ProductOverview")</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+@if (Model.ShowHelperMessages)
+{
+    <div class="panel-group">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                @T("Plugins.Misc.QixolPromo.Help.Resources.ShowHelperMessagesTitle")
+            </div>
+            <div class="panel-body">
+                <div class="form-group">
+                    <div class="col-md-3">
+                        @Html.NopLabelFor(model => model.ShowHelperMessages)
+                    </div>
+                    <div class="col-md-9">
+                        @Html.NopEditorFor(model => model.ShowHelperMessages)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <div class="form-group">
+                <div class="col-md-3">&nbsp;</div>
+                <div class="col-md-9">
+                    <div class="qixol-promo-about">
+                        <div class="product-title">@T("Plugins.Misc.QixolPromo.ProductTitle")</div>
+                        <div>@T("Admin.Configuration.Plugins.Fields.Version"): @Model.DisplayVersion</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

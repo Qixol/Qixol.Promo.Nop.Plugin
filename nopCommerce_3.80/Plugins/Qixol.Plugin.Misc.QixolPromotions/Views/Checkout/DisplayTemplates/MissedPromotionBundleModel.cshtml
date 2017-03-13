@@ -1,0 +1,128 @@
+﻿@model MissedPromotionBundleModel
+
+@using Qixol.Plugin.Misc.Promo.Models.Checkout;
+@using global::Nop.Web.Models.Catalog;
+@using global::Nop.Core.Domain.Orders;
+@using global::Nop.Web.Models.Media;
+
+@{
+    Layout = null;
+
+    //prepare "Add to cart" AJAX link
+    string addtocartlink = string.Empty;
+    var shoppingCartTypeId = (int) ShoppingCartType.ShoppingCart;
+    var quantity = 1;
+    var addToCartText = T("ShoppingCart.AddToCart").Text;
+}
+
+<style>
+    .product.missed-promotion .add-to-cart-button {
+        min-width: 160px;
+        border: none;
+        background-color: #4ab2f1;
+        padding: 10px 20px;
+        font-size: 16px;
+        color: #fff;
+        text-transform: uppercase;
+    }
+
+    .promo-product-picture {
+        vertical-align: top;
+    }
+</style>
+<tr>
+    <td class="promo-product-picture">
+        @foreach(var matchedCartItemModel in Model.MatchedCartItemModels)
+        { 
+                <div><a href="@Url.RouteUrl("Product", new { SeName = matchedCartItemModel.ProductSeName })"><img alt="@matchedCartItemModel.Picture.AlternateText" src="@matchedCartItemModel.Picture.ImageUrl" title="@matchedCartItemModel.Picture.Title" /></a></div>
+        }
+    </td>
+    <td class="product missed-promotion">
+        <div style="display: inline-block; width: 100%;">
+            @foreach (var matchedCartItemModel in Model.MatchedCartItemModels)
+            {
+                <div>
+                    <a href="@Url.RouteUrl("Product", new { SeName = matchedCartItemModel.ProductSeName })" class="product-name">@matchedCartItemModel.ProductName</a>
+                    @if (!String.IsNullOrEmpty(matchedCartItemModel.AttributeInfo))
+                    {
+                    <div class="attributes">
+                        @Html.Raw(matchedCartItemModel.AttributeInfo)
+                    </div>
+                    }
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(@Model.PromotionName))
+            {
+                <div class="promotion-item">@Model.PromotionName</div>
+            }
+            else
+            {
+                <div class="promotion-item">Deal</div>
+            }
+            @if (!string.IsNullOrEmpty(Model.SaveFrom))
+            {
+                <div>@T("Plugins.Misc.QixolPromo.SaveFrom")&nbsp;@Model.SaveFrom</div>
+            }
+            @if (Model.UnmatchedProductDetailsModels != null && Model.UnmatchedProductDetailsModels.Count > 0)
+            {
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="product-picture">
+                                @T("ShoppingCart.Image")
+                            </th>
+                            <th class="product">
+                                @T("Plugins.Misc.QixolPromo.Product(s)")
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var missedPromoProductDetailsModel in Model.UnmatchedProductDetailsModels)
+                        {
+                            PictureModel pictureModel = null;
+                            if (missedPromoProductDetailsModel.ProductDetailsModel.PictureModels != null && missedPromoProductDetailsModel.ProductDetailsModel.PictureModels.Count > 0)
+                            {
+                                pictureModel = missedPromoProductDetailsModel.ProductDetailsModel.PictureModels.First();
+                            }
+                            <tr>
+                                <td>
+                                    @if (pictureModel != null)
+                                    {
+                                        <img alt="@pictureModel.AlternateText" src="@pictureModel.ImageUrl" title="@pictureModel.Title" />
+                                    }
+                                </td>
+                                <td>
+                                    @missedPromoProductDetailsModel.ProductDetailsModel.Name
+                                    @{
+                                        var addToCartModel = missedPromoProductDetailsModel.ProductDetailsModel.AddToCart;
+                                        if (addToCartModel != null)
+                                        {
+                                            addtocartlink = Url.RouteUrl("AddProductToCart-Catalog", new { productId = addToCartModel.ProductId, shoppingCartTypeId = shoppingCartTypeId, quantity = quantity });
+                                            <div class="add-to-cart-panel" style="float: right;">
+                                                <input type="button" value="@(addToCartText)" class="button-1 add-to-cart-button" onclick="PromoAjaxCart.addproducttocart_catalog('@addtocartlink');return true;" />
+                                            </div>
+                                        }
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            @if (Model.CategorySimpleModels.Count > 0)
+            {
+                <div>@T("Plugins.Misc.QixolPromo.ToCompleteThePromotion")</div>
+            foreach(var simpleCategoryModel in Model.CategorySimpleModels)
+            {
+                <div><a href="@Url.RouteUrl("Category", new { SeName = simpleCategoryModel.SeName })">
+                    @simpleCategoryModel.Name
+                @if (simpleCategoryModel.NumberOfProducts.HasValue)
+                {
+                    @T("Categories.TotalProducts", simpleCategoryModel.NumberOfProducts.Value)<text>&nbsp;&minus;&nbsp;</text>@T("Plugins.Misc.QixolPromo.Product(s)")
+                }
+            </a></div>
+            }
+            }
+        </div>
+    </td>
+</tr>
