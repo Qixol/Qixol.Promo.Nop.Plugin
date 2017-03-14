@@ -3,7 +3,18 @@
 @{
     Layout = "";
 
-    int selectedTabIndex = 5;       // Default to 'Help'
+    const int INTEGRATION_TAB = 0;
+    const int SYNCHRONIZED_ITEMS_TAB = 1;
+    const int PRODUCT_ATTRIBUTES_TAB = 2;
+    const int INTEGRATION_CODES_TAB = 3;
+    const int MISSED_PROMOTIONS_TAB = 4;
+    const int ADVANCED_TAB = 5;
+    const int HELP_TAB = 6;
+    const int CUSTOM_SERVICES_TAB = 7;
+
+    const int SERVICES_CUSTOM_END_POINTS = 2;
+
+    int selectedTabIndex = HELP_TAB;       // Default to 'Help'
     if (!Model.ShowHelperMessages)
     {
         selectedTabIndex = GetSelectedTabIndex();
@@ -19,7 +30,7 @@
         @{
             if (!Model.SynchronizeProducts)
             {
-                @Html.Raw("tabStrip.enable(tabStrip.tabGroup.children().eq(2), false);");
+                @Html.Raw("tabStrip.enable(tabStrip.tabGroup.children().eq(" + PRODUCT_ATTRIBUTES_TAB + "), false);");
                 @Html.Raw(string.Format("$('#{0}').prop('disabled', true);", Html.FieldIdFor(model => model.StoreId)));
                 @Html.Raw(string.Format("$('label[for=\"{0}\"]').toggleClass('k-state-disabled', true);", Html.FieldIdFor(model => model.StoreId)));
             }
@@ -30,9 +41,9 @@
                 @Html.Raw(string.Format("$('#{0}').prop('disabled', !$(this).prop('checked'));", Html.FieldIdFor(model => model.StoreGroup)));
                 @Html.Raw(string.Format("$('label[for=\"{0}\"]').toggleClass('k-state-disabled', !$(this).prop('checked'));", Html.FieldIdFor(model => model.StoreGroup)));
             }
-            if (!(Model.AllowCustomEndpoint && (Model.SelectedServicesEndPoint == 2)))
+            if (Model.AllowCustomEndpoint && (Model.SelectedServicesEndPoint != SERVICES_CUSTOM_END_POINTS))
             {
-                @Html.Raw("tabStrip.enable(tabStrip.tabGroup.children().eq(6), false);");
+                @Html.Raw("tabStrip.enable(tabStrip.tabGroup.children().eq(" + CUSTOM_SERVICES_TAB+ "), false);");
             }
         }
 
@@ -64,7 +75,7 @@
             <text>
         $('#@Html.FieldIdFor(model => model.SelectedServicesEndPoint)').change(function () {
             var tabStrip = $("#qixolpromotionsbase-configure").kendoTabStrip().data("kendoTabStrip");
-            tabStrip.enable(tabStrip.tabGroup.children().eq(6), ($(this).val() == 2));
+            tabStrip.enable(tabStrip.tabGroup.children().eq(@CUSTOM_SERVICES_TAB), ($(this).val() == 2));
         });
         </text>
         }
@@ -92,30 +103,30 @@
     @Html.AntiForgeryToken()
     <div id="qixolpromotionsbase-configure">
         <ul>
-            <li @Html.RenderSelectedTabIndex(0, selectedTabIndex)>
+            <li @Html.RenderSelectedTabIndex(INTEGRATION_TAB, selectedTabIndex)>
                 @T("Plugins.Misc.QixolPromo.Integration")
             </li>
-            <li @Html.RenderSelectedTabIndex(1, selectedTabIndex)>
+            <li @Html.RenderSelectedTabIndex(SYNCHRONIZED_ITEMS_TAB, selectedTabIndex)>
                 @T("Plugins.Misc.QixolPromo.SynchronizedItems")
             </li>
-            <li @Html.RenderSelectedTabIndex(2, selectedTabIndex)>
+            <li @Html.RenderSelectedTabIndex(PRODUCT_ATTRIBUTES_TAB, selectedTabIndex)>
                 @T("Plugins.Misc.QixolPromo.ProductAttributes")
             </li>
-            <li @Html.RenderSelectedTabIndex(3, selectedTabIndex)>
+            <li @Html.RenderSelectedTabIndex(INTEGRATION_CODES_TAB, selectedTabIndex)>
                 @T("Plugins.Misc.QixolPromo.IntegrationCodes")
             </li>
-            <li @Html.RenderSelectedTabIndex(3, selectedTabIndex)>
+            <li @Html.RenderSelectedTabIndex(MISSED_PROMOTIONS_TAB, selectedTabIndex)>
                 @T("Plugins.Misc.QixolPromo.MissedPromotions")
             </li>
-            <li @Html.RenderSelectedTabIndex(5, selectedTabIndex)>
+            <li @Html.RenderSelectedTabIndex(ADVANCED_TAB, selectedTabIndex)>
                 @T("Plugins.Misc.QixolPromo.Advanced")
             </li>
-            <li @Html.RenderSelectedTabIndex(6, selectedTabIndex)>
+            <li @Html.RenderSelectedTabIndex(HELP_TAB, selectedTabIndex)>
                 @T("Plugins.Misc.QixolPromo.Help")
             </li>
             @if (Model.AllowCustomEndpoint)
             {
-                <li @Html.RenderSelectedTabIndex(7, selectedTabIndex)>
+                <li @Html.RenderSelectedTabIndex(CUSTOM_SERVICES_TAB, selectedTabIndex)>
                     @T("Plugins.Misc.QixolPromo.ServiceEndpoint.Custom")
                 </li>
             }
@@ -322,22 +333,6 @@
                 @Html.EditorFor(model => model.ShowMissedPromotions)
             </td>
         </tr>
-
-        @*<tr>
-            <td class="adminTitle">
-                @Html.NopLabelFor(model => model.MissedPromotionsPictureId):
-            </td>
-            <td class="adminData">
-                @Html.EditorFor(model => model.MissedPromotionsPictureId)
-                @Html.ValidationMessageFor(model => model.MissedPromotionsPictureId)
-            </td>
-        </tr>
-        <tr style="height: 10px;"><td colspan="2"></td></tr>
-        <tr>
-            <td colspan="2" align="left" style="padding-top: 20px; padding-bottom: 30px;">
-                <input type="button" id="addPromoPicture" class="k-button" value="@T("Plugins.Misc.QixolPromo.PromoPicture.AddButon")" />
-            </td>
-        </tr>*@
     </table>
 }
 
