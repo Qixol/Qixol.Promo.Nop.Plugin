@@ -125,6 +125,7 @@
     <Compile Include="Orders\CheckoutAttributeExtensions.cs" />
     <Compile Include="Orders\CheckoutAttributeFormatter.cs" />
     <Compile Include="Orders\IPromoOrderService.cs" />
+    <Compile Include="Orders\OrderProcessingServiceExtensions.cs" />
     <Compile Include="Orders\OrderProcessingService.cs" />
     <Compile Include="Orders\OrderTotalCalculationService.cs" />
     <Compile Include="Orders\PromoOrderExtensions.cs" />

@@ -70,6 +70,8 @@ namespace Qixol.Nop.Promo.Services.Orders
         private readonly IAffiliateService _affiliateService;
         private readonly IEventPublisher _eventPublisher;
         private readonly IPdfService _pdfService;
+        private readonly IRewardPointService _rewardPointService;
+        private readonly IGenericAttributeService _genericAttributeService;
 
         private readonly ShippingSettings _shippingSettings;
         private readonly PaymentSettings _paymentSettings;
@@ -81,14 +83,12 @@ namespace Qixol.Nop.Promo.Services.Orders
 
         private readonly PromoSettings _promoSettings;
         private readonly IPromoUtilities _promoUtilities;
-        private readonly IGenericAttributeService _genericAttributeService;
 
         private readonly IPromoOrderService _promoOrderService;
         private readonly IPromoService _promoService;
 
         private readonly IStoreContext _storeContext;
 
-        private readonly IRewardPointService _rewardPointService;
 
         #endregion
 
@@ -126,6 +126,8 @@ namespace Qixol.Nop.Promo.Services.Orders
         /// <param name="affiliateService">Affiliate service</param>
         /// <param name="eventPublisher">Event published</param>
         /// <param name="pdfService">PDF service</param>
+        /// <param name="rewardPointService">Reward point service</param>
+        /// <param name="genericAttributeService">Generic attribute service</param>
         /// <param name="paymentSettings">Payment settings</param>
         /// <param name="shippingSettings">Shipping settings</param>
         /// <param name="rewardPointsSettings">Reward points settings</param>
@@ -163,6 +165,7 @@ namespace Qixol.Nop.Promo.Services.Orders
             IEventPublisher eventPublisher,
             IPdfService pdfService,
             IRewardPointService rewardPointService,
+            IGenericAttributeService genericAttributeService,
             ShippingSettings shippingSettings,
             PaymentSettings paymentSettings,
             RewardPointsSettings rewardPointsSettings,
@@ -170,7 +173,6 @@ namespace Qixol.Nop.Promo.Services.Orders
             TaxSettings taxSettings,
             LocalizationSettings localizationSettings,
             CurrencySettings currencySettings,
-            IGenericAttributeService genericAttributeService,
             PromoSettings promoSettings,
             IPromoUtilities promoUtilities,
             IPromoOrderService promoOrderService,
@@ -214,6 +216,8 @@ namespace Qixol.Nop.Promo.Services.Orders
             this._eventPublisher = eventPublisher;
             this._pdfService = pdfService;
             this._rewardPointService = rewardPointService;
+            this._genericAttributeService = genericAttributeService;
+
             this._paymentSettings = paymentSettings;
             this._shippingSettings = shippingSettings;
             this._rewardPointsSettings = rewardPointsSettings;
@@ -221,683 +225,11 @@ namespace Qixol.Nop.Promo.Services.Orders
             this._taxSettings = taxSettings;
             this._localizationSettings = localizationSettings;
             this._currencySettings = currencySettings;
-            this._genericAttributeService = genericAttributeService;
             this._promoSettings = promoSettings;
             this._promoUtilities = promoUtilities;
             this._promoOrderService = promoOrderService;
             this._promoService = promoService;
             this._storeContext = storeContext;
-        }
-
-        #endregion
-
-        #region Methods
-
-
-        /// <summary>
-        /// Places an order
-        /// </summary>
-        /// <param name="processPaymentRequest">Process payment request</param>
-        /// <returns>Place order result</returns>
-        public override PlaceOrderResult PlaceOrder(ProcessPaymentRequest processPaymentRequest)
-        {
-            //think about moving functionality of processing recurring orders (after the initial order was placed) to ProcessNextRecurringPayment() method
-            if (processPaymentRequest == null)
-                throw new ArgumentNullException("processPaymentRequest");
-
-            var result = new PlaceOrderResult();
-            try
-            {
-                if (processPaymentRequest.OrderGuid == Guid.Empty)
-                    processPaymentRequest.OrderGuid = Guid.NewGuid();
-
-                //prepare order details
-                var details = PreparePlaceOrderDetails(processPaymentRequest);
-
-                #region Payment workflow
-
-
-                //process payment
-                ProcessPaymentResult processPaymentResult = null;
-                //skip payment workflow if order total equals zero
-                var skipPaymentWorkflow = details.OrderTotal == decimal.Zero;
-                if (!skipPaymentWorkflow)
-                {
-                    var paymentMethod = _paymentService.LoadPaymentMethodBySystemName(processPaymentRequest.PaymentMethodSystemName);
-                    if (paymentMethod == null)
-                        throw new NopException("Payment method couldn't be loaded");
-
-                    //ensure that payment method is active
-                    if (!paymentMethod.IsPaymentMethodActive(_paymentSettings))
-                        throw new NopException("Payment method is not active");
-
-                    if (!processPaymentRequest.IsRecurringPayment)
-                    {
-                        if (details.IsRecurringShoppingCart)
-                        {
-                            //recurring cart
-                            var recurringPaymentType = _paymentService.GetRecurringPaymentType(processPaymentRequest.PaymentMethodSystemName);
-                            switch (recurringPaymentType)
-                            {
-                                case RecurringPaymentType.NotSupported:
-                                    throw new NopException("Recurring payments are not supported by selected payment method");
-                                case RecurringPaymentType.Manual:
-                                case RecurringPaymentType.Automatic:
-                                    processPaymentResult = _paymentService.ProcessRecurringPayment(processPaymentRequest);
-                                    break;
-                                default:
-                                    throw new NopException("Not supported recurring payment type");
-                            }
-                        }
-                        else
-                        {
-                            //standard cart
-                            processPaymentResult = _paymentService.ProcessPayment(processPaymentRequest);
-                        }
-                    }
-                    else
-                    {
-                        if (details.IsRecurringShoppingCart)
-                        {
-                            //Old credit card info
-                            processPaymentRequest.CreditCardType = details.InitialOrder.AllowStoringCreditCardNumber ? _encryptionService.DecryptText(details.InitialOrder.CardType) : "";
-                            processPaymentRequest.CreditCardName = details.InitialOrder.AllowStoringCreditCardNumber ? _encryptionService.DecryptText(details.InitialOrder.CardName) : "";
-                            processPaymentRequest.CreditCardNumber = details.InitialOrder.AllowStoringCreditCardNumber ? _encryptionService.DecryptText(details.InitialOrder.CardNumber) : "";
-                            processPaymentRequest.CreditCardCvv2 = details.InitialOrder.AllowStoringCreditCardNumber ? _encryptionService.DecryptText(details.InitialOrder.CardCvv2) : "";
-                            try
-                            {
-                                processPaymentRequest.CreditCardExpireMonth = details.InitialOrder.AllowStoringCreditCardNumber ? Convert.ToInt32(_encryptionService.DecryptText(details.InitialOrder.CardExpirationMonth)) : 0;
-                                processPaymentRequest.CreditCardExpireYear = details.InitialOrder.AllowStoringCreditCardNumber ? Convert.ToInt32(_encryptionService.DecryptText(details.InitialOrder.CardExpirationYear)) : 0;
-                            }
-                            catch { }
-
-                            var recurringPaymentType = _paymentService.GetRecurringPaymentType(processPaymentRequest.PaymentMethodSystemName);
-                            switch (recurringPaymentType)
-                            {
-                                case RecurringPaymentType.NotSupported:
-                                    throw new NopException("Recurring payments are not supported by selected payment method");
-                                case RecurringPaymentType.Manual:
-                                    processPaymentResult = _paymentService.ProcessRecurringPayment(processPaymentRequest);
-                                    break;
-                                case RecurringPaymentType.Automatic:
-                                    //payment is processed on payment gateway site
-                                    processPaymentResult = new ProcessPaymentResult();
-                                    break;
-                                default:
-                                    throw new NopException("Not supported recurring payment type");
-                            }
-                        }
-                        else
-                        {
-                            throw new NopException("No recurring products");
-                        }
-                    }
-                }
-                else
-                {
-                    //payment is not required
-                    if (processPaymentResult == null)
-                        processPaymentResult = new ProcessPaymentResult();
-                    processPaymentResult.NewPaymentStatus = PaymentStatus.Paid;
-                }
-
-                if (processPaymentResult == null)
-                    throw new NopException("processPaymentResult is not available");
-
-                #endregion
-
-                if (processPaymentResult.Success)
-                {
-                    #region Save order details
-
-                    var order = new Order
-                    {
-                        StoreId = processPaymentRequest.StoreId,
-                        OrderGuid = processPaymentRequest.OrderGuid,
-                        CustomerId = details.Customer.Id,
-                        CustomerLanguageId = details.CustomerLanguage.Id,
-                        CustomerTaxDisplayType = details.CustomerTaxDisplayType,
-                        CustomerIp = _webHelper.GetCurrentIpAddress(),
-                        OrderSubtotalInclTax = details.OrderSubTotalInclTax,
-                        OrderSubtotalExclTax = details.OrderSubTotalExclTax,
-                        OrderSubTotalDiscountInclTax = details.OrderSubTotalDiscountInclTax,
-                        OrderSubTotalDiscountExclTax = details.OrderSubTotalDiscountExclTax,
-                        OrderShippingInclTax = details.OrderShippingTotalInclTax,
-                        OrderShippingExclTax = details.OrderShippingTotalExclTax,
-                        PaymentMethodAdditionalFeeInclTax = details.PaymentAdditionalFeeInclTax,
-                        PaymentMethodAdditionalFeeExclTax = details.PaymentAdditionalFeeExclTax,
-                        TaxRates = details.TaxRates,
-                        OrderTax = details.OrderTaxTotal,
-                        OrderTotal = details.OrderTotal,
-                        RefundedAmount = decimal.Zero,
-                        OrderDiscount = details.OrderDiscountAmount,
-                        CheckoutAttributeDescription = details.CheckoutAttributeDescription,
-                        CheckoutAttributesXml = details.CheckoutAttributesXml,
-                        CustomerCurrencyCode = details.CustomerCurrencyCode,
-                        CurrencyRate = details.CustomerCurrencyRate,
-                        AffiliateId = details.AffiliateId,
-                        OrderStatus = OrderStatus.Pending,
-                        AllowStoringCreditCardNumber = processPaymentResult.AllowStoringCreditCardNumber,
-                        CardType = processPaymentResult.AllowStoringCreditCardNumber ? _encryptionService.EncryptText(processPaymentRequest.CreditCardType) : string.Empty,
-                        CardName = processPaymentResult.AllowStoringCreditCardNumber ? _encryptionService.EncryptText(processPaymentRequest.CreditCardName) : string.Empty,
-                        CardNumber = processPaymentResult.AllowStoringCreditCardNumber ? _encryptionService.EncryptText(processPaymentRequest.CreditCardNumber) : string.Empty,
-                        MaskedCreditCardNumber = _encryptionService.EncryptText(_paymentService.GetMaskedCreditCardNumber(processPaymentRequest.CreditCardNumber)),
-                        CardCvv2 = processPaymentResult.AllowStoringCreditCardNumber ? _encryptionService.EncryptText(processPaymentRequest.CreditCardCvv2) : string.Empty,
-                        CardExpirationMonth = processPaymentResult.AllowStoringCreditCardNumber ? _encryptionService.EncryptText(processPaymentRequest.CreditCardExpireMonth.ToString()) : string.Empty,
-                        CardExpirationYear = processPaymentResult.AllowStoringCreditCardNumber ? _encryptionService.EncryptText(processPaymentRequest.CreditCardExpireYear.ToString()) : string.Empty,
-                        PaymentMethodSystemName = processPaymentRequest.PaymentMethodSystemName,
-                        AuthorizationTransactionId = processPaymentResult.AuthorizationTransactionId,
-                        AuthorizationTransactionCode = processPaymentResult.AuthorizationTransactionCode,
-                        AuthorizationTransactionResult = processPaymentResult.AuthorizationTransactionResult,
-                        CaptureTransactionId = processPaymentResult.CaptureTransactionId,
-                        CaptureTransactionResult = processPaymentResult.CaptureTransactionResult,
-                        SubscriptionTransactionId = processPaymentResult.SubscriptionTransactionId,
-                        PaymentStatus = processPaymentResult.NewPaymentStatus,
-                        PaidDateUtc = null,
-                        BillingAddress = details.BillingAddress,
-                        ShippingAddress = details.ShippingAddress,
-                        ShippingStatus = details.ShippingStatus,
-                        ShippingMethod = details.ShippingMethodName,
-                        PickUpInStore = details.PickUpInStore,
-                        ShippingRateComputationMethodSystemName = details.ShippingRateComputationMethodSystemName,
-                        CustomValuesXml = processPaymentRequest.SerializeCustomValues(),
-                        VatNumber = details.VatNumber,
-                        CreatedOnUtc = DateTime.UtcNow
-                    };
-                    _orderService.InsertOrder(order);
-
-                    #region Promo
-
-                    _promoService.SendConfirmedBasket(order);
-
-                    BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
-
-                    if (basketResponse == null)
-                    {
-                        throw new NopException(string.Format("Failed to create PromoOrder for order: {0}", order.Id));
-                    }
-                    else
-                    {
-
-                        PromoOrder promoOrder = new PromoOrder()
-                        {
-                            RequestXml = _workContext.CurrentCustomer.GetAttribute<string>(PromoCustomerAttributeNames.PromoBasketRequest, _genericAttributeService, _storeContext.CurrentStore.Id),
-                            ResponseXml = basketResponse.ToXml(),
-                            OrderId = order.Id,
-                            DeliveryOriginalPrice = basketResponse.DeliveryOriginalPrice
-                        };
-
-                        _promoOrderService.InsertPromoOrder(promoOrder);
-
-                        basketResponse.Items.ForEach(bi =>
-                        {
-                            PromoOrderItem promoOrderItem = new PromoOrderItem()
-                            {
-                                LineAmount = bi.LineAmount,
-                                OrderId = order.Id,
-                                PromoOrderId = promoOrder.Id,
-                                IsDelivery = bi.IsDelivery,
-                                ProductCode = bi.ProductCode,
-                                VariantCode = bi.VariantCode,
-                                LinePromotionDiscount = bi.LinePromotionDiscount,
-                                Barcode = bi.Barcode,
-                                Generated = bi.Generated,
-                                ManualDiscount = bi.ManualDiscount,
-                                OriginalAmount = bi.OriginalAmount,
-                                OriginalPrice = bi.OriginalPrice,
-                                OriginalQuantity = bi.OriginalQuantity,
-                                Price = bi.Price,
-                                ProductDescription = bi.ProductDescription,
-                                Quantity = bi.Quantity,
-                                SplitFromLineId = bi.SplitFromLineId,
-                                TotalDiscount = bi.TotalDiscount,
-                                TotalIssuedPoints = bi.TotalIssuedPoints
-                            };
-
-                            promoOrder.PromoOrderItems.Add(promoOrderItem);
-                            _promoOrderService.UpdatePromoOrder(promoOrder);
-
-                            bi.AppliedPromotions.ForEach(ap =>
-                            {
-                                string promotionTypeDisplay = string.Empty;
-                                string promotionType = string.Empty;
-                                string promotionName = string.Empty;
-                                string promotionDisplayText = string.Empty;
-                                var appliedPromo = (from sap in basketResponse.Summary.AppliedPromotions where sap.PromotionId == ap.PromotionId select sap).FirstOrDefault();
-                                if (appliedPromo != null)
-                                {
-                                    promotionName = appliedPromo.PromotionName;
-                                    promotionType = appliedPromo.PromotionType;
-                                    promotionTypeDisplay = appliedPromo.PromotionTypeDisplay;
-                                    promotionDisplayText = appliedPromo.DisplayText;
-                                }
-
-                                PromoOrderItemPromotion promoOrderItemPromotion = new PromoOrderItemPromotion()
-                                {
-                                    BasketLevel = ap.BasketLevelPromotion,
-                                    DeliveryLevel = ap.DeliveryLevelPromotion,
-                                    DiscountAmount = ap.DiscountAmount,
-                                    ForLineId = ap.AssociatedLine,
-                                    Instance = ap.InstanceId,
-                                    PointsIssued = ap.PointsIssued,
-                                    PromotionId = ap.PromotionId,
-                                    DisplayText = promotionDisplayText,
-                                    PromotionTypeDisplay = promotionTypeDisplay,
-                                    PromotionName = promotionName,
-                                    PromotionType = promotionType,
-                                    ExternalIdentifier = ap.ExternalIdentifier,
-                                    ReportingGroupCode = ap.ReportingGroupCode
-                                };
-                                promoOrderItem.PromoOrderItemPromotions.Add(promoOrderItemPromotion);
-                                _promoOrderService.UpdatePromoOrder(promoOrder);
-                            });
-                        });
-
-                        basketResponse.Coupons.ForEach(c =>
-                            {
-                                PromoOrderCoupon promoOrderCoupon = new PromoOrderCoupon()
-                                {
-                                    CouponCode = c.CouponCode,
-                                    Issued = c.Issued,
-                                    OrderId = order.Id,
-                                    PromoOrderId = promoOrder.Id,
-                                    CouponName = c.CouponName,
-                                    IssuedConfirmed = c.IssuedConfirmed,
-                                    DisplayText = c.DisplayText
-                                };
-                                promoOrder.PromoOrderCoupons.Add(promoOrderCoupon);
-                                _promoOrderService.UpdatePromoOrder(promoOrder);
-                            });
-                    }
-
-                    #region clean up
-
-                    Customer customer = _workContext.CurrentCustomer;
-
-                    // basket guid
-                    _genericAttributeService.SaveAttribute<string>(customer, PromoCustomerAttributeNames.PromoBasketUniqueReference, null, _storeContext.CurrentStore.Id);
-
-                    // basket response
-                    _genericAttributeService.SaveAttribute<string>(customer, PromoCustomerAttributeNames.PromoBasketResponse, null, _storeContext.CurrentStore.Id);
-
-                    // basket request
-                    _genericAttributeService.SaveAttribute<string>(customer, PromoCustomerAttributeNames.PromoBasketRequest, null, _storeContext.CurrentStore.Id);
-
-                    // coupon code
-                    _genericAttributeService.SaveAttribute<string>(customer, SystemCustomerAttributeNames.DiscountCouponCode, null);
-
-                    #endregion
-
-                    #endregion
-
-                    result.PlacedOrder = order;
-
-                    if (!processPaymentRequest.IsRecurringPayment)
-                    {
-                        //move shopping cart items to order items
-                        foreach (var sc in details.Cart)
-                        {
-                            var basketResponseItems = basketResponse.FindBasketResponseItems(sc);
-
-                            if (basketResponseItems == null)
-                            {
-                                // TODO: handle this error
-                            }
-                            else
-                            {
-                                //prices
-                                decimal taxRate;
-                                decimal discountAmount = basketResponseItems.Sum(i => i.LinePromotionDiscount);
-                                decimal scUnitPrice = _priceCalculationService.GetUnitPrice(sc);
-                                decimal scSubTotal = basketResponseItems.Sum(i => i.LineAmount);
-                                decimal scUnitPriceInclTax = _taxService.GetProductPrice(sc.Product, scUnitPrice, true, details.Customer, out taxRate);
-                                decimal scUnitPriceExclTax = _taxService.GetProductPrice(sc.Product, scUnitPrice, false, details.Customer, out taxRate);
-                                decimal scSubTotalInclTax = _taxService.GetProductPrice(sc.Product, scSubTotal, true, details.Customer, out taxRate);
-                                decimal scSubTotalExclTax = _taxService.GetProductPrice(sc.Product, scSubTotal, false, details.Customer, out taxRate);
-
-                                decimal discountAmountInclTax = _taxService.GetProductPrice(sc.Product, discountAmount, true, details.Customer, out taxRate);
-                                decimal discountAmountExclTax = _taxService.GetProductPrice(sc.Product, discountAmount, false, details.Customer, out taxRate);
-
-                                //attributes
-                                string attributeDescription = _productAttributeFormatter.FormatAttributes(sc.Product, sc.AttributesXml, details.Customer);
-
-                                var itemWeight = _shippingService.GetShoppingCartItemWeight(sc);
-
-                                //save order item
-                                var orderItem = new OrderItem
-                                {
-                                    OrderItemGuid = Guid.NewGuid(),
-                                    Order = order,
-                                    ProductId = sc.ProductId,
-                                    UnitPriceInclTax = scUnitPriceInclTax,
-                                    UnitPriceExclTax = scUnitPriceExclTax,
-                                    PriceInclTax = scSubTotalInclTax,
-                                    PriceExclTax = scSubTotalExclTax,
-                                    OriginalProductCost = _priceCalculationService.GetProductCost(sc.Product, sc.AttributesXml),
-                                    AttributeDescription = attributeDescription,
-                                    AttributesXml = sc.AttributesXml,
-                                    Quantity = sc.Quantity,
-                                    DiscountAmountInclTax = discountAmountInclTax,
-                                    DiscountAmountExclTax = discountAmountExclTax,
-                                    DownloadCount = 0,
-                                    IsDownloadActivated = false,
-                                    LicenseDownloadId = 0,
-                                    ItemWeight = itemWeight,
-                                    RentalStartDateUtc = sc.RentalStartDateUtc,
-                                    RentalEndDateUtc = sc.RentalEndDateUtc
-                                };
-                                order.OrderItems.Add(orderItem);
-                                _orderService.UpdateOrder(order);
-
-                                //gift cards
-                                if (sc.Product.IsGiftCard)
-                                {
-                                    string giftCardRecipientName, giftCardRecipientEmail,
-                                        giftCardSenderName, giftCardSenderEmail, giftCardMessage;
-                                    _productAttributeParser.GetGiftCardAttribute(sc.AttributesXml,
-                                        out giftCardRecipientName, out giftCardRecipientEmail,
-                                        out giftCardSenderName, out giftCardSenderEmail, out giftCardMessage);
-
-                                    for (int i = 0; i < sc.Quantity; i++)
-                                    {
-                                        var gc = new GiftCard
-                                        {
-                                            GiftCardType = sc.Product.GiftCardType,
-                                            PurchasedWithOrderItem = orderItem,
-                                            Amount = scUnitPriceExclTax,
-                                            IsGiftCardActivated = false,
-                                            GiftCardCouponCode = _giftCardService.GenerateGiftCardCode(),
-                                            RecipientName = giftCardRecipientName,
-                                            RecipientEmail = giftCardRecipientEmail,
-                                            SenderName = giftCardSenderName,
-                                            SenderEmail = giftCardSenderEmail,
-                                            Message = giftCardMessage,
-                                            IsRecipientNotified = false,
-                                            CreatedOnUtc = DateTime.UtcNow
-                                        };
-                                        _giftCardService.InsertGiftCard(gc);
-                                    }
-                                }
-
-                                //inventory
-                                _productService.AdjustInventory(sc.Product, -sc.Quantity, sc.AttributesXml);
-                            }
-                        }
-
-                        //clear shopping cart
-                        details.Cart.ToList().ForEach(sci => _shoppingCartService.DeleteShoppingCartItem(sci, false));
-                    }
-                    else
-                    {
-                        //recurring payment
-                        var initialOrderItems = details.InitialOrder.OrderItems;
-                        foreach (var orderItem in initialOrderItems)
-                        {
-                            //save item
-                            var newOrderItem = new OrderItem
-                            {
-                                OrderItemGuid = Guid.NewGuid(),
-                                Order = order,
-                                ProductId = orderItem.ProductId,
-                                UnitPriceInclTax = orderItem.UnitPriceInclTax,
-                                UnitPriceExclTax = orderItem.UnitPriceExclTax,
-                                PriceInclTax = orderItem.PriceInclTax,
-                                PriceExclTax = orderItem.PriceExclTax,
-                                OriginalProductCost = orderItem.OriginalProductCost,
-                                AttributeDescription = orderItem.AttributeDescription,
-                                AttributesXml = orderItem.AttributesXml,
-                                Quantity = orderItem.Quantity,
-                                DiscountAmountInclTax = orderItem.DiscountAmountInclTax,
-                                DiscountAmountExclTax = orderItem.DiscountAmountExclTax,
-                                DownloadCount = 0,
-                                IsDownloadActivated = false,
-                                LicenseDownloadId = 0,
-                                ItemWeight = orderItem.ItemWeight,
-                                RentalStartDateUtc = orderItem.RentalStartDateUtc,
-                                RentalEndDateUtc = orderItem.RentalEndDateUtc
-                            };
-                            order.OrderItems.Add(newOrderItem);
-                            _orderService.UpdateOrder(order);
-
-                            //gift cards
-                            if (orderItem.Product.IsGiftCard)
-                            {
-                                string giftCardRecipientName, giftCardRecipientEmail,
-                                    giftCardSenderName, giftCardSenderEmail, giftCardMessage;
-                                _productAttributeParser.GetGiftCardAttribute(orderItem.AttributesXml,
-                                    out giftCardRecipientName, out giftCardRecipientEmail,
-                                    out giftCardSenderName, out giftCardSenderEmail, out giftCardMessage);
-
-                                for (int i = 0; i < orderItem.Quantity; i++)
-                                {
-                                    var gc = new GiftCard
-                                    {
-                                        GiftCardType = orderItem.Product.GiftCardType,
-                                        PurchasedWithOrderItem = newOrderItem,
-                                        Amount = orderItem.UnitPriceExclTax,
-                                        IsGiftCardActivated = false,
-                                        GiftCardCouponCode = _giftCardService.GenerateGiftCardCode(),
-                                        RecipientName = giftCardRecipientName,
-                                        RecipientEmail = giftCardRecipientEmail,
-                                        SenderName = giftCardSenderName,
-                                        SenderEmail = giftCardSenderEmail,
-                                        Message = giftCardMessage,
-                                        IsRecipientNotified = false,
-                                        CreatedOnUtc = DateTime.UtcNow
-                                    };
-                                    _giftCardService.InsertGiftCard(gc);
-                                }
-                            }
-
-                            //inventory
-                            _productService.AdjustInventory(orderItem.Product, -orderItem.Quantity, orderItem.AttributesXml);
-                        }
-                    }
-
-                    //discount usage history
-                    // TODO: replace with Promo discount usage history?
-
-                    //gift card usage history
-                    if (!processPaymentRequest.IsRecurringPayment)
-                        if (details.AppliedGiftCards != null)
-                            foreach (var agc in details.AppliedGiftCards)
-                            {
-                                decimal amountUsed = agc.AmountCanBeUsed;
-                                var gcuh = new GiftCardUsageHistory
-                                {
-                                    GiftCard = agc.GiftCard,
-                                    UsedWithOrder = order,
-                                    UsedValue = amountUsed,
-                                    CreatedOnUtc = DateTime.UtcNow
-                                };
-                                agc.GiftCard.GiftCardUsageHistory.Add(gcuh);
-                                _giftCardService.UpdateGiftCard(agc.GiftCard);
-                            }
-
-                    //reward points history
-                    if (details.RedeemedRewardPointsAmount > decimal.Zero)
-                    {
-                        _rewardPointService.AddRewardPointsHistoryEntry(order.Customer, -details.RedeemedRewardPoints, order.StoreId,
-                            string.Format(_localizationService.GetResource("RewardPoints.Message.RedeemedForOrder"), order.Id));
-                    }
-
-                    //recurring orders
-                    if (!processPaymentRequest.IsRecurringPayment && details.IsRecurringShoppingCart)
-                    {
-                        //create recurring payment (the first payment)
-                        var rp = new RecurringPayment
-                        {
-                            CycleLength = processPaymentRequest.RecurringCycleLength,
-                            CyclePeriod = processPaymentRequest.RecurringCyclePeriod,
-                            TotalCycles = processPaymentRequest.RecurringTotalCycles,
-                            StartDateUtc = DateTime.UtcNow,
-                            IsActive = true,
-                            CreatedOnUtc = DateTime.UtcNow,
-                            InitialOrder = order,
-                        };
-                        _orderService.InsertRecurringPayment(rp);
-
-
-                        var recurringPaymentType = _paymentService.GetRecurringPaymentType(processPaymentRequest.PaymentMethodSystemName);
-                        switch (recurringPaymentType)
-                        {
-                            case RecurringPaymentType.NotSupported:
-                                {
-                                    //not supported
-                                }
-                                break;
-                            case RecurringPaymentType.Manual:
-                                {
-                                    //first payment
-                                    var rph = new RecurringPaymentHistory
-                                    {
-                                        RecurringPayment = rp,
-                                        CreatedOnUtc = DateTime.UtcNow,
-                                        OrderId = order.Id,
-                                    };
-                                    rp.RecurringPaymentHistory.Add(rph);
-                                    _orderService.UpdateRecurringPayment(rp);
-                                }
-                                break;
-                            case RecurringPaymentType.Automatic:
-                                {
-                                    //will be created later (process is automated)
-                                }
-                                break;
-                            default:
-                                break;
-                        }
-                    }
-
-                    #endregion
-
-                    #region Notifications & notes
-
-                    //notes, messages
-                    if (_workContext.OriginalCustomerIfImpersonated != null)
-                    {
-                        //this order is placed by a store administrator impersonating a customer
-                        order.OrderNotes.Add(new OrderNote
-                        {
-                            Note = string.Format("Order placed by a store owner ('{0}'. ID = {1}) impersonating the customer.",
-                                _workContext.OriginalCustomerIfImpersonated.Email, _workContext.OriginalCustomerIfImpersonated.Id),
-                            DisplayToCustomer = false,
-                            CreatedOnUtc = DateTime.UtcNow
-                        });
-                        _orderService.UpdateOrder(order);
-                    }
-                    else
-                    {
-                        order.OrderNotes.Add(new OrderNote
-                        {
-                            Note = "Order placed",
-                            DisplayToCustomer = false,
-                            CreatedOnUtc = DateTime.UtcNow
-                        });
-                        _orderService.UpdateOrder(order);
-                    }
-
-                    //send email notifications
-                    int orderPlacedStoreOwnerNotificationQueuedEmailId = _workflowMessageService.SendOrderPlacedStoreOwnerNotification(order, _localizationSettings.DefaultAdminLanguageId);
-                    if (orderPlacedStoreOwnerNotificationQueuedEmailId > 0)
-                    {
-                        order.OrderNotes.Add(new OrderNote
-                        {
-                            Note = string.Format("\"Order placed\" email (to store owner) has been queued. Queued email identifier: {0}.", orderPlacedStoreOwnerNotificationQueuedEmailId),
-                            DisplayToCustomer = false,
-                            CreatedOnUtc = DateTime.UtcNow
-                        });
-                        _orderService.UpdateOrder(order);
-                    }
-
-                    var orderPlacedAttachmentFilePath = _orderSettings.AttachPdfInvoiceToOrderPlacedEmail ?
-                        _pdfService.PrintOrderToPdf(order, order.CustomerLanguageId) : null;
-                    var orderPlacedAttachmentFileName = _orderSettings.AttachPdfInvoiceToOrderPlacedEmail ?
-                        "order.pdf" : null;
-                    int orderPlacedCustomerNotificationQueuedEmailId = _workflowMessageService
-                        .SendOrderPlacedCustomerNotification(order, order.CustomerLanguageId, orderPlacedAttachmentFilePath, orderPlacedAttachmentFileName);
-                    if (orderPlacedCustomerNotificationQueuedEmailId > 0)
-                    {
-                        order.OrderNotes.Add(new OrderNote
-                        {
-                            Note = string.Format("\"Order placed\" email (to customer) has been queued. Queued email identifier: {0}.", orderPlacedCustomerNotificationQueuedEmailId),
-                            DisplayToCustomer = false,
-                            CreatedOnUtc = DateTime.UtcNow
-                        });
-                        _orderService.UpdateOrder(order);
-                    }
-
-                    var vendors = GetVendorsInOrder(order);
-                    foreach (var vendor in vendors)
-                    {
-                        int orderPlacedVendorNotificationQueuedEmailId = _workflowMessageService.SendOrderPlacedVendorNotification(order, vendor, order.CustomerLanguageId);
-                        if (orderPlacedVendorNotificationQueuedEmailId > 0)
-                        {
-                            order.OrderNotes.Add(new OrderNote
-                            {
-                                Note = string.Format("\"Order placed\" email (to vendor) has been queued. Queued email identifier: {0}.", orderPlacedVendorNotificationQueuedEmailId),
-                                DisplayToCustomer = false,
-                                CreatedOnUtc = DateTime.UtcNow
-                            });
-                            _orderService.UpdateOrder(order);
-                        }
-                    }
-
-                    //check order status
-                    CheckOrderStatus(order);
-
-                    //reset checkout data
-                    if (!processPaymentRequest.IsRecurringPayment)
-                        _customerService.ResetCheckoutData(details.Customer, processPaymentRequest.StoreId, clearCouponCodes: true, clearCheckoutAttributes: true);
-
-                    if (!processPaymentRequest.IsRecurringPayment)
-                    {
-                        _customerActivityService.InsertActivity(
-                            "PublicStore.PlaceOrder",
-                            _localizationService.GetResource("ActivityLog.PublicStore.PlaceOrder"),
-                            order.Id);
-                    }
-
-                    //raise event       
-                    _eventPublisher.Publish(new OrderPlacedEvent(order));
-
-                    if (order.PaymentStatus == PaymentStatus.Paid)
-                    {
-                        ProcessOrderPaid(order);
-                    }
-                    #endregion
-                }
-                else
-                {
-                    foreach (var paymentError in processPaymentResult.Errors)
-                        result.AddError(string.Format(_localizationService.GetResource("Checkout.PaymentError"), paymentError));
-                }
-            }
-            catch (Exception exc)
-            {
-                _logger.Error(exc.Message, exc);
-                result.AddError(exc.Message);
-            }
-
-            #region Process errors
-
-            string error = "";
-            for (int i = 0; i < result.Errors.Count; i++)
-            {
-                error += string.Format("Error {0}: {1}", i + 1, result.Errors[i]);
-                if (i != result.Errors.Count - 1)
-                    error += ". ";
-            }
-            if (!String.IsNullOrEmpty(error))
-            {
-                //log it
-                string logError = string.Format("Error while placing order. {0}", error);
-                _logger.Error(logError);
-            }
-
-            #endregion
-
-            return result;
         }
 
         #endregion
@@ -1078,16 +410,15 @@ namespace Qixol.Nop.Promo.Services.Orders
             {
                 details.CustomerTaxDisplayType = details.InitialOrder.CustomerTaxDisplayType;
             }
-
+            
             //sub total
             if (!processPaymentRequest.IsRecurringPayment)
             {
                 //sub total (incl tax)
                 decimal orderSubTotalDiscountAmount1;
-
+                global::Nop.Core.Domain.Discounts.Discount orderSubTotalAppliedDiscount1; // TODO: NOT ACTUALLY USED - confirm this, add interface with new signature?
                 decimal subTotalWithoutDiscountBase1;
                 decimal subTotalWithDiscountBase1;
-                global::Nop.Core.Domain.Discounts.Discount orderSubTotalAppliedDiscount1; // TODO: NOT ACTUALLY USED - confirm this, add interface with new signature?
                 _orderTotalCalculationService.GetShoppingCartSubTotal(details.Cart,
                     true, out orderSubTotalDiscountAmount1, out orderSubTotalAppliedDiscount1,
                     out subTotalWithoutDiscountBase1, out subTotalWithDiscountBase1);
@@ -1358,26 +689,555 @@ namespace Qixol.Nop.Promo.Services.Orders
         }
 
         #endregion
+			
+		#region Methods
 
-        #region IOrderTotalCalculationService extensions
 
-        private int CalculateRewardPoints(Order order)
+        /// <summary>
+        /// Places an order
+        /// </summary>
+        /// <param name="processPaymentRequest">Process payment request</param>
+        /// <returns>Place order result</returns>
+        public override PlaceOrderResult PlaceOrder(ProcessPaymentRequest processPaymentRequest)
         {
-            var attributes = _genericAttributeService.GetAttributesForEntity(order.Id, "Order");
+            //think about moving functionality of processing recurring orders (after the initial order was placed) to ProcessNextRecurringPayment() method
+            if (processPaymentRequest == null)
+                throw new ArgumentNullException("processPaymentRequest");
 
-            if (attributes == null)
-                return 0;
+            var result = new PlaceOrderResult();
+            try
+            {
+                if (processPaymentRequest.OrderGuid == Guid.Empty)
+                    processPaymentRequest.OrderGuid = Guid.NewGuid();
 
-            var basketResponseAttribute = (from a in attributes where string.Compare(a.Key, PromoCustomerAttributeNames.PromoBasketResponse, StringComparison.InvariantCultureIgnoreCase) == 0 select a).FirstOrDefault();
+                //prepare order details
+                var details = PreparePlaceOrderDetails(processPaymentRequest);
 
-            if (basketResponseAttribute == null || string.IsNullOrEmpty(basketResponseAttribute.Value))
-                return 0;
+                #region Payment workflow
 
-            BasketResponse basketResponse = BasketResponse.FromXml(basketResponseAttribute.Value);
-            if (basketResponse == null)
-                return 0;
 
-            return Convert.ToInt32(basketResponse.TotalIssuedPoints);
+                //process payment
+                ProcessPaymentResult processPaymentResult = null;
+                //skip payment workflow if order total equals zero
+                var skipPaymentWorkflow = details.OrderTotal == decimal.Zero;
+                if (!skipPaymentWorkflow)
+                {
+                    var paymentMethod = _paymentService.LoadPaymentMethodBySystemName(processPaymentRequest.PaymentMethodSystemName);
+                    if (paymentMethod == null)
+                        throw new NopException("Payment method couldn't be loaded");
+
+                    //ensure that payment method is active
+                    if (!paymentMethod.IsPaymentMethodActive(_paymentSettings))
+                        throw new NopException("Payment method is not active");
+
+                    if (!processPaymentRequest.IsRecurringPayment)
+                    {
+                        if (details.IsRecurringShoppingCart)
+                        {
+                            //recurring cart
+                            var recurringPaymentType = _paymentService.GetRecurringPaymentType(processPaymentRequest.PaymentMethodSystemName);
+                            switch (recurringPaymentType)
+                            {
+                                case RecurringPaymentType.NotSupported:
+                                    throw new NopException("Recurring payments are not supported by selected payment method");
+                                case RecurringPaymentType.Manual:
+                                case RecurringPaymentType.Automatic:
+                                    processPaymentResult = _paymentService.ProcessRecurringPayment(processPaymentRequest);
+                                    break;
+                                default:
+                                    throw new NopException("Not supported recurring payment type");
+                            }
+                        }
+                        else
+                        {
+                            //standard cart
+                            processPaymentResult = _paymentService.ProcessPayment(processPaymentRequest);
+                        }
+                    }
+                    else
+                    {
+                        if (details.IsRecurringShoppingCart)
+                        {
+                            //Old credit card info
+                            processPaymentRequest.CreditCardType = details.InitialOrder.AllowStoringCreditCardNumber ? _encryptionService.DecryptText(details.InitialOrder.CardType) : "";
+                            processPaymentRequest.CreditCardName = details.InitialOrder.AllowStoringCreditCardNumber ? _encryptionService.DecryptText(details.InitialOrder.CardName) : "";
+                            processPaymentRequest.CreditCardNumber = details.InitialOrder.AllowStoringCreditCardNumber ? _encryptionService.DecryptText(details.InitialOrder.CardNumber) : "";
+                            processPaymentRequest.CreditCardCvv2 = details.InitialOrder.AllowStoringCreditCardNumber ? _encryptionService.DecryptText(details.InitialOrder.CardCvv2) : "";
+                            try
+                            {
+                                processPaymentRequest.CreditCardExpireMonth = details.InitialOrder.AllowStoringCreditCardNumber ? Convert.ToInt32(_encryptionService.DecryptText(details.InitialOrder.CardExpirationMonth)) : 0;
+                                processPaymentRequest.CreditCardExpireYear = details.InitialOrder.AllowStoringCreditCardNumber ? Convert.ToInt32(_encryptionService.DecryptText(details.InitialOrder.CardExpirationYear)) : 0;
+                            }
+                            catch { }
+
+                            var recurringPaymentType = _paymentService.GetRecurringPaymentType(processPaymentRequest.PaymentMethodSystemName);
+                            switch (recurringPaymentType)
+                            {
+                                case RecurringPaymentType.NotSupported:
+                                    throw new NopException("Recurring payments are not supported by selected payment method");
+                                case RecurringPaymentType.Manual:
+                                    processPaymentResult = _paymentService.ProcessRecurringPayment(processPaymentRequest);
+                                    break;
+                                case RecurringPaymentType.Automatic:
+                                    //payment is processed on payment gateway site
+                                    processPaymentResult = new ProcessPaymentResult();
+                                    break;
+                                default:
+                                    throw new NopException("Not supported recurring payment type");
+                            }
+                        }
+                        else
+                        {
+                            throw new NopException("No recurring products");
+                        }
+                    }
+                }
+                else
+                {
+                    //payment is not required
+                    if (processPaymentResult == null)
+                        processPaymentResult = new ProcessPaymentResult();
+                    processPaymentResult.NewPaymentStatus = PaymentStatus.Paid;
+                }
+
+                if (processPaymentResult == null)
+                    throw new NopException("processPaymentResult is not available");
+
+                #endregion
+
+                if (processPaymentResult.Success)
+                {
+                    #region Save order details
+
+                    var order = new Order
+                    {
+                        StoreId = processPaymentRequest.StoreId,
+                        OrderGuid = processPaymentRequest.OrderGuid,
+                        CustomerId = details.Customer.Id,
+                        CustomerLanguageId = details.CustomerLanguage.Id,
+                        CustomerTaxDisplayType = details.CustomerTaxDisplayType,
+                        CustomerIp = _webHelper.GetCurrentIpAddress(),
+                        OrderSubtotalInclTax = details.OrderSubTotalInclTax,
+                        OrderSubtotalExclTax = details.OrderSubTotalExclTax,
+                        OrderSubTotalDiscountInclTax = details.OrderSubTotalDiscountInclTax,
+                        OrderSubTotalDiscountExclTax = details.OrderSubTotalDiscountExclTax,
+                        OrderShippingInclTax = details.OrderShippingTotalInclTax,
+                        OrderShippingExclTax = details.OrderShippingTotalExclTax,
+                        PaymentMethodAdditionalFeeInclTax = details.PaymentAdditionalFeeInclTax,
+                        PaymentMethodAdditionalFeeExclTax = details.PaymentAdditionalFeeExclTax,
+                        TaxRates = details.TaxRates,
+                        OrderTax = details.OrderTaxTotal,
+                        OrderTotal = details.OrderTotal,
+                        RefundedAmount = decimal.Zero,
+                        OrderDiscount = details.OrderDiscountAmount,
+                        CheckoutAttributeDescription = details.CheckoutAttributeDescription,
+                        CheckoutAttributesXml = details.CheckoutAttributesXml,
+                        CustomerCurrencyCode = details.CustomerCurrencyCode,
+                        CurrencyRate = details.CustomerCurrencyRate,
+                        AffiliateId = details.AffiliateId,
+                        OrderStatus = OrderStatus.Pending,
+                        AllowStoringCreditCardNumber = processPaymentResult.AllowStoringCreditCardNumber,
+                        CardType = processPaymentResult.AllowStoringCreditCardNumber ? _encryptionService.EncryptText(processPaymentRequest.CreditCardType) : string.Empty,
+                        CardName = processPaymentResult.AllowStoringCreditCardNumber ? _encryptionService.EncryptText(processPaymentRequest.CreditCardName) : string.Empty,
+                        CardNumber = processPaymentResult.AllowStoringCreditCardNumber ? _encryptionService.EncryptText(processPaymentRequest.CreditCardNumber) : string.Empty,
+                        MaskedCreditCardNumber = _encryptionService.EncryptText(_paymentService.GetMaskedCreditCardNumber(processPaymentRequest.CreditCardNumber)),
+                        CardCvv2 = processPaymentResult.AllowStoringCreditCardNumber ? _encryptionService.EncryptText(processPaymentRequest.CreditCardCvv2) : string.Empty,
+                        CardExpirationMonth = processPaymentResult.AllowStoringCreditCardNumber ? _encryptionService.EncryptText(processPaymentRequest.CreditCardExpireMonth.ToString()) : string.Empty,
+                        CardExpirationYear = processPaymentResult.AllowStoringCreditCardNumber ? _encryptionService.EncryptText(processPaymentRequest.CreditCardExpireYear.ToString()) : string.Empty,
+                        PaymentMethodSystemName = processPaymentRequest.PaymentMethodSystemName,
+                        AuthorizationTransactionId = processPaymentResult.AuthorizationTransactionId,
+                        AuthorizationTransactionCode = processPaymentResult.AuthorizationTransactionCode,
+                        AuthorizationTransactionResult = processPaymentResult.AuthorizationTransactionResult,
+                        CaptureTransactionId = processPaymentResult.CaptureTransactionId,
+                        CaptureTransactionResult = processPaymentResult.CaptureTransactionResult,
+                        SubscriptionTransactionId = processPaymentResult.SubscriptionTransactionId,
+                        PaymentStatus = processPaymentResult.NewPaymentStatus,
+                        PaidDateUtc = null,
+                        BillingAddress = details.BillingAddress,
+                        ShippingAddress = details.ShippingAddress,
+                        ShippingStatus = details.ShippingStatus,
+                        ShippingMethod = details.ShippingMethodName,
+                        PickUpInStore = details.PickUpInStore,
+                        ShippingRateComputationMethodSystemName = details.ShippingRateComputationMethodSystemName,
+                        CustomValuesXml = processPaymentRequest.SerializeCustomValues(),
+                        VatNumber = details.VatNumber,
+                        CreatedOnUtc = DateTime.UtcNow
+                    };
+                    _orderService.InsertOrder(order);
+
+                    PromoSaveOrderDetails(order);
+
+                    result.PlacedOrder = order;
+
+                    if (!processPaymentRequest.IsRecurringPayment)
+                    {
+                        BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
+                        //move shopping cart items to order items
+                        foreach (var sc in details.Cart)
+                        {
+                            var basketResponseItems = basketResponse.FindBasketResponseItems(sc);
+
+                            if (basketResponseItems == null)
+                            {
+                                // TODO: handle this error
+                            }
+                            else
+                            {
+                                //prices
+                                decimal taxRate;
+                                decimal discountAmount = basketResponseItems.Sum(i => i.LinePromotionDiscount);
+                                decimal scUnitPrice = _priceCalculationService.GetUnitPrice(sc);
+                                decimal scSubTotal = basketResponseItems.Sum(i => i.LineAmount);
+                                decimal scUnitPriceInclTax = _taxService.GetProductPrice(sc.Product, scUnitPrice, true, details.Customer, out taxRate);
+                                decimal scUnitPriceExclTax = _taxService.GetProductPrice(sc.Product, scUnitPrice, false, details.Customer, out taxRate);
+                                decimal scSubTotalInclTax = _taxService.GetProductPrice(sc.Product, scSubTotal, true, details.Customer, out taxRate);
+                                decimal scSubTotalExclTax = _taxService.GetProductPrice(sc.Product, scSubTotal, false, details.Customer, out taxRate);
+
+                                decimal discountAmountInclTax = _taxService.GetProductPrice(sc.Product, discountAmount, true, details.Customer, out taxRate);
+                                decimal discountAmountExclTax = _taxService.GetProductPrice(sc.Product, discountAmount, false, details.Customer, out taxRate);
+
+                                //attributes
+                                string attributeDescription = _productAttributeFormatter.FormatAttributes(sc.Product, sc.AttributesXml, details.Customer);
+
+                                var itemWeight = _shippingService.GetShoppingCartItemWeight(sc);
+
+                                //save order item
+                                var orderItem = new OrderItem
+                                {
+                                    OrderItemGuid = Guid.NewGuid(),
+                                    Order = order,
+                                    ProductId = sc.ProductId,
+                                    UnitPriceInclTax = scUnitPriceInclTax,
+                                    UnitPriceExclTax = scUnitPriceExclTax,
+                                    PriceInclTax = scSubTotalInclTax,
+                                    PriceExclTax = scSubTotalExclTax,
+                                    OriginalProductCost = _priceCalculationService.GetProductCost(sc.Product, sc.AttributesXml),
+                                    AttributeDescription = attributeDescription,
+                                    AttributesXml = sc.AttributesXml,
+                                    Quantity = sc.Quantity,
+                                    DiscountAmountInclTax = discountAmountInclTax,
+                                    DiscountAmountExclTax = discountAmountExclTax,
+                                    DownloadCount = 0,
+                                    IsDownloadActivated = false,
+                                    LicenseDownloadId = 0,
+                                    ItemWeight = itemWeight,
+                                    RentalStartDateUtc = sc.RentalStartDateUtc,
+                                    RentalEndDateUtc = sc.RentalEndDateUtc
+                                };
+                                order.OrderItems.Add(orderItem);
+                                _orderService.UpdateOrder(order);
+
+                                //gift cards
+                                if (sc.Product.IsGiftCard)
+                                {
+                                    string giftCardRecipientName, giftCardRecipientEmail,
+                                        giftCardSenderName, giftCardSenderEmail, giftCardMessage;
+                                    _productAttributeParser.GetGiftCardAttribute(sc.AttributesXml,
+                                        out giftCardRecipientName, out giftCardRecipientEmail,
+                                        out giftCardSenderName, out giftCardSenderEmail, out giftCardMessage);
+
+                                    for (int i = 0; i < sc.Quantity; i++)
+                                    {
+                                        var gc = new GiftCard
+                                        {
+                                            GiftCardType = sc.Product.GiftCardType,
+                                            PurchasedWithOrderItem = orderItem,
+                                            Amount = scUnitPriceExclTax,
+                                            IsGiftCardActivated = false,
+                                            GiftCardCouponCode = _giftCardService.GenerateGiftCardCode(),
+                                            RecipientName = giftCardRecipientName,
+                                            RecipientEmail = giftCardRecipientEmail,
+                                            SenderName = giftCardSenderName,
+                                            SenderEmail = giftCardSenderEmail,
+                                            Message = giftCardMessage,
+                                            IsRecipientNotified = false,
+                                            CreatedOnUtc = DateTime.UtcNow
+                                        };
+                                        _giftCardService.InsertGiftCard(gc);
+                                    }
+                                }
+
+                                //inventory
+                                _productService.AdjustInventory(sc.Product, -sc.Quantity, sc.AttributesXml);
+                            }
+                        }
+
+                        //clear shopping cart
+                        details.Cart.ToList().ForEach(sci => _shoppingCartService.DeleteShoppingCartItem(sci, false));
+                    }
+                    else
+                    {
+                        //recurring payment
+                        var initialOrderItems = details.InitialOrder.OrderItems;
+                        foreach (var orderItem in initialOrderItems)
+                        {
+                            //save item
+                            var newOrderItem = new OrderItem
+                            {
+                                OrderItemGuid = Guid.NewGuid(),
+                                Order = order,
+                                ProductId = orderItem.ProductId,
+                                UnitPriceInclTax = orderItem.UnitPriceInclTax,
+                                UnitPriceExclTax = orderItem.UnitPriceExclTax,
+                                PriceInclTax = orderItem.PriceInclTax,
+                                PriceExclTax = orderItem.PriceExclTax,
+                                OriginalProductCost = orderItem.OriginalProductCost,
+                                AttributeDescription = orderItem.AttributeDescription,
+                                AttributesXml = orderItem.AttributesXml,
+                                Quantity = orderItem.Quantity,
+                                DiscountAmountInclTax = orderItem.DiscountAmountInclTax,
+                                DiscountAmountExclTax = orderItem.DiscountAmountExclTax,
+                                DownloadCount = 0,
+                                IsDownloadActivated = false,
+                                LicenseDownloadId = 0,
+                                ItemWeight = orderItem.ItemWeight,
+                                RentalStartDateUtc = orderItem.RentalStartDateUtc,
+                                RentalEndDateUtc = orderItem.RentalEndDateUtc
+                            };
+                            order.OrderItems.Add(newOrderItem);
+                            _orderService.UpdateOrder(order);
+
+                            //gift cards
+                            if (orderItem.Product.IsGiftCard)
+                            {
+                                string giftCardRecipientName, giftCardRecipientEmail,
+                                    giftCardSenderName, giftCardSenderEmail, giftCardMessage;
+                                _productAttributeParser.GetGiftCardAttribute(orderItem.AttributesXml,
+                                    out giftCardRecipientName, out giftCardRecipientEmail,
+                                    out giftCardSenderName, out giftCardSenderEmail, out giftCardMessage);
+
+                                for (int i = 0; i < orderItem.Quantity; i++)
+                                {
+                                    var gc = new GiftCard
+                                    {
+                                        GiftCardType = orderItem.Product.GiftCardType,
+                                        PurchasedWithOrderItem = newOrderItem,
+                                        Amount = orderItem.UnitPriceExclTax,
+                                        IsGiftCardActivated = false,
+                                        GiftCardCouponCode = _giftCardService.GenerateGiftCardCode(),
+                                        RecipientName = giftCardRecipientName,
+                                        RecipientEmail = giftCardRecipientEmail,
+                                        SenderName = giftCardSenderName,
+                                        SenderEmail = giftCardSenderEmail,
+                                        Message = giftCardMessage,
+                                        IsRecipientNotified = false,
+                                        CreatedOnUtc = DateTime.UtcNow
+                                    };
+                                    _giftCardService.InsertGiftCard(gc);
+                                }
+                            }
+
+                            //inventory
+                            _productService.AdjustInventory(orderItem.Product, -orderItem.Quantity, orderItem.AttributesXml);
+                        }
+                    }
+
+                    //discount usage history
+                    // TODO: replace with Promo discount usage history?
+
+                    //gift card usage history
+                    if (!processPaymentRequest.IsRecurringPayment)
+                        if (details.AppliedGiftCards != null)
+                            foreach (var agc in details.AppliedGiftCards)
+                            {
+                                decimal amountUsed = agc.AmountCanBeUsed;
+                                var gcuh = new GiftCardUsageHistory
+                                {
+                                    GiftCard = agc.GiftCard,
+                                    UsedWithOrder = order,
+                                    UsedValue = amountUsed,
+                                    CreatedOnUtc = DateTime.UtcNow
+                                };
+                                agc.GiftCard.GiftCardUsageHistory.Add(gcuh);
+                                _giftCardService.UpdateGiftCard(agc.GiftCard);
+                            }
+
+                    //reward points history
+                    if (details.RedeemedRewardPointsAmount > decimal.Zero)
+                    {
+                        _rewardPointService.AddRewardPointsHistoryEntry(order.Customer, -details.RedeemedRewardPoints, order.StoreId,
+                            string.Format(_localizationService.GetResource("RewardPoints.Message.RedeemedForOrder"), order.Id));
+                    }
+
+                    //recurring orders
+                    if (!processPaymentRequest.IsRecurringPayment && details.IsRecurringShoppingCart)
+                    {
+                        //create recurring payment (the first payment)
+                        var rp = new RecurringPayment
+                        {
+                            CycleLength = processPaymentRequest.RecurringCycleLength,
+                            CyclePeriod = processPaymentRequest.RecurringCyclePeriod,
+                            TotalCycles = processPaymentRequest.RecurringTotalCycles,
+                            StartDateUtc = DateTime.UtcNow,
+                            IsActive = true,
+                            CreatedOnUtc = DateTime.UtcNow,
+                            InitialOrder = order,
+                        };
+                        _orderService.InsertRecurringPayment(rp);
+
+
+                        var recurringPaymentType = _paymentService.GetRecurringPaymentType(processPaymentRequest.PaymentMethodSystemName);
+                        switch (recurringPaymentType)
+                        {
+                            case RecurringPaymentType.NotSupported:
+                                {
+                                    //not supported
+                                }
+                                break;
+                            case RecurringPaymentType.Manual:
+                                {
+                                    //first payment
+                                    var rph = new RecurringPaymentHistory
+                                    {
+                                        RecurringPayment = rp,
+                                        CreatedOnUtc = DateTime.UtcNow,
+                                        OrderId = order.Id,
+                                    };
+                                    rp.RecurringPaymentHistory.Add(rph);
+                                    _orderService.UpdateRecurringPayment(rp);
+                                }
+                                break;
+                            case RecurringPaymentType.Automatic:
+                                {
+                                    //will be created later (process is automated)
+                                }
+                                break;
+                            default:
+                                break;
+                        }
+                    }
+
+                    #endregion
+
+                    #region Notifications & notes
+
+                    //notes, messages
+                    if (_workContext.OriginalCustomerIfImpersonated != null)
+                    {
+                        //this order is placed by a store administrator impersonating a customer
+                        order.OrderNotes.Add(new OrderNote
+                        {
+                            Note = string.Format("Order placed by a store owner ('{0}'. ID = {1}) impersonating the customer.",
+                                _workContext.OriginalCustomerIfImpersonated.Email, _workContext.OriginalCustomerIfImpersonated.Id),
+                            DisplayToCustomer = false,
+                            CreatedOnUtc = DateTime.UtcNow
+                        });
+                        _orderService.UpdateOrder(order);
+                    }
+                    else
+                    {
+                        order.OrderNotes.Add(new OrderNote
+                        {
+                            Note = "Order placed",
+                            DisplayToCustomer = false,
+                            CreatedOnUtc = DateTime.UtcNow
+                        });
+                        _orderService.UpdateOrder(order);
+                    }
+
+
+                    //send email notifications
+                    int orderPlacedStoreOwnerNotificationQueuedEmailId = _workflowMessageService.SendOrderPlacedStoreOwnerNotification(order, _localizationSettings.DefaultAdminLanguageId);
+                    if (orderPlacedStoreOwnerNotificationQueuedEmailId > 0)
+                    {
+                        order.OrderNotes.Add(new OrderNote
+                        {
+                            Note = string.Format("\"Order placed\" email (to store owner) has been queued. Queued email identifier: {0}.", orderPlacedStoreOwnerNotificationQueuedEmailId),
+                            DisplayToCustomer = false,
+                            CreatedOnUtc = DateTime.UtcNow
+                        });
+                        _orderService.UpdateOrder(order);
+                    }
+
+                    var orderPlacedAttachmentFilePath = _orderSettings.AttachPdfInvoiceToOrderPlacedEmail ?
+                        _pdfService.PrintOrderToPdf(order, order.CustomerLanguageId) : null;
+                    var orderPlacedAttachmentFileName = _orderSettings.AttachPdfInvoiceToOrderPlacedEmail ?
+                        "order.pdf" : null;
+                    int orderPlacedCustomerNotificationQueuedEmailId = _workflowMessageService
+                        .SendOrderPlacedCustomerNotification(order, order.CustomerLanguageId, orderPlacedAttachmentFilePath, orderPlacedAttachmentFileName);
+                    if (orderPlacedCustomerNotificationQueuedEmailId > 0)
+                    {
+                        order.OrderNotes.Add(new OrderNote
+                        {
+                            Note = string.Format("\"Order placed\" email (to customer) has been queued. Queued email identifier: {0}.", orderPlacedCustomerNotificationQueuedEmailId),
+                            DisplayToCustomer = false,
+                            CreatedOnUtc = DateTime.UtcNow
+                        });
+                        _orderService.UpdateOrder(order);
+                    }
+
+                    var vendors = GetVendorsInOrder(order);
+                    foreach (var vendor in vendors)
+                    {
+                        int orderPlacedVendorNotificationQueuedEmailId = _workflowMessageService.SendOrderPlacedVendorNotification(order, vendor, order.CustomerLanguageId);
+                        if (orderPlacedVendorNotificationQueuedEmailId > 0)
+                        {
+                            order.OrderNotes.Add(new OrderNote
+                            {
+                                Note = string.Format("\"Order placed\" email (to vendor) has been queued. Queued email identifier: {0}.", orderPlacedVendorNotificationQueuedEmailId),
+                                DisplayToCustomer = false,
+                                CreatedOnUtc = DateTime.UtcNow
+                            });
+                            _orderService.UpdateOrder(order);
+                        }
+                    }
+
+                    //check order status
+                    CheckOrderStatus(order);
+
+                    //reset checkout data
+                    if (!processPaymentRequest.IsRecurringPayment)
+                        _customerService.ResetCheckoutData(details.Customer, processPaymentRequest.StoreId, clearCouponCodes: true, clearCheckoutAttributes: true);
+
+                    if (!processPaymentRequest.IsRecurringPayment)
+                    {
+                        _customerActivityService.InsertActivity(
+                            "PublicStore.PlaceOrder",
+                            _localizationService.GetResource("ActivityLog.PublicStore.PlaceOrder"),
+                            order.Id);
+                    }
+
+                    //raise event       
+                    _eventPublisher.Publish(new OrderPlacedEvent(order));
+
+                    if (order.PaymentStatus == PaymentStatus.Paid)
+                    {
+                        ProcessOrderPaid(order);
+                    }
+                    #endregion
+                }
+                else
+                {
+                    foreach (var paymentError in processPaymentResult.Errors)
+                        result.AddError(string.Format(_localizationService.GetResource("Checkout.PaymentError"), paymentError));
+                }
+            }
+            catch (Exception exc)
+            {
+                _logger.Error(exc.Message, exc);
+                result.AddError(exc.Message);
+            }
+
+            #region Process errors
+
+            string error = "";
+            for (int i = 0; i < result.Errors.Count; i++)
+            {
+                error += string.Format("Error {0}: {1}", i + 1, result.Errors[i]);
+                if (i != result.Errors.Count - 1)
+                    error += ". ";
+            }
+            if (!String.IsNullOrEmpty(error))
+            {
+                //log it
+                string logError = string.Format("Error while placing order. {0}", error);
+                var customer = _customerService.GetCustomerById(processPaymentRequest.CustomerId);
+                _logger.Error(logError, customer: customer);
+            }
+
+            #endregion
+
+            return result;
         }
 
         #endregion
