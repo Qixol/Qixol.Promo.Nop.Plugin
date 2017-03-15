@@ -86,7 +86,7 @@
                         </div>
                     </form>
                     <script type="text/javascript">
-                        Billing.init('#co-billing-form', '@(storeLocation)checkout/OpcSaveBilling/', @(Model.DisableBillingAddressCheckoutStep.ToString().ToLowerInvariant()));
+                        Billing.init('#co-billing-form', '@(storeLocation)checkout/OpcSaveBilling', @(Model.DisableBillingAddressCheckoutStep.ToString().ToLowerInvariant()));
                         if ($("#billing-address-select").length > 0) {
                             Billing.newAddress(!$('#billing-address-select').val());
                         }
@@ -111,7 +111,7 @@
                             </div>
                         </form>
                         <script type="text/javascript">
-                            Shipping.init('#co-shipping-form', '@(storeLocation)checkout/OpcSaveShipping/');
+                            Shipping.init('#co-shipping-form', '@(storeLocation)checkout/OpcSaveShipping');
                             if ($("#shipping-address-select").length > 0) {
                                 Shipping.newAddress(!$('#shipping-address-select').val());
                             }
@@ -139,7 +139,7 @@
                                 @*shipping methods content will be loaded here*@
                             </div>
                             <script type="text/javascript">
-                                ShippingMethod.init('#co-shipping-method-form', '@(storeLocation)checkout/OpcSaveShippingMethod/');
+                                ShippingMethod.init('#co-shipping-method-form', '@(storeLocation)checkout/OpcSaveShippingMethod');
                             </script>
                             <div class="buttons" id="shipping-method-buttons-container">
                                 <p class="back-link">
@@ -164,7 +164,7 @@
                         </div>
                     </form>
                     <script type="text/javascript">
-                        PaymentMethod.init('#co-payment-method-form', '@(storeLocation)checkout/OpcSavePaymentMethod/');
+                        PaymentMethod.init('#co-payment-method-form', '@(storeLocation)checkout/OpcSavePaymentMethod');
                     </script>
                     <div class="buttons" id="payment-method-buttons-container">
                         <p class="back-link">
@@ -187,7 +187,7 @@
                         </div>
                     </form>
                     <script type="text/javascript">
-                        PaymentInfo.init('#co-payment-info-form', '@(storeLocation)checkout/OpcSavePaymentInfo/');
+                        PaymentInfo.init('#co-payment-info-form', '@(storeLocation)checkout/OpcSavePaymentInfo');
                     </script>
                     <div class="buttons" id="payment-info-buttons-container">
                         <p class="back-link">
@@ -208,7 +208,7 @@
                         @*confirm order content will be loaded here*@
                     </div>
                     <script type="text/javascript">
-                        ConfirmOrder.init('@(storeLocation)checkout/OpcConfirmOrder/', '@(storeLocation)checkout/completed/');
+                        ConfirmOrder.init('@(storeLocation)checkout/OpcConfirmOrder', '@(storeLocation)checkout/completed');
                     </script>
                     <div class="buttons" id="confirm-order-buttons-container">
                         <p class="back-link">
@@ -226,7 +226,7 @@
         Accordion.init('checkout-steps', '.step-title', true);
         Accordion.closeSection('#opc-billing');
         Accordion.openSection('#opc-missed-promotions');
-        Checkout.init('@(storeLocation)cart/');
+        Checkout.init('@(storeLocation)cart');
         if (!MissedPromotions.showMissedPromotionsStep)
         {
             Accordion.hideSection("#opc-missed-promotions");
