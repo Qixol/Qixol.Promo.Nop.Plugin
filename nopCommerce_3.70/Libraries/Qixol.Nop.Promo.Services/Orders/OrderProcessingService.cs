@@ -865,13 +865,12 @@ namespace Qixol.Nop.Promo.Services.Orders
                     };
                     _orderService.InsertOrder(order);
 
-                    PromoSaveOrderDetails(order);
+                    BasketResponse basketResponse = PromoSaveOrderDetails(order);
 
                     result.PlacedOrder = order;
 
                     if (!processPaymentRequest.IsRecurringPayment)
                     {
-                        BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
                         //move shopping cart items to order items
                         foreach (var sc in details.Cart)
                         {
