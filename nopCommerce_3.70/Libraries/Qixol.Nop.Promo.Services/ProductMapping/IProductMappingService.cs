@@ -14,6 +14,8 @@ namespace Qixol.Nop.Promo.Services.ProductMapping
 
         ProductMappingItem RetrieveFromAttributesXml(Product product, string attributesXml);
 
+        ProductMappingItem RetrieveFromAttributesXml(OrderItem orderItem);
+
         ProductMappingItem RetrieveFromVariantCode(int productId, string variantcode);
 
         ProductMappingItem RetrieveFromShoppingCartItem(ShoppingCartItem shoppingCartItem);

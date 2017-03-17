@@ -1,5 +1,6 @@
 ﻿using Nop.Core.Domain.Catalog;
 using Nop.Core.Infrastructure;
+using global::Nop.Core.Domain.Orders;
 using Qixol.Nop.Promo.Core.Domain.Orders;
 using Qixol.Nop.Promo.Core.Domain.Products;
 using Qixol.Nop.Promo.Core.Domain.Promo;
@@ -131,12 +132,15 @@ namespace Qixol.Nop.Promo.Services.Orders
             }
         }
 
-        public static List<string> GetLineDiscountNames(this PromoOrder promoOrder, Product product, PromoSettings promoSettings, string attributesXml)
+        public static List<string> GetLineDiscountNames(this PromoOrder promoOrder, OrderItem orderItem, PromoSettings promoSettings)
         {
             if (promoOrder == null)
                 return null;
 
-            List<PromoOrderItemPromotion> lineLevelPromotions = promoOrder.LineLevelPromotions(product, promoSettings, attributesXml)
+            if (orderItem == null)
+                return null;
+
+            List<PromoOrderItemPromotion> lineLevelPromotions = promoOrder.LineLevelPromotions(orderItem, promoSettings)
                                                                                      .Where(lp => lp.DiscountAmount != decimal.Zero || lp.PointsIssued != decimal.Zero)
                                                                                      .GroupBy(gb => gb.PromotionId)
                                                                                      .Select(s => s.First())
@@ -154,7 +158,7 @@ namespace Qixol.Nop.Promo.Services.Orders
             return promotionNames;
         }
 
-        public static List<PromoOrderItemPromotion> LineLevelPromotions(this PromoOrder promoOrder, Product product, PromoSettings promoSettings, string attributesXml)
+        public static List<PromoOrderItemPromotion> LineLevelPromotions(this PromoOrder promoOrder, OrderItem orderItem, PromoSettings promoSettings)
         {
             if (promoOrder == null)
                 return null;
@@ -162,7 +166,7 @@ namespace Qixol.Nop.Promo.Services.Orders
             List<PromoOrderItem> items = new List<PromoOrderItem>();
             IProductMappingService productMappingService = EngineContext.Current.Resolve<IProductMappingService>();
 
-            ProductMappingItem productMappingItem = productMappingService.RetrieveFromAttributesXml(product, attributesXml);
+            ProductMappingItem productMappingItem = productMappingService.RetrieveFromAttributesXml(orderItem);
             if (productMappingItem != null)
             {
                 items = (from i in promoOrder.PromoOrderItems
@@ -207,36 +211,35 @@ namespace Qixol.Nop.Promo.Services.Orders
             return itemPromos;
         }
 
-        public static decimal GetLineDiscountAmount(this PromoOrder promoOrder, Product product, PromoSettings promoSettings, string attributesXml)
+        public static decimal GetLineDiscountAmount(this PromoOrder promoOrder, OrderItem orderItem, PromoSettings promoSettings)
         {
             if (promoOrder == null)
                 return decimal.Zero;
 
             decimal totalDiscountsForLines = Decimal.Zero;
-            var responseItems = promoOrder.FindBasketResponseItems(product, promoSettings, attributesXml);
+            var responseItems = promoOrder.FindBasketResponseItems(orderItem, promoSettings);
             if (responseItems != null && responseItems.Count > 0)
                 totalDiscountsForLines = responseItems.Sum(l => l.LinePromotionDiscount);
 
             return totalDiscountsForLines;
         }
 
-        public static IList<PromoOrderItem> FindBasketResponseItems(this PromoOrder promoOrder, Product product, PromoSettings promoSettings, string attributesXml)
+        public static IList<PromoOrderItem> FindBasketResponseItems(this PromoOrder promoOrder, OrderItem orderItem, PromoSettings promoSettings)
         {
             if (promoOrder == null)
                 return null;
 
-            string productCode = product.Id.ToString();
-            string variantCode = string.Empty;
-
             IProductMappingService productMappingService = EngineContext.Current.Resolve<IProductMappingService>();
 
-            ProductMappingItem productMappingItem = productMappingService.RetrieveFromAttributesXml(product, attributesXml);
+            ProductMappingItem productMappingItem = productMappingService.RetrieveFromAttributesXml(orderItem);
             if (productMappingItem == null)
                 return null;
-            variantCode = productMappingItem.VariantCode;
+
+            string productCode = orderItem.ProductId.ToString();
+            string variantCode = productMappingItem.VariantCode;
 
             IList<PromoOrderItem> basketResponseItems = (from bri in promoOrder.PromoOrderItems
-                                                             where bri.ProductCode.Equals(product.Id.ToString(), StringComparison.InvariantCultureIgnoreCase) &&
+                                                             where bri.ProductCode.Equals(orderItem.ProductId.ToString(), StringComparison.InvariantCultureIgnoreCase) &&
                                                                 ((string.IsNullOrEmpty(variantCode) ||
                                                                     (!string.IsNullOrEmpty(variantCode) &&
                                                                         bri.VariantCode.Equals(variantCode, StringComparison.InvariantCultureIgnoreCase))))
