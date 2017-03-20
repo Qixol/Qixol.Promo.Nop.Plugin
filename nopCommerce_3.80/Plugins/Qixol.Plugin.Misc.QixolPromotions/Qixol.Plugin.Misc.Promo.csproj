@@ -298,8 +298,12 @@
     <Content Include="Content\Images\default-missedpromotion.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Scripts\promo.ajaxcart.js" />
-    <Content Include="Scripts\promo.onepagecheckout.js" />
+    <Content Include="Scripts\promo.ajaxcart.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Scripts\promo.onepagecheckout.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="Themes\DefaultClean\Content\css\styles.css">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

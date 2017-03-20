@@ -15,6 +15,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utilities", "Utilities", "{E59862EA-4BCE-48F0-97EE-B5A859EFFB02}"
 	ProjectSection(SolutionItems) = preProject
 		Utilities\Upgrade_from_3.70.8.14_to_3.80.0.1.sql = Utilities\Upgrade_from_3.70.8.14_to_3.80.0.1.sql
+		Utilities\Upgrade_from_3.80.0.1_to_3.80.0.2.sql = Utilities\Upgrade_from_3.80.0.1_to_3.80.0.2.sql
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Qixol.Nop.Promo.Core", "Libraries\Qixol.Nop.Promo.Core\Qixol.Nop.Promo.Core.csproj", "{913636AF-4223-4AF2-B425-255340AB51F5}"
