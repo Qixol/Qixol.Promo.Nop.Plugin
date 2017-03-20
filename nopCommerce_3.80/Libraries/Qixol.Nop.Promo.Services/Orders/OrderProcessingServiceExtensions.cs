@@ -13,8 +13,6 @@ namespace Qixol.Nop.Promo.Services.Orders
 {
     public partial class OrderProcessingService : global::Nop.Services.Orders.OrderProcessingService, IOrderProcessingService
     {
-        #region OrderProcessingService extensions
-
         private int CalculateRewardPoints(Order order)
         {
             var attributes = _genericAttributeService.GetAttributesForEntity(order.Id, "Order");
@@ -34,7 +32,7 @@ namespace Qixol.Nop.Promo.Services.Orders
             return Convert.ToInt32(basketResponse.TotalIssuedPoints);
         }
 
-        private void PromoSaveOrderDetails(Order order)
+        private BasketResponse PromoSaveOrderDetails(Order order)
         {
             _promoService.SendConfirmedBasket(order);
 
@@ -156,7 +154,7 @@ namespace Qixol.Nop.Promo.Services.Orders
 
             #endregion
 
-            #endregion
+            return basketResponse;
 
         }
     }

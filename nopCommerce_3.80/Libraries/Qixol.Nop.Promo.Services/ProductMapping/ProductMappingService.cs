@@ -47,6 +47,17 @@ namespace Qixol.Nop.Promo.Services.ProductMapping
                 (pm.AttributesXml ?? string.Empty).Equals((attributesXml ?? string.Empty), StringComparison.InvariantCultureIgnoreCase)).FirstOrDefault();
         }
 
+        public ProductMappingItem RetrieveFromAttributesXml(OrderItem orderItem)
+        {
+            var attributesXml = orderItem.AttributesXml;
+
+            if (orderItem.Product.IsGiftCard)
+                attributesXml = string.Empty;
+
+            return this._repository.Table.Where(pm => pm.EntityId == orderItem.Product.Id && pm.EntityName == EntityAttributeName.Product &&
+                (pm.AttributesXml ?? string.Empty).Equals((attributesXml ?? string.Empty), StringComparison.InvariantCultureIgnoreCase)).FirstOrDefault();
+        }
+
         public ProductMappingItem RetrieveFromShoppingCartItem(ShoppingCartItem shoppingCartItem)
         {
             string attributesXml = string.Empty;

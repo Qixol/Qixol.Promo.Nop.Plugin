@@ -453,7 +453,7 @@ namespace Qixol.Plugin.Misc.Promo
             this.InsertStringResource("Plugins.Misc.QixolPromo.Help.Resources.HelpGuide", "Help Guide");
             this.InsertStringResource("Plugins.Misc.QixolPromo.Help.Resources.Tutorials", "Tutorials and getting started videos");
             this.InsertStringResource("Plugins.Misc.QixolPromo.Help.Resources.ProductOverview", "Qixol Promo Product Overview");
-            this.InsertStringResource(("Plugins.Misc.QixolPromo.Help.Resources.ShowHelperMessagesTitle", "Show Help Messages");
+            this.InsertStringResource("Plugins.Misc.QixolPromo.Help.Resources.ShowHelperMessagesTitle", "Show Help Messages");
             #endregion
 
             #region Missed Promotions

@@ -314,9 +314,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <None Include="packages.config" />
-    <Content Include="Views\Admin\Configure.cshtml">
+    <None Include="Views\Admin\Configure.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    </None>
     <Compile Include="QixolPromotionsPlugin.cs" />
     <Compile Include="RouteProvider.cs" />
     <None Include="Views\Admin\_AdminHelp.cshtml">
@@ -328,20 +328,42 @@
     <None Include="Views\Admin\_ProductAttributesList.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="Views\Checkout\CheckoutProgress.cshtml" />
-    <None Include="Views\Checkout\DisplayTemplates\MissedPromotionBogofModel.cshtml" />
-    <None Include="Views\Checkout\DisplayTemplates\MissedPromotionBogorModel.cshtml" />
-    <None Include="Views\Checkout\DisplayTemplates\MissedPromotionBundleModel.cshtml" />
-    <None Include="Views\Checkout\DisplayTemplates\MissedPromotionDealModel.cshtml" />
-    <None Include="Views\Checkout\DisplayTemplates\MissedPromotionUnknownModel.cshtml" />
-    <None Include="Views\Checkout\MissedPromotions.cshtml" />
-    <None Include="Views\Checkout\MissedPromotionsSummary.cshtml" />
-    <None Include="Views\Checkout\OnePageCheckout.cshtml" />
-    <None Include="Views\Checkout\OpcMissedPromotions.cshtml" />
+    <None Include="Views\Checkout\CheckoutProgress.cshtml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Views\Checkout\DisplayTemplates\MissedPromotionBogofModel.cshtml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Views\Checkout\DisplayTemplates\MissedPromotionBogorModel.cshtml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Views\Checkout\DisplayTemplates\MissedPromotionBundleModel.cshtml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Views\Checkout\DisplayTemplates\MissedPromotionDealModel.cshtml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Views\Checkout\DisplayTemplates\MissedPromotionUnknownModel.cshtml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Views\Checkout\MissedPromotions.cshtml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Views\Checkout\MissedPromotionsSummary.cshtml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Views\Checkout\OnePageCheckout.cshtml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Views\Checkout\OpcMissedPromotions.cshtml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="Views\Order\Details.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="Views\ShoppingCart\BasketTotalDiscount.cshtml" />
+    <None Include="Views\ShoppingCart\BasketTotalDiscount.cshtml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="Views\ShoppingCart\IssuedCoupons.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

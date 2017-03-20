@@ -344,12 +344,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
-    <Content Include="Views\Admin\Configure.cshtml">
+    <None Include="Views\Admin\Configure.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Views\Admin\ConfigureBanner.cshtml">
+    </None>
+    <None Include="Views\Admin\ConfigureBanner.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    </None>
     <None Include="Views\Admin\_BannerWidgetZonesList.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

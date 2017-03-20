@@ -453,7 +453,7 @@ namespace Qixol.Nop.Promo.Services.Common
                     // promo
                     if (promoOrder != null)
                     {
-                        List<string> promoNames = promoOrder.GetLineDiscountNames(orderItem.Product, _promoSettings, orderItem.AttributesXml);
+                        List<string> promoNames = promoOrder.GetLineDiscountNames(orderItem, _promoSettings);
                         if (promoNames != null && promoNames.Count > 0)
                         {
                             var allPromoNames = string.Join(Environment.NewLine, promoNames);
@@ -525,7 +525,7 @@ namespace Qixol.Nop.Promo.Services.Common
                     if (promoOrder != null)
                     {
 
-                        var lineTotalDiscount = promoOrder.GetLineDiscountAmount(orderItem.Product, _promoSettings, orderItem.AttributesXml);
+                        var lineTotalDiscount = promoOrder.GetLineDiscountAmount(orderItem, _promoSettings);
                         if (lineTotalDiscount != decimal.Zero)
                         {
                             var localLinePromoAmount = _currencyService.ConvertCurrency(lineTotalDiscount, order.CurrencyRate);
