@@ -1,0 +1,81 @@
+﻿@model MissedPromotionsModel
+
+@using Qixol.Plugin.Misc.Promo.Models.Checkout;
+@using global::Nop.Web.Models.Catalog;
+@using global::Nop.Core.Domain.Tax;
+@using global::Nop.Core;
+@using global::Nop.Core.Infrastructure;
+@using global::Nop.Web.Models.ShoppingCart;
+@using global::Nop.Web.Framework.Themes;
+
+@{
+    var webHelper = EngineContext.Current.Resolve<IWebHelper>();
+    var themeName = EngineContext.Current.Resolve<IThemeContext>().WorkingThemeName;
+
+    Html.AppendCssFileParts(string.Format("~/Plugins/Misc.QixolPromo/Themes/{0}/Content/css/styles.css", themeName));
+    Html.AddScriptParts(ResourceLocation.Head, "~/Plugins/Misc.QixolPromo/Scripts/promo.ajaxcart.js");
+
+}
+
+@* inline style temporarily until able to add css from one page checkout *@
+<style>
+    .promotion-item {
+        color: #4ab2f1;
+        font-style: italic;
+        font-weight: normal;
+    }
+
+    .no-bottom-border td {
+        border-bottom: 0px !important;
+    }
+
+    .cart-promotion-row td {
+        line-height: 15px !important;
+    }
+
+    .cart-coupon-row td {
+        line-height: 15px !important;
+    }
+
+    .truncate-140 {
+        float: left;
+        max-width: 140px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+        .truncate-140:hover {
+            overflow: visible;
+        }
+</style>
+
+<div class="table-wrapper">
+    <table class="cart">
+        <colgroup>
+            <col width="1" />
+            <col />
+            <col width="1" />
+        </colgroup>
+        <thead>
+            <tr>
+                <th class="product-picture">
+                    @T("ShoppingCart.Image")
+                </th>
+                <th class="product">
+                    @T("Plugins.Misc.QixolPromo.MissedPromotion(s)")
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.MissedPromotions.Count == 0)
+            {
+                <tr><td></td><td>There are no missed promotions</td></tr>
+            }
+            else
+            {
+                @Html.DisplayFor(mp => Model.MissedPromotions);
+            }
+        </tbody>
+    </table>
+</div>

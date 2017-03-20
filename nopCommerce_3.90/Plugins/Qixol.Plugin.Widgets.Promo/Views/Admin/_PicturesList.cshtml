@@ -1,0 +1,291 @@
+﻿@model PromoAddPictureModel
+
+<style>
+    .disabled {
+        color: silver;
+    }
+</style>
+
+<div class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            @T("Plugins.Widgets.QixolPromo.Pictures")
+        </div>
+        <div class="panel-body">
+            <div id="promopictures-grid"></div>
+        </div>
+    </div>
+</div>
+
+<div class="panel-group">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            @T("Admin.Catalog.Products.Pictures.AddNew")
+        </div>
+        <div class="panel-body">
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.NopLabelFor(model => model.PictureId)
+                </div>
+                <div class="col-md-9">
+                    @Html.NopEditorFor(model => model.PictureId)
+                    @Html.ValidationMessageFor(model => model.PictureId)
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.NopLabelFor(model => model.IsDefaultForType)
+                </div>
+                <div class="col-md-9">
+                    @Html.NopEditorFor(model => model.IsDefaultForType)
+                    @Html.ValidationMessageFor(model => model.IsDefaultForType)
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.NopLabelFor(model => model.DefaultForTypeName)
+                </div>
+                <div class="col-md-9">
+                    @Html.NopDropDownListFor(model => model.DefaultForTypeName, Model.PromoTypes, new { disabled = "disabled" })
+                    @Html.ValidationMessageFor(model => model.DefaultForTypeName)
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">
+                    @Html.NopLabelFor(model => model.PromoReference)
+                </div>
+                <div class="col-md-9">
+                    @Html.NopEditorFor(model => model.PromoReference)
+                    @Html.ValidationMessageFor(model => model.PromoReference)
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-3">
+                    &nbsp;
+                </div>
+                <div class="col-md-9">
+                    <input type="submit" id="addPromoPicture" class="btn bg-blue" value="@T("Plugins.Widgets.QixolPromo.PromoPicture.AddButton")" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function onDataBound() {
+        //Selects all delete buttons
+        $("#promopictures-grid tbody tr .k-grid-delete").each(function () {
+            var currentDataItem = $("#promopictures-grid").data("kendoGrid").dataItem($(this).closest("tr"));
+
+            //Check in the current dataItem if the row is the system default, and if so remove it.
+            if (currentDataItem.SystemDefault == true) {
+                $(this).remove();
+            }
+        })
+    }
+
+    function initializeGrid() {
+        $("#promopictures-grid").kendoGrid({
+            dataSource: {
+                type: "json",
+                transport: {
+                    read: {
+                        url: "@Html.Raw(Url.Action("PicturesList", "PromoWidgetAdmin"))",
+                        type: "POST",
+                        dataType: "json"
+                    },
+                    destroy: {
+                        url: "@Html.Raw(Url.Action("PictureDelete", "PromoWidgetAdmin"))",
+                        type: "POST",
+                        dataType: "json"
+                    }
+                },
+                schema: {
+                    data: "Data",
+                    total: "Total",
+                    errors: "Errors",
+                    model: {
+                        id: "Id",
+                        fields: {
+                            PictureUrl: { editable: false, type: "string" },
+                            DefaultForTypeName: { editable: false, type: "string" },
+                            PromoReference: { editable: false, type: "string" },
+                            SystemDefault: { editable: false, type: "bool" },
+                            DefaultForTypeDisplay: { editable: false, type: "string" }
+                        }
+                    }
+                },
+                requestEnd: function (e) {
+                    if (e.type == "destroy") {
+                        this.read();
+                    }
+                },
+                error: function (e) {
+                    display_kendoui_grid_error(e);
+                    // Cancel the changes
+                    this.cancelChanges();
+                },
+                serverPaging: true,
+                serverFiltering: true,
+                serverSorting: true
+            },
+            dataBound: function (e) {
+                onDataBound();
+            },
+            pageable: {
+                refresh: true,
+                numeric: false,
+                previousNext: false,
+                info: false
+            },
+            editable: {
+                confirmation: true,
+                mode: "inline"
+            },
+            scrollable: false,
+            columns: [{
+                field: "PictureUrl",
+                title: "@T("Plugins.Widgets.QixolPromo.PromoPicture.Picture")",
+                template: '<a href="#=PictureUrl#" target="_blank"><img alt="#=PictureId#" src="#=PictureUrl#" width="80" /><a/>',
+                width: 100
+            }, {
+                field: "DefaultForTypeDisplay",
+                title: "@T("Plugins.Widgets.QixolPromo.PromoPicture.DefaultForType.ColumnHeader")",
+                width: 150
+            }, {
+                field: "PromoReference",
+                title: "@T("Plugins.Widgets.QixolPromo.PromoPicture.PromoReference")",
+                width: 150
+            }, {
+                command: [{
+                    name: "destroy",
+                    text: "@T("Admin.Common.Delete")"
+                }],
+                headerAttributes: { style: "text-align:center" },
+                attributes: { style: "text-align:center" },
+                width: 50
+            }]
+        });
+    }
+
+    function addPromoPicture(e) {
+            var pictureId = $("#@Html.FieldIdFor(model => model.PictureId)").val();
+            var defaultForType = document.getElementById("@Html.FieldIdFor(model => model.IsDefaultForType)").checked;
+            var promoRef = $("#@Html.FieldIdFor(model => model.PromoReference)").val();
+            var promoType = $("#@Html.FieldIdFor(model => model.DefaultForTypeName)").val();
+
+            if (pictureId == 0) {
+                alert('@T("Plugins.Widgets.QixolPromo.PromoPicture.Validation.Msg.1")');
+                return;
+            }
+
+            if (defaultForType == false && promoRef == "") {
+                alert("@T("Plugins.Widgets.QixolPromo.PromoPicture.Validation.Msg.2")");
+                return;
+            }
+
+            if (defaultForType == true && promoType == "") {
+                alert("@T("Plugins.Widgets.QixolPromo.PromoPicture.Validation.Msg.3")");
+                return;
+            }
+
+            $('#addPromoPicture').attr('disabled', true);
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("PictureAdd", "PromoWidgetAdmin"))",
+                data: { "pictureId": pictureId, "defaultForType": defaultForType, "promoRef": promoRef, "promoType": promoType },
+            success: function (data) {
+                var grid = $("#promopictures-grid");
+                grid.data('kendoGrid').dataSource.read();
+
+                // Reset the inputs..  Currently doesn't clear the picture though.
+                $('#addPromoPicture').attr('disabled', false);
+                $("#@Html.FieldIdFor(model => model.PictureId)").val(0);
+                $("#@Html.FieldIdFor(model => model.PromoReference)").val("");
+                $("#@Html.FieldIdFor(model => model.IsDefaultForType)").prop('checked', false);
+            $('#@Html.FieldIdFor(model => model.DefaultForTypeName)').prop('disabled', true);
+            $('label[for="@Html.FieldIdFor(model => model.DefaultForTypeName)"]').toggleClass('disabled', true);
+            $('#@Html.FieldIdFor(model => model.PromoReference)').prop('disabled', false);
+            $('label[for="@Html.FieldIdFor(model => model.PromoReference)"]').toggleClass('disabled', false);
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                alert('@T("Plugins.Widgets.QixolPromo.PromoPicture.Failure.Msg")');
+                $('#addPromoPicture').attr('disabled', false);
+            }
+        });
+    }
+
+    $(document).ready(function () {
+        initializeGrid();
+
+        $('#addPromoPicture').click(function () {
+            addPromoPicture(this);
+        });
+
+        // "disable" label for default type drop down
+        $('label[for="@Html.FieldIdFor(model => model.DefaultForTypeName)"]').toggleClass('disabled', true);
+
+        $('#@Html.FieldIdFor(m => m.IsDefaultForType)').change(function () {
+            $('#@Html.FieldIdFor(model => model.DefaultForTypeName)').prop('disabled', !$(this).prop('checked'));
+            $('label[for="@Html.FieldIdFor(model => model.DefaultForTypeName)"]').toggleClass('disabled', !$(this).prop('checked'));
+            $('#@Html.FieldIdFor(model => model.PromoReference)').prop('disabled', $(this).prop('checked'));
+            $('label[for="@Html.FieldIdFor(model => model.PromoReference)"]').toggleClass('disabled', $(this).prop('checked'));
+        });
+    });
+
+</script>
+
+@*
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+
+            $('#addPromoPicture').click(function () {
+                var pictureId = $("#@Html.FieldIdFor(model => model.PictureId)").val();
+                var defaultForType = document.getElementById("@Html.FieldIdFor(model => model.IsDefaultForType)").checked;
+                var promoRef = $("#@Html.FieldIdFor(model => model.PromoReference)").val();
+                var promoType = $("#@Html.FieldIdFor(model => model.DefaultForTypeName)").val();
+
+                if (pictureId == 0) {
+                    alert('@T("Plugins.Widgets.QixolPromo.PromoPicture.Validation.Msg.1")');
+                    return;
+                }
+
+                if (defaultForType == false && promoRef == "") {
+                    alert("@T("Plugins.Widgets.QixolPromo.PromoPicture.Validation.Msg.2")");
+                    return;
+                }
+
+                if (defaultForType == true && promoType == "") {
+                    alert("@T("Plugins.Widgets.QixolPromo.PromoPicture.Validation.Msg.3")");
+                    return;
+                }
+
+                $('#addPromoPicture').attr('disabled', true);
+                $.ajax({
+                    cache: false,
+                    type: "POST",
+                    url: "@(Url.Action("PictureAdd", "PromoWidgetAdmin"))",
+                    data: { "pictureId": pictureId, "defaultForType": defaultForType, "promoRef": promoRef, "promoType": promoType },
+                success: function (data) {
+                    var grid = $("#promopictures-grid");
+                    grid.data('kendoGrid').dataSource.read();
+
+                    // Reset the inputs back..  Currently doesn't clear the picture though.
+                    $('#addPromoPicture').attr('disabled', false);
+                    $("#@Html.FieldIdFor(model => model.PictureId)").val(0);
+                    $("#@Html.FieldIdFor(model => model.PromoReference)").val("");
+                    document.getElementById("@Html.FieldIdFor(model => model.IsDefaultForType)").checked = false;
+                    enableItems("@Html.FieldIdFor(model => model.DefaultForTypeName)", false);
+                    enableItems("@Html.FieldIdFor(model => model.PromoReference)", true);
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    alert('@T("Plugins.Widgets.QixolPromo.PromoPicture.Failure.Msg")');
+                    $('#addPromoPicture').attr('disabled', false);
+                }
+            });
+        });
+        });
+    </script>
+*@

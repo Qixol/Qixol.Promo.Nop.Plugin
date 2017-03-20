@@ -1,0 +1,21 @@
+﻿@model PromoBannerDisplayPictureModel
+
+@{
+    Layout = null;
+}
+
+@{
+    if (!string.IsNullOrEmpty(Model.PictureUrl))
+    {
+        if (!string.IsNullOrEmpty(Model.Url))
+        {
+            <a href="@Model.Url">
+                <img src="@Model.PictureUrl" data-thumb="@Model.PictureUrl" data-transition="@Model.TransitionType" alt="" title="@Model.Comment" />
+            </a>
+        }
+        else
+        {
+            <img src="@Model.PictureUrl" data-thumb="@Model.PictureUrl" data-transition="@Model.TransitionType" alt="" title="@Model.Comment" />
+        }
+    }
+}

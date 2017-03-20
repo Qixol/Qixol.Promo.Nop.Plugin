@@ -1,0 +1,240 @@
+﻿@model PromoOnePageCheckoutModel
+@using Nop.Web.Models.Checkout;
+@using Nop.Core.Infrastructure;
+@{
+    Layout = "~/Views/Shared/_ColumnsOne.cshtml";
+
+    //scripts
+    Html.AddScriptParts("~/Scripts/public.accordion.js");
+    Html.AddScriptParts("~/Scripts/public.onepagecheckout.js");
+    Html.AddScriptParts("~/Plugins/Misc.QixolPromo/Scripts/promo.onepagecheckout.js");
+
+    var storeLocation = EngineContext.Current.Resolve<Nop.Core.IWebHelper>().GetStoreLocation();
+
+    //title
+    Html.AddTitleParts(T("PageTitle.Checkout").Text);
+    //page class
+    Html.AppendPageCssClassParts("html-checkout-page");
+}
+@{
+    //step numbers
+    int missedPromotionsStepNumber = 1;
+    int billingAddressStepNumber = 2;
+    int shippingAddressStepNumber = 3;
+    int shippingMethodStepNumber = 4;
+    int paymentMethodStepNumber = 5;
+    int paymentInfoStepNumber = 6;
+    int confirmOrderStepNumber = 7;
+    if (!Model.ShowMissedPromotions)
+    {
+        billingAddressStepNumber--;
+        shippingAddressStepNumber--;
+        shippingMethodStepNumber--;
+        paymentMethodStepNumber--;
+        paymentInfoStepNumber--;
+        confirmOrderStepNumber--;
+    }
+    if (!Model.ShippingRequired)
+    {
+        paymentMethodStepNumber = paymentMethodStepNumber - 2;
+        paymentInfoStepNumber = paymentInfoStepNumber - 2;
+        confirmOrderStepNumber = confirmOrderStepNumber - 2;
+    }
+    if (Model.DisableBillingAddressCheckoutStep)
+    {
+        shippingAddressStepNumber--;
+        shippingMethodStepNumber--;
+        paymentMethodStepNumber--;
+        paymentInfoStepNumber--;
+        confirmOrderStepNumber--;
+    }
+}
+<div class="page checkout-page">
+    <div class="page-title">
+        <h1>@T("Checkout")</h1>
+    </div>
+    <div class="page-body checkout-data">
+        @Html.Widget("opc_content_before")
+        <ol class="opc" id="checkout-steps">
+            <li id="opc-missed-promotions" class="tab-section allow">
+                <div class="step-title">
+                    <span class="number">@missedPromotionsStepNumber</span>
+                    <h2 class="title">@T("Plugins.Misc.QixolPromo.MissedPromotion(s)")</h2>
+                </div>
+                <div id="checkout-step-missed-promotions" class="step a-item" style="display: none;">
+                    <div id="checkout-missed-promotions-load">
+                        @Html.Action("OpcMissedPromotionsForm", "PromoCheckout")
+                        @*missed promotions content will be loaded here*@
+                    </div>
+                    <script type="text/javascript">
+                        MissedPromotions.init('@Url.RouteUrl("PromoContinueShopping")', @Model.ShowMissedPromotions.ToString().ToLower());
+                    </script>
+                    <div class="buttons" id="missed-promotions-buttons-container">
+                        <input type="button" title="@T("ShoppingCart.ContinueShopping")" value="@T("ShoppingCart.ContinueShopping")" onclick="MissedPromotions.continueShopping();" class="button-1 continue-shopping-button" />
+                        <input type="button" title="@T("Plugins.Misc.QixolPromo.ContinueCheckout")" class="button-1 missed-promotions-next-step-button" onclick="MissedPromotions.next();" style="width: 221px;" value="@T("Plugins.Misc.QixolPromo.ContinueCheckout")" />
+                        <span class="please-wait" id="missed-promotions-please-wait" style="display: none;">@T("Common.LoadingNextStep")</span>
+                    </div>
+                </div>
+            </li>
+            <li id="opc-billing" class="tab-section">
+                <div class="step-title">
+                    <span class="number">@billingAddressStepNumber</span>
+                    <h2 class="title">@T("Checkout.BillingAddress")</h2>
+                </div>
+                <div id="checkout-step-billing" class="step a-item" style="display: none;">
+                    <form id="co-billing-form" action="">
+                        <div id="checkout-billing-load">
+                            @Html.Action("OpcBillingForm", "Checkout")
+                            @*billing address content will be loaded here*@
+                        </div>
+                    </form>
+                    <script type="text/javascript">
+                        Billing.init('#co-billing-form', '@(storeLocation)checkout/OpcSaveBilling', @(Model.DisableBillingAddressCheckoutStep.ToString().ToLowerInvariant()));
+                        if ($("#billing-address-select").length > 0) {
+                            Billing.newAddress(!$('#billing-address-select').val());
+                        }
+                    </script>
+                    <div class="buttons" id="billing-buttons-container">
+                        <input type="button" title="@T("Common.Continue")" class="button-1 new-address-next-step-button" onclick="Billing.save()" value="@T("Common.Continue")" />
+                        <span class="please-wait" id="billing-please-wait" style="display: none;">@T("Common.LoadingNextStep")</span>
+                    </div>
+                </div>
+            </li>
+            @if (Model.ShippingRequired)
+            {
+                <li id="opc-shipping" class="tab-section">
+                    <div class="step-title">
+                        <span class="number">@shippingAddressStepNumber</span>
+                        <h2 class="title">@T("Checkout.ShippingAddress")</h2>
+                    </div>
+                    <div id="checkout-step-shipping" class="step a-item" style="display: none;">
+                        <form action="" id="co-shipping-form">
+                            <div id="checkout-shipping-load">
+                                @*shipping address content will be loaded here*@
+                            </div>
+                        </form>
+                        <script type="text/javascript">
+                            Shipping.init('#co-shipping-form', '@(storeLocation)checkout/OpcSaveShipping');
+                            if ($("#shipping-address-select").length > 0) {
+                                Shipping.newAddress(!$('#shipping-address-select').val());
+                            }
+                        </script>
+                        <div class="buttons" id="shipping-buttons-container">
+                            @if (!Model.DisableBillingAddressCheckoutStep)
+                            {
+                                <p class="back-link">
+                                    <a href="#" onclick="Checkout.back(); return false; "><small>&laquo; </small>@T("Common.Back")</a>
+                                </p>
+                            }
+                            <input type="button" class="button-1 new-address-next-step-button" title="@T("Common.Continue")" onclick="Shipping.save()" value="@T("Common.Continue")" />
+                            <span id="shipping-please-wait" class="please-wait" style="display: none;"> @T("Common.LoadingNextStep")</span>
+                        </div>
+                    </div>
+                </li>
+                <li id="opc-shipping_method" class="tab-section">
+                    <div class="step-title">
+                        <span class="number">@shippingMethodStepNumber</span>
+                        <h2 class="title">@T("Checkout.ShippingMethod")</h2>
+                    </div>
+                    <div id="checkout-step-shipping-method" class="step a-item" style="display: none;">
+                        <form id="co-shipping-method-form" action="">
+                            <div id="checkout-shipping-method-load">
+                                @*shipping methods content will be loaded here*@
+                            </div>
+                            <script type="text/javascript">
+                                ShippingMethod.init('#co-shipping-method-form', '@(storeLocation)checkout/OpcSaveShippingMethod');
+                            </script>
+                            <div class="buttons" id="shipping-method-buttons-container">
+                                <p class="back-link">
+                                    <a href="#" onclick="Checkout.back(); return false;"><small>&laquo; </small>@T("Common.Back")</a></p>
+                                <input type="button" class="button-1 shipping-method-next-step-button" onclick="ShippingMethod.save()" value="@T("Common.Continue")" />
+                                <span id="shipping-method-please-wait" class="please-wait" style="display: none;">@T("Common.LoadingNextStep")</span>
+                            </div>
+                        </form>
+                    </div>
+                </li>
+            }
+            <li id="opc-payment_method" class="tab-section">
+                <div class="step-title">
+                    <span class="number">@paymentMethodStepNumber</span>
+                    <h2 class="title">@T("Checkout.PaymentMethod")</h2>
+                </div>
+                <div id="checkout-step-payment-method" class="step a-item" style="display: none;">
+                    <form action="" id="co-payment-method-form">
+                        <div id="checkout-payment-method-load">
+                            @*payment methods content will be loaded here*@ Payment is not required
+                        </div>
+                    </form>
+                    <script type="text/javascript">
+                        PaymentMethod.init('#co-payment-method-form', '@(storeLocation)checkout/OpcSavePaymentMethod');
+                    </script>
+                    <div class="buttons" id="payment-method-buttons-container">
+                        <p class="back-link">
+                            <a href="#" onclick="Checkout.back(); return false;"><small>&laquo; </small>@T("Common.Back")</a></p>
+                        <input type="button" class="button-1 payment-method-next-step-button" onclick="PaymentMethod.save()" value="@T("Common.Continue")" />
+                        <span class="please-wait" id="payment-method-please-wait" style="display: none;">@T("Common.LoadingNextStep")</span>
+                    </div>
+                </div>
+            </li>
+            <li id="opc-payment_info" class="tab-section">
+                <div class="step-title">
+                    <span class="number">@paymentInfoStepNumber</span>
+                    <h2 class="title">@T("Checkout.PaymentInfo")</h2>
+                </div>
+                <div id="checkout-step-payment-info" class="step a-item" style="display: none;">
+                    <form action="" id="co-payment-info-form">
+                        <div id="checkout-payment-info-load">
+                            @*payment info content will be loaded here*@ Payment is not required
+                        </div>
+                    </form>
+                    <script type="text/javascript">
+                        PaymentInfo.init('#co-payment-info-form', '@(storeLocation)checkout/OpcSavePaymentInfo');
+                    </script>
+                    <div class="buttons" id="payment-info-buttons-container">
+                        <p class="back-link">
+                            <a href="#" onclick="Checkout.back(); return false;"><small>&laquo; </small>@T("Common.Back")</a></p>
+                        <input type="button" class="button-1 payment-info-next-step-button" onclick="PaymentInfo.save()" value="@T("Common.Continue")" />
+                        <span class="please-wait" id="payment-info-please-wait" style="display: none;">@T("Common.LoadingNextStep")</span>
+                    </div>
+                </div>
+            </li>
+            <li id="opc-confirm_order" class="tab-section">
+                <div class="step-title">
+                    <span class="number">@confirmOrderStepNumber</span>
+                    <h2 class="title">@T("Checkout.ConfirmOrder")</h2>
+                </div>
+                <div id="checkout-step-confirm-order" class="step a-item" style="display: none;">
+                    <div id="checkout-confirm-order-load">
+                        @*confirm order content will be loaded here*@
+                    </div>
+                    <script type="text/javascript">
+                        ConfirmOrder.init('@(storeLocation)checkout/OpcConfirmOrder', '@(storeLocation)checkout/completed');
+                    </script>
+                    <div class="buttons" id="confirm-order-buttons-container">
+                        <p class="back-link">
+                            <a href="#" onclick="Checkout.back(); return false;"><small>&laquo; </small>@T("Common.Back")</a></p>
+                        <input type="button" class="button-1 confirm-order-next-step-button" onclick="ConfirmOrder.save()" value="@T("Common.Confirm")" />
+                        <span class="please-wait" id="confirm-order-please-wait" style="display: none;">@T("Checkout.SubmittingOrder")</span>
+                    </div>
+                </div>
+            </li>
+        </ol>
+        @Html.Widget("opc_content_after")
+    </div>
+    <script type="text/javascript">
+        Accordion.init('checkout-steps', '.step-title', true);
+        Accordion.closeSection('#opc-billing');
+        Accordion.openSection('#opc-missed-promotions');
+        Checkout.init('@(storeLocation)cart');
+        if (!MissedPromotions.showMissedPromotionsStep)
+        {
+            Accordion.hideSection("#opc-missed-promotions");
+            MissedPromotions.next();
+        }
+        if (Billing.disableBillingAddressCheckoutStep)
+        {
+            Accordion.hideSection('#opc-billing');
+            Billing.save();
+        }
+    </script>
+</div>
