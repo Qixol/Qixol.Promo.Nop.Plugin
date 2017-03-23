@@ -1,6 +1,5 @@
 ﻿using global::Nop.Core.Domain.Catalog;
 using global::Nop.Core.Domain.Customers;
-//using global::Nop.Core.Domain.Discounts;
 using global::Nop.Core.Domain.Orders;
 using Nop.Services.Discounts;
 using System;
@@ -27,8 +26,8 @@ namespace Qixol.Nop.Promo.Services.Catalog
         /// <returns>Final price</returns>
         decimal GetFinalPrice(Product product,
             Customer customer,
-            decimal additionalCharge = decimal.Zero,
-            bool includeDiscounts = true,
+            decimal additionalCharge = decimal.Zero, 
+            bool includeDiscounts = true, 
             int quantity = 1);
         /// <summary>
         /// Gets the final price
@@ -126,6 +125,20 @@ namespace Qixol.Nop.Promo.Services.Catalog
         /// <returns>Shopping cart item sub total</returns>
         decimal GetSubTotal(ShoppingCartItem shoppingCartItem,
             bool includeDiscounts = true);
+        /// <summary>
+        /// Gets the shopping cart item sub total
+        /// </summary>
+        /// <param name="shoppingCartItem">The shopping cart item</param>
+        /// <param name="includeDiscounts">A value indicating whether include discounts or not for price computation</param>
+        /// <param name="discountAmount">Applied discount amount</param>
+        /// <param name="appliedDiscounts">Applied discounts</param>
+        /// <param name="maximumDiscountQty">Maximum discounted qty. Return not nullable value if discount cannot be applied to ALL items</param>
+        /// <returns>Shopping cart item sub total</returns>
+        decimal GetSubTotal(ShoppingCartItem shoppingCartItem,
+            bool includeDiscounts,
+            out decimal discountAmount,
+            out List<DiscountForCaching> appliedDiscounts,
+            out int? maximumDiscountQty);
 
         /// <summary>
         /// Gets the product cost (one item)

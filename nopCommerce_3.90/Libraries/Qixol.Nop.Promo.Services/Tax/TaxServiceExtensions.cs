@@ -15,6 +15,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nop.Services.Logging;
+using Nop.Core.Domain.Shipping;
 
 namespace Qixol.Nop.Promo.Services.Tax
 {
@@ -33,18 +34,23 @@ namespace Qixol.Nop.Promo.Services.Tax
 
         public TaxServiceExtensions(IAddressService addressService,
             IWorkContext workContext,
+            IStoreContext storeContext,
             TaxSettings taxSettings,
             IPluginFinder pluginFinder,
             IGeoLookupService geoLookupService,
             ICountryService countryService,
+            IStateProvinceService stateProvinceService,
             ILogger logger,
             CustomerSettings customerSettings,
+            ShippingSettings shippingSettings,
             AddressSettings addressSettings,
             PromoSettings promoSettings,
-            IPromoUtilities promoUtilities)
-            : base(addressService, workContext, taxSettings,
-                                                    pluginFinder, geoLookupService, countryService,
-                                                    logger, customerSettings, addressSettings)
+            //IpromoService promoService,
+            IPromoUtilities promoUtilities,
+            ITaxServiceExtensions taxServiceExtensions)
+            : base(addressService, workContext, storeContext, taxSettings,
+                                                    pluginFinder, geoLookupService, countryService, stateProvinceService,
+                                                    logger, customerSettings, shippingSettings, addressSettings)
         {
             this._promoSettings = promoSettings;
             //this._promoService = promoService;

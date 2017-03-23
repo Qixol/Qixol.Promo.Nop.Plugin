@@ -41,7 +41,7 @@ namespace Qixol.Nop.Promo.Services.Orders
     public partial class OrderProcessingService : global::Nop.Services.Orders.OrderProcessingService, IOrderProcessingService
     {
         #region Fields
-
+        
         private readonly IOrderService _orderService;
         private readonly IWebHelper _webHelper;
         private readonly ILocalizationService _localizationService;
@@ -74,6 +74,7 @@ namespace Qixol.Nop.Promo.Services.Orders
         private readonly IRewardPointService _rewardPointService;
         private readonly IGenericAttributeService _genericAttributeService;
         private readonly ICountryService _countryService;
+        private readonly IStateProvinceService _stateProvinceService;
 
         private readonly ShippingSettings _shippingSettings;
         private readonly PaymentSettings _paymentSettings;
@@ -82,6 +83,7 @@ namespace Qixol.Nop.Promo.Services.Orders
         private readonly TaxSettings _taxSettings;
         private readonly LocalizationSettings _localizationSettings;
         private readonly CurrencySettings _currencySettings;
+        private readonly ICustomNumberFormatter _customNumberFormatter;
 
         private readonly PromoSettings _promoSettings;
         private readonly IPromoUtilities _promoUtilities;
@@ -138,6 +140,7 @@ namespace Qixol.Nop.Promo.Services.Orders
         /// <param name="taxSettings">Tax settings</param>
         /// <param name="localizationSettings">Localization settings</param>
         /// <param name="currencySettings">Currency settings</param>
+        /// <param name="customNumberFormatter">Custom number formatter</param>
         public OrderProcessingService(IOrderService orderService,
             IWebHelper webHelper,
             ILocalizationService localizationService,
@@ -170,6 +173,7 @@ namespace Qixol.Nop.Promo.Services.Orders
             IRewardPointService rewardPointService,
             IGenericAttributeService genericAttributeService,
             ICountryService countryService,
+            IStateProvinceService stateProvinceService,
             ShippingSettings shippingSettings,
             PaymentSettings paymentSettings,
             RewardPointsSettings rewardPointsSettings,
@@ -177,6 +181,7 @@ namespace Qixol.Nop.Promo.Services.Orders
             TaxSettings taxSettings,
             LocalizationSettings localizationSettings,
             CurrencySettings currencySettings,
+            ICustomNumberFormatter customNumberFormatter,
             PromoSettings promoSettings,
             IPromoUtilities promoUtilities,
             IPromoOrderService promoOrderService,
@@ -187,8 +192,8 @@ namespace Qixol.Nop.Promo.Services.Orders
                                                         productAttributeFormatter, giftCardService, shoppingCartService, checkoutAttributeFormatter, shippingService,
                                                         shipmentService, taxService, customerService, discountService, encryptionService, workContext, workflowMessageService,
                                                         vendorService, customerActivityService, currencyService, affiliateService, eventPublisher, pdfService, rewardPointService,
-                                                        genericAttributeService, countryService, shippingSettings, paymentSettings, rewardPointsSettings, orderSettings, taxSettings,
-                                                        localizationSettings, currencySettings)
+                                                        genericAttributeService, countryService, stateProvinceService, shippingSettings, paymentSettings, rewardPointsSettings, orderSettings, taxSettings,
+                                                        localizationSettings, currencySettings, customNumberFormatter)
         {
             this._orderService = orderService;
             this._webHelper = webHelper;
@@ -248,8 +253,239 @@ namespace Qixol.Nop.Promo.Services.Orders
         /// <returns>Details</returns>
         protected override PlaceOrderContainter PreparePlaceOrderDetails(ProcessPaymentRequest processPaymentRequest)
         {
-            return base.PreparePlaceOrderDetails(processPaymentRequest);
+            var details = new PlaceOrderContainter();
+
+            //customer
+            details.Customer = _customerService.GetCustomerById(processPaymentRequest.CustomerId);
+            if (details.Customer == null)
+                throw new ArgumentException("Customer is not set");
+
+            //affiliate
+            var affiliate = _affiliateService.GetAffiliateById(details.Customer.AffiliateId);
+            if (affiliate != null && affiliate.Active && !affiliate.Deleted)
+                details.AffiliateId = affiliate.Id;
+
+            //check whether customer is guest
+            if (details.Customer.IsGuest() && !_orderSettings.AnonymousCheckoutAllowed)
+                throw new NopException("Anonymous checkout is not allowed");
+
+            //customer currency
+            var currencyTmp = _currencyService.GetCurrencyById(
+                details.Customer.GetAttribute<int>(SystemCustomerAttributeNames.CurrencyId, processPaymentRequest.StoreId));
+            var customerCurrency = (currencyTmp != null && currencyTmp.Published) ? currencyTmp : _workContext.WorkingCurrency;
+            var primaryStoreCurrency = _currencyService.GetCurrencyById(_currencySettings.PrimaryStoreCurrencyId);
+            details.CustomerCurrencyCode = customerCurrency.CurrencyCode;
+            details.CustomerCurrencyRate = customerCurrency.Rate / primaryStoreCurrency.Rate;
+
+            //customer language
+            details.CustomerLanguage = _languageService.GetLanguageById(
+                details.Customer.GetAttribute<int>(SystemCustomerAttributeNames.LanguageId, processPaymentRequest.StoreId));
+            if (details.CustomerLanguage == null || !details.CustomerLanguage.Published)
+                details.CustomerLanguage = _workContext.WorkingLanguage;
+
+            //billing address
+            if (details.Customer.BillingAddress == null)
+                throw new NopException("Billing address is not provided");
+
+            if (!CommonHelper.IsValidEmail(details.Customer.BillingAddress.Email))
+                throw new NopException("Email is not valid");
+
+            details.BillingAddress = (Address)details.Customer.BillingAddress.Clone();
+            if (details.BillingAddress.Country != null && !details.BillingAddress.Country.AllowsBilling)
+                throw new NopException(string.Format("Country '{0}' is not allowed for billing", details.BillingAddress.Country.Name));
+
+            //checkout attributes
+            details.CheckoutAttributesXml = details.Customer.GetAttribute<string>(SystemCustomerAttributeNames.CheckoutAttributes, processPaymentRequest.StoreId);
+            details.CheckoutAttributeDescription = _checkoutAttributeFormatter.FormatAttributes(details.CheckoutAttributesXml, details.Customer);
+
+            //load shopping cart
+            details.Cart = details.Customer.ShoppingCartItems.Where(sci => sci.ShoppingCartType == ShoppingCartType.ShoppingCart)
+                .LimitPerStore(processPaymentRequest.StoreId).ToList();
+
+            if (!details.Cart.Any())
+                throw new NopException("Cart is empty");
+
+            //validate the entire shopping cart
+            var warnings = _shoppingCartService.GetShoppingCartWarnings(details.Cart, details.CheckoutAttributesXml, true);
+            if (warnings.Any())
+                throw new NopException(warnings.Aggregate(string.Empty, (current, next) => string.Format("{0}{1};", current, next)));
+
+            //validate individual cart items
+            foreach (var sci in details.Cart)
+            {
+                var sciWarnings = _shoppingCartService.GetShoppingCartItemWarnings(details.Customer,
+                    sci.ShoppingCartType, sci.Product, processPaymentRequest.StoreId, sci.AttributesXml,
+                    sci.CustomerEnteredPrice, sci.RentalStartDateUtc, sci.RentalEndDateUtc, sci.Quantity, false);
+                if (sciWarnings.Any())
+                    throw new NopException(sciWarnings.Aggregate(string.Empty, (current, next) => string.Format("{0}{1};", current, next)));
+            }
+
+            //min totals validation
+            if (!ValidateMinOrderSubtotalAmount(details.Cart))
+            {
+                var minOrderSubtotalAmount = _currencyService.ConvertFromPrimaryStoreCurrency(_orderSettings.MinOrderSubtotalAmount, _workContext.WorkingCurrency);
+                throw new NopException(string.Format(_localizationService.GetResource("Checkout.MinOrderSubtotalAmount"),
+                    _priceFormatter.FormatPrice(minOrderSubtotalAmount, true, false)));
+            }
+
+            if (!ValidateMinOrderTotalAmount(details.Cart))
+            {
+                var minOrderTotalAmount = _currencyService.ConvertFromPrimaryStoreCurrency(_orderSettings.MinOrderTotalAmount, _workContext.WorkingCurrency);
+                throw new NopException(string.Format(_localizationService.GetResource("Checkout.MinOrderTotalAmount"),
+                    _priceFormatter.FormatPrice(minOrderTotalAmount, true, false)));
+            }
+
+            //tax display type
+            if (_taxSettings.AllowCustomersToSelectTaxDisplayType)
+                details.CustomerTaxDisplayType = (TaxDisplayType)details.Customer.GetAttribute<int>(SystemCustomerAttributeNames.TaxDisplayTypeId, processPaymentRequest.StoreId);
+            else
+                details.CustomerTaxDisplayType = _taxSettings.TaxDisplayType;
+
+            //sub total (incl tax)
+            decimal orderSubTotalDiscountAmount;
+            List<global::Nop.Services.Discounts.DiscountForCaching> orderSubTotalAppliedDiscounts;
+            decimal subTotalWithoutDiscountBase;
+            decimal subTotalWithDiscountBase;
+            _orderTotalCalculationService.GetShoppingCartSubTotal(details.Cart, true, out orderSubTotalDiscountAmount,
+                out orderSubTotalAppliedDiscounts, out subTotalWithoutDiscountBase, out subTotalWithDiscountBase);
+            details.OrderSubTotalInclTax = subTotalWithoutDiscountBase;
+            details.OrderSubTotalDiscountInclTax = orderSubTotalDiscountAmount;
+
+            //discount history
+            foreach (var disc in orderSubTotalAppliedDiscounts)
+                if (!details.AppliedDiscounts.ContainsDiscount(disc))
+                    details.AppliedDiscounts.Add(disc);
+
+            //sub total (excl tax)
+            _orderTotalCalculationService.GetShoppingCartSubTotal(details.Cart, false, out orderSubTotalDiscountAmount,
+                out orderSubTotalAppliedDiscounts, out subTotalWithoutDiscountBase, out subTotalWithDiscountBase);
+            details.OrderSubTotalExclTax = subTotalWithoutDiscountBase;
+            details.OrderSubTotalDiscountExclTax = orderSubTotalDiscountAmount;
+
+            //shipping info
+            if (details.Cart.RequiresShipping())
+            {
+                var pickupPoint = details.Customer.GetAttribute<PickupPoint>(SystemCustomerAttributeNames.SelectedPickupPoint, processPaymentRequest.StoreId);
+                if (_shippingSettings.AllowPickUpInStore && pickupPoint != null)
+                {
+                    var country = _countryService.GetCountryByTwoLetterIsoCode(pickupPoint.CountryCode);
+                    var state = _stateProvinceService.GetStateProvinceByAbbreviation(pickupPoint.StateAbbreviation);
+
+                    details.PickUpInStore = true;
+                    details.PickupAddress = new Address
+                    {
+                        Address1 = pickupPoint.Address,
+                        City = pickupPoint.City,
+                        Country = country,
+                        StateProvince = state,
+                        ZipPostalCode = pickupPoint.ZipPostalCode,
+                        CreatedOnUtc = DateTime.UtcNow,
+                    };
+                }
+                else
+                {
+                    if (details.Customer.ShippingAddress == null)
+                        throw new NopException("Shipping address is not provided");
+
+                    if (!CommonHelper.IsValidEmail(details.Customer.ShippingAddress.Email))
+                        throw new NopException("Email is not valid");
+
+                    //clone shipping address
+                    details.ShippingAddress = (Address)details.Customer.ShippingAddress.Clone();
+                    if (details.ShippingAddress.Country != null && !details.ShippingAddress.Country.AllowsShipping)
+                        throw new NopException(string.Format("Country '{0}' is not allowed for shipping", details.ShippingAddress.Country.Name));
+                }
+
+                var shippingOption = details.Customer.GetAttribute<ShippingOption>(SystemCustomerAttributeNames.SelectedShippingOption, processPaymentRequest.StoreId);
+                if (shippingOption != null)
+                {
+                    details.ShippingMethodName = shippingOption.Name;
+                    details.ShippingRateComputationMethodSystemName = shippingOption.ShippingRateComputationMethodSystemName;
+                }
+
+                details.ShippingStatus = ShippingStatus.NotYetShipped;
+            }
+            else
+                details.ShippingStatus = ShippingStatus.ShippingNotRequired;
+
+            //shipping total
+            decimal tax;
+            List<global::Nop.Services.Discounts.DiscountForCaching> shippingTotalDiscounts;
+            var orderShippingTotalInclTax = _orderTotalCalculationService.GetShoppingCartShippingTotal(details.Cart, true, out tax, out shippingTotalDiscounts);
+            var orderShippingTotalExclTax = _orderTotalCalculationService.GetShoppingCartShippingTotal(details.Cart, false);
+            if (!orderShippingTotalInclTax.HasValue || !orderShippingTotalExclTax.HasValue)
+                throw new NopException("Shipping total couldn't be calculated");
+
+            details.OrderShippingTotalInclTax = orderShippingTotalInclTax.Value;
+            details.OrderShippingTotalExclTax = orderShippingTotalExclTax.Value;
+
+            foreach(var disc in shippingTotalDiscounts)
+                if (!details.AppliedDiscounts.ContainsDiscount(disc))
+                    details.AppliedDiscounts.Add(disc);
+
+            //payment total
+            var paymentAdditionalFee = _paymentService.GetAdditionalHandlingFee(details.Cart, processPaymentRequest.PaymentMethodSystemName);
+            details.PaymentAdditionalFeeInclTax = _taxService.GetPaymentMethodAdditionalFee(paymentAdditionalFee, true, details.Customer);
+            details.PaymentAdditionalFeeExclTax = _taxService.GetPaymentMethodAdditionalFee(paymentAdditionalFee, false, details.Customer);
+
+            //tax amount
+            SortedDictionary<decimal, decimal> taxRatesDictionary;
+            details.OrderTaxTotal = _orderTotalCalculationService.GetTaxTotal(details.Cart, out taxRatesDictionary);
+
+            //VAT number
+            var customerVatStatus = (VatNumberStatus)details.Customer.GetAttribute<int>(SystemCustomerAttributeNames.VatNumberStatusId);
+            if (_taxSettings.EuVatEnabled && customerVatStatus == VatNumberStatus.Valid)
+                details.VatNumber = details.Customer.GetAttribute<string>(SystemCustomerAttributeNames.VatNumber);
+
+            //tax rates
+            details.TaxRates = taxRatesDictionary.Aggregate(string.Empty, (current, next) =>
+                string.Format("{0}{1}:{2};   ", current, next.Key.ToString(CultureInfo.InvariantCulture), next.Value.ToString(CultureInfo.InvariantCulture)));
+
+            //order total (and applied discounts, gift cards, reward points)
+            List<AppliedGiftCard> appliedGiftCards;
+            List<global::Nop.Services.Discounts.DiscountForCaching> orderAppliedDiscounts;
+            decimal orderDiscountAmount;
+            int redeemedRewardPoints;
+            decimal redeemedRewardPointsAmount;
+            var orderTotal = _orderTotalCalculationService.GetShoppingCartTotal(details.Cart, out orderDiscountAmount,
+                out orderAppliedDiscounts, out appliedGiftCards, out redeemedRewardPoints, out redeemedRewardPointsAmount);
+            if (!orderTotal.HasValue)
+                throw new NopException("Order total couldn't be calculated");
+
+            details.OrderDiscountAmount = orderDiscountAmount;
+            details.RedeemedRewardPoints = redeemedRewardPoints;
+            details.RedeemedRewardPointsAmount = redeemedRewardPointsAmount;
+            details.AppliedGiftCards = appliedGiftCards;
+            details.OrderTotal = orderTotal.Value;
+
+            //discount history
+            foreach (var disc in orderAppliedDiscounts)
+                if (!details.AppliedDiscounts.ContainsDiscount(disc))
+                    details.AppliedDiscounts.Add(disc);
+
+            processPaymentRequest.OrderTotal = details.OrderTotal;
+
+            //recurring or standard shopping cart?
+            details.IsRecurringShoppingCart = details.Cart.IsRecurring();
+            if (details.IsRecurringShoppingCart)
+            {
+                int recurringCycleLength;
+                RecurringProductCyclePeriod recurringCyclePeriod;
+                int recurringTotalCycles;
+                var recurringCyclesError = details.Cart.GetRecurringCycleInfo(_localizationService,
+                    out recurringCycleLength, out recurringCyclePeriod, out recurringTotalCycles);
+                if (!string.IsNullOrEmpty(recurringCyclesError))
+                    throw new NopException(recurringCyclesError);
+
+                processPaymentRequest.RecurringCycleLength = recurringCycleLength;
+                processPaymentRequest.RecurringCyclePeriod = recurringCyclePeriod;
+                processPaymentRequest.RecurringTotalCycles = recurringTotalCycles;
+            }
+
+            return details;
         }
+
+        /// <summary>
         /// Award reward points
         /// </summary>
         /// <param name="order">Order</param>
@@ -266,19 +502,28 @@ namespace Qixol.Nop.Promo.Services.Orders
             if (points == 0)
                 return;
 
-            //Ensure that reward points were not added before. We should not add reward points if they were already earned for this order
-            if (order.RewardPointsWereAdded)
+            //Ensure that reward points were not added (earned) before. We should not add reward points if they were already earned for this order
+            if (order.RewardPointsHistoryEntryId.HasValue)
                 return;
 
+            //check whether delay is set
+            DateTime? activatingDate = null;
+            if (_rewardPointsSettings.ActivationDelay > 0)
+            {
+                var delayPeriod = (RewardPointsActivatingDelayPeriod)_rewardPointsSettings.ActivationDelayPeriodId;
+                var delayInHours = delayPeriod.ToHours(_rewardPointsSettings.ActivationDelay);
+                activatingDate = DateTime.UtcNow.AddHours(delayInHours);
+            }
+
             //add reward points
-            _rewardPointService.AddRewardPointsHistoryEntry(order.Customer, points, order.StoreId,
-                string.Format(_localizationService.GetResource("RewardPoints.Message.EarnedForOrder"), order.Id));
-            order.RewardPointsWereAdded = true;
+            order.RewardPointsHistoryEntryId = _rewardPointService.AddRewardPointsHistoryEntry(order.Customer, points, order.StoreId,
+                string.Format(_localizationService.GetResource("RewardPoints.Message.EarnedForOrder"), order.CustomOrderNumber), activatingDate: activatingDate);
+
             _orderService.UpdateOrder(order);
         }
 
         /// <summary>
-        /// Award reward points
+        /// Reduce (cancel) reward points (previously awarded for placing an order)
         /// </summary>
         /// <param name="order">Order</param>
         protected override void ReduceRewardPoints(Order order)
@@ -289,17 +534,29 @@ namespace Qixol.Nop.Promo.Services.Orders
                 return;
             }
 
-            int points = CalculateRewardPoints(order);
+            var totalForRewardPoints = _orderTotalCalculationService.CalculateApplicableOrderTotalForRewardPoints(order.OrderShippingInclTax, order.OrderTotal);
+            int points = _orderTotalCalculationService.CalculateRewardPoints(order.Customer, totalForRewardPoints);
             if (points == 0)
                 return;
 
             //ensure that reward points were already earned for this order before
-            if (!order.RewardPointsWereAdded)
+            if (!order.RewardPointsHistoryEntryId.HasValue)
                 return;
 
-            //reduce reward points
-            _rewardPointService.AddRewardPointsHistoryEntry(order.Customer, -points, order.StoreId,
-                string.Format(_localizationService.GetResource("RewardPoints.Message.ReducedForOrder"), order.Id));
+            //get appropriate history entry
+            var rewardPointsHistoryEntry = _rewardPointService.GetRewardPointsHistoryEntryById(order.RewardPointsHistoryEntryId.Value);
+            if (rewardPointsHistoryEntry != null && rewardPointsHistoryEntry.CreatedOnUtc > DateTime.UtcNow)
+            {
+                //just delete the upcoming entry (points were not granted yet)
+                _rewardPointService.DeleteRewardPointsHistoryEntry(rewardPointsHistoryEntry);
+            }
+            else
+            {
+                //or reduce reward points if the entry already exists
+                _rewardPointService.AddRewardPointsHistoryEntry(order.Customer, -points, order.StoreId,
+                    string.Format(_localizationService.GetResource("RewardPoints.Message.ReducedForOrder"), order.CustomOrderNumber));
+            }
+
             _orderService.UpdateOrder(order);
         }
 
@@ -394,7 +651,6 @@ namespace Qixol.Nop.Promo.Services.Orders
                         {
                             //prices
                             decimal taxRate;
-                            //List <global::Nop.Core.Domain.Discounts.Discount> scDiscounts;
                             decimal discountAmount = basketResponseItems.Sum(i => i.LinePromotionDiscount);
                             var scUnitPrice = _priceCalculationService.GetUnitPrice(sc);
                             var scSubTotal = basketResponseItems.Sum(i => i.LineAmount);
@@ -402,12 +658,9 @@ namespace Qixol.Nop.Promo.Services.Orders
                             var scUnitPriceExclTax = _taxService.GetProductPrice(sc.Product, scUnitPrice, false, details.Customer, out taxRate);
                             var scSubTotalInclTax = _taxService.GetProductPrice(sc.Product, scSubTotal, true, details.Customer, out taxRate);
                             var scSubTotalExclTax = _taxService.GetProductPrice(sc.Product, scSubTotal, false, details.Customer, out taxRate);
+
                             var discountAmountInclTax = _taxService.GetProductPrice(sc.Product, discountAmount, true, details.Customer, out taxRate);
                             var discountAmountExclTax = _taxService.GetProductPrice(sc.Product, discountAmount, false, details.Customer, out taxRate);
-                            throw new NotImplementedException("CHECK - do promotions need to be added to details.AppliedDiscounts at this point?");
-                            //foreach (var disc in scDiscounts)
-                            //    if (!details.AppliedDiscounts.ContainsDiscount(disc))
-                            //        details.AppliedDiscounts.Add(disc);
 
                             //attributes
                             var attributeDescription = _productAttributeFormatter.FormatAttributes(sc.Product, sc.AttributesXml, details.Customer);

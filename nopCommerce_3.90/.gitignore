@@ -1,4 +1,5 @@
 ## NopCommerce files/folders to ignore
+[Ww]ebsite.sln
 [Ww]ebsite/
 # explicitly exclude some sub-folders (to help Visual Studio)
 Website/Web.config

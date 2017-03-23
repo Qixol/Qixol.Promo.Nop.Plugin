@@ -48,6 +48,7 @@ using Nop.Core.Domain.Vendors;
 using Nop.Core.Domain.Blogs;
 using Nop.Core.Domain.Forums;
 using Nop.Core.Caching;
+using Nop.Web.Factories;
 
 namespace Qixol.Plugin.Misc.Promo.Controllers
 {
@@ -55,6 +56,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
     public partial class CatalogController : global::Nop.Web.Controllers.CatalogController
     {
         #region Fields
+        private readonly ICatalogModelFactory _catalogModelFactory;
         private readonly ICategoryService _categoryService;
         private readonly IManufacturerService _manufacturerService;
         private readonly IProductService _productService;
@@ -91,81 +93,46 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
 
         #region Constructors
 
-        public CatalogController(ICategoryService categoryService,
+        public CatalogController(ICatalogModelFactory catalogModelFactory,
+            IProductModelFactory productModelFactory,
+            ICategoryService categoryService,
             IManufacturerService manufacturerService,
             IProductService productService,
             IVendorService vendorService,
-            ICategoryTemplateService categoryTemplateService,
-            IManufacturerTemplateService manufacturerTemplateService,
             IWorkContext workContext,
             IStoreContext storeContext,
-            ITaxService taxService,
-            ICurrencyService currencyService,
-            IPictureService pictureService,
             ILocalizationService localizationService,
-            IPriceCalculationService priceCalculationService,
-            IPriceFormatter priceFormatter,
             IWebHelper webHelper,
-            ISpecificationAttributeService specificationAttributeService,
             IProductTagService productTagService,
             IGenericAttributeService genericAttributeService,
             IAclService aclService,
             IStoreMappingService storeMappingService,
             IPermissionService permissionService,
             ICustomerActivityService customerActivityService,
-            ITopicService topicService,
-            IEventPublisher eventPublisher,
-            ISearchTermService searchTermService,
-            IMeasureService measureService,
             MediaSettings mediaSettings,
             CatalogSettings catalogSettings,
-            VendorSettings vendorSettings,
-            BlogSettings blogSettings,
-            ForumSettings forumSettings,
-            ICacheManager cacheManager)
-            : base (categoryService,
+            VendorSettings vendorSettings)
+            : base (catalogModelFactory,
+                  productModelFactory,
+                  categoryService,
             manufacturerService,
             productService,
             vendorService,
-            categoryTemplateService,
-            manufacturerTemplateService,
             workContext,
             storeContext,
-            taxService,
-            currencyService,
-            pictureService,
             localizationService,
-            priceCalculationService,
-            priceFormatter,
             webHelper,
-            specificationAttributeService,
             productTagService,
             genericAttributeService,
             aclService,
             storeMappingService,
             permissionService,
             customerActivityService,
-            topicService,
-            eventPublisher,
-            searchTermService,
-            measureService,
             mediaSettings,
             catalogSettings,
-            vendorSettings,
-            blogSettings,
-             forumSettings,
-            cacheManager)
+            vendorSettings)
         {
-        }
-
-        #endregion
-
-        #region utilities
-
-        [NonAction]
-        public IList<CategorySimpleModel> PromoPrepareCategorySimpleModels(int rootCategoryId, Category category)
-        {
-            return base.PrepareCategorySimpleModels(rootCategoryId, false, new List<Category> { category });
+            this._catalogModelFactory = catalogModelFactory;
         }
 
         #endregion

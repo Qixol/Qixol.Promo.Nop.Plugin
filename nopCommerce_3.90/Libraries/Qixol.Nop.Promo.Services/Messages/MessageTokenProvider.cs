@@ -31,6 +31,8 @@ using Qixol.Nop.Promo.Services.Localization;
 using Qixol.Nop.Promo.Core.Domain.Orders;
 using Qixol.Nop.Promo.Services.Orders;
 using Nop.Core.Domain;
+using global::Nop.Core.Domain.Payments;
+using global::Nop.Services.Customers;
 
 namespace Qixol.Nop.Promo.Services.Messages
 {
@@ -49,6 +51,7 @@ namespace Qixol.Nop.Promo.Services.Messages
         private readonly IPaymentService _paymentService;
         private readonly IProductAttributeParser _productAttributeParser;
         private readonly IAddressAttributeFormatter _addressAttributeFormatter;
+        private readonly ICustomerAttributeFormatter _customerAttributeFormatter;
         private readonly IStoreService _storeService;
         private readonly IStoreContext _storeContext;
 
@@ -57,6 +60,7 @@ namespace Qixol.Nop.Promo.Services.Messages
         private readonly TaxSettings _taxSettings;
         private readonly CurrencySettings _currencySettings;
         private readonly ShippingSettings _shippingSettings;
+        private readonly PaymentSettings _paymentSettings;
 
         private readonly IEventPublisher _eventPublisher;
         private readonly StoreInformationSettings _storeInformationSettings;
@@ -69,9 +73,9 @@ namespace Qixol.Nop.Promo.Services.Messages
         #region Ctor
 
         public MessageTokenProvider(ILanguageService languageService,
-            ILocalizationService localizationService,
+            ILocalizationService localizationService, 
             IDateTimeHelper dateTimeHelper,
-            IPriceFormatter priceFormatter,
+            IPriceFormatter priceFormatter, 
             ICurrencyService currencyService,
             IWorkContext workContext,
             IDownloadService downloadService,
@@ -81,11 +85,13 @@ namespace Qixol.Nop.Promo.Services.Messages
             IStoreContext storeContext,
             IProductAttributeParser productAttributeParser,
             IAddressAttributeFormatter addressAttributeFormatter,
+            ICustomerAttributeFormatter customerAttributeFormatter,
             MessageTemplatesSettings templatesSettings,
             CatalogSettings catalogSettings,
             TaxSettings taxSettings,
             CurrencySettings currencySettings,
             ShippingSettings shippingSettings,
+            PaymentSettings paymentSettings,
             IEventPublisher eventPublisher,
             StoreInformationSettings storeInformationSettings,
             PromoSettings promoSettings,
@@ -95,8 +101,8 @@ namespace Qixol.Nop.Promo.Services.Messages
             dateTimeHelper, priceFormatter, currencyService, workContext,
             downloadService, orderService, paymentService, storeService,
             storeContext, productAttributeParser,
-            addressAttributeFormatter, templatesSettings, catalogSettings,
-            taxSettings, currencySettings, shippingSettings, eventPublisher, storeInformationSettings)
+            addressAttributeFormatter, customerAttributeFormatter, templatesSettings, catalogSettings,
+            taxSettings, currencySettings, shippingSettings, paymentSettings, eventPublisher, storeInformationSettings)
         {
             this._languageService = languageService;
             this._localizationService = localizationService;
@@ -136,7 +142,8 @@ namespace Qixol.Nop.Promo.Services.Messages
         /// <returns>HTML table of products</returns>
         protected override string ProductListToHtmlTable(Order order, int languageId, int vendorId)
         {
-            var result = "";
+            string result;
+
             var language = _languageService.GetLanguageById(languageId);
 
             PromoOrder promoOrder = _promoOrderService.GetPromoOrderByOrderId(order.Id);
@@ -195,15 +202,15 @@ namespace Qixol.Nop.Promo.Services.Messages
                 //rental info
                 if (orderItem.Product.IsRental)
                 {
-                    var rentalStartDate = orderItem.RentalStartDateUtc.HasValue ? orderItem.Product.FormatRentalDate(orderItem.RentalStartDateUtc.Value) : "";
-                    var rentalEndDate = orderItem.RentalEndDateUtc.HasValue ? orderItem.Product.FormatRentalDate(orderItem.RentalEndDateUtc.Value) : "";
+                    var rentalStartDate = orderItem.RentalStartDateUtc.HasValue ? orderItem.Product.FormatRentalDate(orderItem.RentalStartDateUtc.Value) : string.Empty;
+                    var rentalEndDate = orderItem.RentalEndDateUtc.HasValue ? orderItem.Product.FormatRentalDate(orderItem.RentalEndDateUtc.Value) : string.Empty;
                     var rentalInfo = string.Format(_localizationService.GetResource("Order.Rental.FormattedDate"),
                         rentalStartDate, rentalEndDate);
                     sb.AppendLine("<br />");
                     sb.AppendLine(rentalInfo);
                 }
                 //sku
-                if (_catalogSettings.ShowProductSku)
+                if (_catalogSettings.ShowSkuOnProductDetailsPage)
                 {
                     var sku = product.FormatSku(orderItem.AttributesXml, _productAttributeParser);
                     if (!String.IsNullOrEmpty(sku))
@@ -228,7 +235,7 @@ namespace Qixol.Nop.Promo.Services.Messages
 
                 sb.AppendLine("</td>");
 
-                string unitPriceStr = string.Empty;
+                string unitPriceStr;
                 if (order.CustomerTaxDisplayType == TaxDisplayType.IncludingTax)
                 {
                     //including tax
@@ -245,7 +252,7 @@ namespace Qixol.Nop.Promo.Services.Messages
 
                 sb.AppendLine(string.Format("<td style=\"padding: 0.6em 0.4em;text-align: center;\">{0}</td>", orderItem.Quantity));
 
-                string priceStr = string.Empty;
+                string priceStr; 
                 decimal baseLineTotal = 0;
                 if (order.CustomerTaxDisplayType == TaxDisplayType.IncludingTax)
                 {
@@ -418,7 +425,7 @@ namespace Qixol.Nop.Promo.Services.Messages
                         foreach (var tr in order.TaxRatesDictionary)
                             taxRates.Add(tr.Key, _currencyService.ConvertCurrency(tr.Value, order.CurrencyRate));
 
-                        displayTaxRates = _taxSettings.DisplayTaxRates && taxRates.Count > 0;
+                        displayTaxRates = _taxSettings.DisplayTaxRates && taxRates.Any();
                         displayTax = !displayTaxRates;
 
                         var orderTaxInCustomerCurrency = _currencyService.ConvertCurrency(order.OrderTax, order.CurrencyRate);
@@ -587,15 +594,15 @@ namespace Qixol.Nop.Promo.Services.Messages
                 //rental info
                 if (orderItem.Product.IsRental)
                 {
-                    var rentalStartDate = orderItem.RentalStartDateUtc.HasValue ? orderItem.Product.FormatRentalDate(orderItem.RentalStartDateUtc.Value) : "";
-                    var rentalEndDate = orderItem.RentalEndDateUtc.HasValue ? orderItem.Product.FormatRentalDate(orderItem.RentalEndDateUtc.Value) : "";
+                    var rentalStartDate = orderItem.RentalStartDateUtc.HasValue ? orderItem.Product.FormatRentalDate(orderItem.RentalStartDateUtc.Value) : string.Empty;
+                    var rentalEndDate = orderItem.RentalEndDateUtc.HasValue ? orderItem.Product.FormatRentalDate(orderItem.RentalEndDateUtc.Value) : string.Empty;
                     var rentalInfo = string.Format(_localizationService.GetResource("Order.Rental.FormattedDate"),
                         rentalStartDate, rentalEndDate);
                     sb.AppendLine("<br />");
                     sb.AppendLine(rentalInfo);
                 }
                 //sku
-                if (_catalogSettings.ShowProductSku)
+                if (_catalogSettings.ShowSkuOnProductDetailsPage)
                 {
                     var sku = product.FormatSku(orderItem.AttributesXml, _productAttributeParser);
                     if (!String.IsNullOrEmpty(sku))
@@ -611,7 +618,7 @@ namespace Qixol.Nop.Promo.Services.Messages
                 sb.AppendLine("</tr>");
             }
             #endregion
-
+            
             sb.AppendLine("</table>");
             result = sb.ToString();
             return result;

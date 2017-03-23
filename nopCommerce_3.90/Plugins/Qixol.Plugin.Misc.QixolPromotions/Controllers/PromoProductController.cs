@@ -45,6 +45,7 @@ using Nop.Core.Domain.Seo;
 using Nop.Core.Caching;
 using global::Nop.Web.Models.Catalog;
 using System.Xml.Linq;
+using Nop.Web.Factories;
 
 namespace Qixol.Plugin.Misc.Promo.Controllers
 {
@@ -52,170 +53,93 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
     {
         #region Fields
 
-        private readonly ICategoryService _categoryService;
-        private readonly IManufacturerService _manufacturerService;
+        private readonly IProductModelFactory _productModelFactory;
         private readonly IProductService _productService;
-        private readonly IVendorService _vendorService;
-        private readonly IProductTemplateService _productTemplateService;
-        private readonly IProductAttributeService _productAttributeService;
         private readonly IWorkContext _workContext;
         private readonly IStoreContext _storeContext;
-        private readonly ITaxService _taxService;
-        private readonly ICurrencyService _currencyService;
-        private readonly IPictureService _pictureService;
         private readonly ILocalizationService _localizationService;
-        private readonly IMeasureService _measureService;
-        private readonly IPriceCalculationService _priceCalculationService;
-        private readonly IPriceFormatter _priceFormatter;
         private readonly IWebHelper _webHelper;
-        private readonly ISpecificationAttributeService _specificationAttributeService;
-        private readonly IDateTimeHelper _dateTimeHelper;
         private readonly IRecentlyViewedProductsService _recentlyViewedProductsService;
         private readonly ICompareProductsService _compareProductsService;
         private readonly IWorkflowMessageService _workflowMessageService;
-        private readonly IProductTagService _productTagService;
         private readonly IOrderReportService _orderReportService;
+        private readonly IOrderService _orderService;
         private readonly IAclService _aclService;
         private readonly IStoreMappingService _storeMappingService;
         private readonly IPermissionService _permissionService;
-        private readonly IDownloadService _downloadService;
         private readonly ICustomerActivityService _customerActivityService;
-        private readonly IProductAttributeParser _productAttributeParser;
-        private readonly IShippingService _shippingService;
         private readonly IEventPublisher _eventPublisher;
-        private readonly MediaSettings _mediaSettings;
         private readonly CatalogSettings _catalogSettings;
-        private readonly VendorSettings _vendorSettings;
         private readonly ShoppingCartSettings _shoppingCartSettings;
         private readonly LocalizationSettings _localizationSettings;
-        private readonly CustomerSettings _customerSettings;
         private readonly CaptchaSettings _captchaSettings;
-        private readonly SeoSettings _seoSettings;
         private readonly ICacheManager _cacheManager;
 
         #endregion
 
         #region Constructors
 
-        public PromoProductController(ICategoryService categoryService,
-            IManufacturerService manufacturerService,
+        public PromoProductController(IProductModelFactory productModelFactory,
             IProductService productService,
-            IVendorService vendorService,
-            IProductTemplateService productTemplateService,
-            IProductAttributeService productAttributeService,
             IWorkContext workContext,
             IStoreContext storeContext,
-            ITaxService taxService,
-            ICurrencyService currencyService,
-            IPictureService pictureService,
             ILocalizationService localizationService,
-            IMeasureService measureService,
-            IPriceCalculationService priceCalculationService,
-            IPriceFormatter priceFormatter,
             IWebHelper webHelper,
-            ISpecificationAttributeService specificationAttributeService,
-            IDateTimeHelper dateTimeHelper,
             IRecentlyViewedProductsService recentlyViewedProductsService,
             ICompareProductsService compareProductsService,
             IWorkflowMessageService workflowMessageService,
-            IProductTagService productTagService,
             IOrderReportService orderReportService,
+            IOrderService orderService,
             IAclService aclService,
             IStoreMappingService storeMappingService,
             IPermissionService permissionService,
-            IDownloadService downloadService,
             ICustomerActivityService customerActivityService,
-            IProductAttributeParser productAttributeParser,
-            IShippingService shippingService,
             IEventPublisher eventPublisher,
-            MediaSettings mediaSettings,
             CatalogSettings catalogSettings,
-            VendorSettings vendorSettings,
             ShoppingCartSettings shoppingCartSettings,
             LocalizationSettings localizationSettings,
-            CustomerSettings customerSettings,
             CaptchaSettings captchaSettings,
-            SeoSettings seoSettings,
-            ICacheManager cacheManager) : base( categoryService,
-             manufacturerService,
+            ICacheManager cacheManager) : base(productModelFactory,
              productService,
-             vendorService,
-             productTemplateService,
-             productAttributeService,
              workContext,
              storeContext,
-             taxService,
-             currencyService,
-             pictureService,
              localizationService,
-             measureService,
-             priceCalculationService,
-             priceFormatter,
              webHelper,
-             specificationAttributeService,
-             dateTimeHelper,
              recentlyViewedProductsService,
              compareProductsService,
              workflowMessageService,
-             productTagService,
              orderReportService,
+             orderService,
              aclService,
              storeMappingService,
              permissionService,
-             downloadService,
              customerActivityService,
-             productAttributeParser,
-             shippingService,
              eventPublisher,
-             mediaSettings,
              catalogSettings,
-             vendorSettings,
              shoppingCartSettings,
              localizationSettings,
-             customerSettings,
              captchaSettings,
-             seoSettings,
              cacheManager)
         {
-            this._categoryService = categoryService;
-            this._manufacturerService = manufacturerService;
+            this._productModelFactory = productModelFactory;
             this._productService = productService;
-            this._vendorService = vendorService;
-            this._productTemplateService = productTemplateService;
-            this._productAttributeService = productAttributeService;
             this._workContext = workContext;
             this._storeContext = storeContext;
-            this._taxService = taxService;
-            this._currencyService = currencyService;
-            this._pictureService = pictureService;
             this._localizationService = localizationService;
-            this._measureService = measureService;
-            this._priceCalculationService = priceCalculationService;
-            this._priceFormatter = priceFormatter;
             this._webHelper = webHelper;
-            this._specificationAttributeService = specificationAttributeService;
-            this._dateTimeHelper = dateTimeHelper;
             this._recentlyViewedProductsService = recentlyViewedProductsService;
             this._compareProductsService = compareProductsService;
             this._workflowMessageService = workflowMessageService;
-            this._productTagService = productTagService;
             this._orderReportService = orderReportService;
             this._aclService = aclService;
             this._storeMappingService = storeMappingService;
             this._permissionService = permissionService;
-            this._downloadService = downloadService;
             this._customerActivityService = customerActivityService;
-            this._productAttributeParser = productAttributeParser;
-            this._shippingService = shippingService;
             this._eventPublisher = eventPublisher;
-            this._mediaSettings = mediaSettings;
             this._catalogSettings = catalogSettings;
-            this._vendorSettings = vendorSettings;
             this._shoppingCartSettings = shoppingCartSettings;
             this._localizationSettings = localizationSettings;
-            this._customerSettings = customerSettings;
             this._captchaSettings = captchaSettings;
-            this._seoSettings = seoSettings;
             this._cacheManager = cacheManager;
         }
 
@@ -223,10 +147,10 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
 
         #region public methods
 
-        public PromoProductDetailsModel PromoPrepareProductDetailsModel(Product product)
+        public PromoProductDetailsModel PromoPrepareProductDetailsModel(Product product, ShoppingCartItem updatecartitem = null, bool isAssociatedProduct = false)
         {
             PromoProductDetailsModel promoProductDetailsModel = new PromoProductDetailsModel();
-            var productDetailsModel = base.PrepareProductDetailsPageModel(product);
+            var productDetailsModel = _productModelFactory.PrepareProductDetailsModel(product, updatecartitem, isAssociatedProduct);
             promoProductDetailsModel.ProductDetailsModel = productDetailsModel;
 
             return promoProductDetailsModel;

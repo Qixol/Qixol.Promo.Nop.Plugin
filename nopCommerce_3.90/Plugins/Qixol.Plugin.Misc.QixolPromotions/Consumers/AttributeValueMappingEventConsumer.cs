@@ -1,5 +1,5 @@
-﻿using Nop.Core.Events;
-using Nop.Services.Events;
+﻿using global::Nop.Core.Events;
+using global::Nop.Services.Events;
 using Qixol.Nop.Promo.Core.Domain.AttributeValues;
 using Qixol.Nop.Promo.Core.Domain.ExportQueue;
 using Qixol.Nop.Promo.Core.Domain.Promo;

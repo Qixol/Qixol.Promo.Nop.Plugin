@@ -1,20 +1,23 @@
-﻿using Qixol.Nop.Promo.Core.Domain.Promo;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using global::Nop.Core.Data;
-using global::Nop.Core.Domain.Discounts;
-using global::Nop.Core.Caching;
-using global::Nop.Services.Events;
 using global::Nop.Core;
-using global::Nop.Services.Common;
+using global::Nop.Core.Caching;
+using global::Nop.Core.Data;
+using global::Nop.Core.Domain.Customers;
+using global::Nop.Core.Domain.Discounts;
+using global::Nop.Core.Domain.Orders;
 using global::Nop.Core.Plugins;
-using Qixol.Nop.Promo.Services.Coupons;
+using global::Nop.Services.Catalog;
+using global::Nop.Services.Customers;
+using global::Nop.Services.Discounts;
+using global::Nop.Services.Discounts.Cache;
+using global::Nop.Services.Events;
+using global::Nop.Services.Localization;
+using global::Nop.Services.Orders;
+using Qixol.Nop.Promo.Core.Domain.Promo;
 using Qixol.Promo.Integration.Lib.Basket;
 using Qixol.Nop.Promo.Services.Promo;
-using Nop.Services.Localization;
 
 namespace Qixol.Nop.Promo.Services.Discounts
 {
@@ -43,52 +46,78 @@ namespace Qixol.Nop.Promo.Services.Discounts
         private readonly PromoSettings _promoSettings;
 
         private readonly IRepository<Discount> _discountRepository;
+        private readonly IRepository<DiscountRequirement> _discountRequirementRepository;
         private readonly IRepository<DiscountUsageHistory> _discountUsageHistoryRepository;
         private readonly ICacheManager _cacheManager;
-        private readonly IEventPublisher _eventPublisher;
+        private readonly IStoreContext _storeContext;
         private readonly ILocalizationService _localizationService;
+        private readonly ICategoryService _categoryService;
+        private readonly IPluginFinder _pluginFinder;
+        private readonly IEventPublisher _eventPublisher;
+        private readonly IWorkContext _workContext;
 
         #endregion
 
-        #region constructor
+        #region Ctor
 
-        public DiscountService(
-            IPromoUtilities promoUtilities,
-            PromoSettings promoSettings,
-            ICacheManager cacheManager,
+        /// <summary>
+        /// Ctor
+        /// </summary>
+        /// <param name="cacheManager">Cache manager</param>
+        /// <param name="discountRepository">Discount repository</param>
+        /// <param name="discountRequirementRepository">Discount requirement repository</param>
+        /// <param name="discountUsageHistoryRepository">Discount usage history repository</param>
+        /// <param name="storeContext">Store context</param>
+        /// <param name="localizationService">Localization service</param>
+        /// <param name="categoryService">Category service</param>
+        /// <param name="pluginFinder">Plugin finder</param>
+        /// <param name="eventPublisher">Event published</param>
+        /// <param name="workContext">work context</param>
+        public DiscountService(ICacheManager cacheManager,
             IRepository<Discount> discountRepository,
             IRepository<DiscountRequirement> discountRequirementRepository,
             IRepository<DiscountUsageHistory> discountUsageHistoryRepository,
             IStoreContext storeContext,
-            IGenericAttributeService genericAttributeService,
+            ILocalizationService localizationService,
+            ICategoryService categoryService,
             IPluginFinder pluginFinder,
             IEventPublisher eventPublisher,
-            ILocalizationService localizationService) : 
+            IWorkContext workContext,
+            IPromoUtilities promoUtilities,
+            PromoSettings promoSettings
+            ) : 
                 base(
                     cacheManager,
                     discountRepository,
                     discountRequirementRepository,
                     discountUsageHistoryRepository,
                     storeContext,
-                    genericAttributeService,
                     localizationService,
+                    categoryService,
                     pluginFinder,
-                    eventPublisher)
+                    eventPublisher,
+                    workContext)
         {
-            this._promoUtilities = promoUtilities;
-            this._promoSettings = promoSettings;
-
+            this._cacheManager = cacheManager;
             this._discountRepository = discountRepository;
             this._discountUsageHistoryRepository = discountUsageHistoryRepository;
-            this._cacheManager = cacheManager;
-            this._eventPublisher = eventPublisher;
             this._localizationService = localizationService;
+            this._eventPublisher = eventPublisher;
+
+            this._promoUtilities = promoUtilities;
+            this._promoSettings = promoSettings;
         }
 
         #endregion
 
-        #region methods
+        #region Methods
 
+        #region Discounts
+
+        /// <summary>
+        /// Delete discount
+        /// </summary>
+        /// <param name="discount">Discount</param>
         public override void DeleteDiscount(Discount discount)
         {
             if (!_promoSettings.Enabled)
@@ -97,25 +126,9 @@ namespace Qixol.Nop.Promo.Services.Discounts
             throw new NotSupportedException("DeleteDiscount");
         }
 
-        public override void DeleteDiscountRequirement(DiscountRequirement discountRequirement)
+        public override Discount GetDiscountById(int discountId)
         {
-            if (!_promoSettings.Enabled)
-                base.DeleteDiscountRequirement(discountRequirement);
-            
-            throw new NotSupportedException("DeleteDiscountRequirement");
-        }
-
-        public override void DeleteDiscountUsageHistory(DiscountUsageHistory discountUsageHistory)
-        {
-            if (!_promoSettings.Enabled)
-                base.DeleteDiscountUsageHistory(discountUsageHistory);
-
-            throw new NotImplementedException("DeleteDiscountUsageHistory");
-        }
-
-        public override global::Nop.Core.IPagedList<DiscountUsageHistory> GetAllDiscountUsageHistory(int? discountId, int? customerId, int? orderId, int pageIndex, int pageSize)
-        {
-            return base.GetAllDiscountUsageHistory(discountId, customerId, orderId, pageIndex, pageSize);
+            return null; // "NotSupportedException"
         }
 
         //public override IList<Discount> GetAllDiscounts(DiscountType? discountType, string couponCode = "", bool showHidden = false)
@@ -126,51 +139,170 @@ namespace Qixol.Nop.Promo.Services.Discounts
         //    return new List<Discount>();
         //}
 
-        public override Discount GetDiscountByCouponCode(string couponCode, bool showHidden = false)
+
+        /// <summary>
+        /// Inserts a discount
+        /// </summary>
+        /// <param name="discount">Discount</param>
+        public override void InsertDiscount(Discount discount)
+        {
+            throw new NotSupportedException("InsertDiscount");
+        }
+
+        /// <summary>
+        /// Updates the discount
+        /// </summary>
+        /// <param name="discount">Discount</param>
+        public override void UpdateDiscount(Discount discount)
         {
             if (!_promoSettings.Enabled)
-                return base.GetDiscountByCouponCode(couponCode, showHidden);
+            {
+                base.UpdateDiscount(discount);
+                return;
+            }
+
+            throw new NotSupportedException("UpdateDiscount");
+        }
+
+        #endregion
+
+        #region Discounts (caching)
+
+        #endregion
+
+        #region Discount requirements
+
+
+        /// <summary>
+        /// Delete discount requirement
+        /// </summary>
+        /// <param name="discountRequirement">Discount requirement</param>
+        public override void DeleteDiscountRequirement(DiscountRequirement discountRequirement)
+        {
+            if (!_promoSettings.Enabled)
+                base.DeleteDiscountRequirement(discountRequirement);
+
+            throw new NotSupportedException("DeleteDiscountRequirement");
+        }
+
+        /// <summary>
+        /// Load discount requirement rule by system name
+        /// </summary>
+        /// <param name="systemName">System name</param>
+        /// <returns>Found discount requirement rule</returns>
+        public override global::Nop.Services.Discounts.IDiscountRequirementRule LoadDiscountRequirementRuleBySystemName(string systemName)
+        {
+            if (!_promoSettings.Enabled)
+                return base.LoadDiscountRequirementRuleBySystemName(systemName);
+
+            throw new NotSupportedException("LoadDiscountRequirementRuleBySystemName");
+        }
+
+        /// <summary>
+        /// Load all discount requirement rules
+        /// </summary>
+        /// <param name="customer">Load records allowed only to a specified customer; pass null to ignore ACL permissions</param>
+        /// <returns>Discount requirement rules</returns>
+        public override IList<global::Nop.Services.Discounts.IDiscountRequirementRule> LoadAllDiscountRequirementRules(Customer customer = null)
+        {
+            if (!_promoSettings.Enabled)
+                return base.LoadAllDiscountRequirementRules(customer);
+
+            return new List<global::Nop.Services.Discounts.IDiscountRequirementRule>(); // "NotSupportedException"
+        }
+        
+        #endregion
+
+        #region Validation
+
+        /// <summary>
+        /// Validate discount
+        /// </summary>
+        /// <param name="discount">Discount</param>
+        /// <param name="customer">Customer</param>
+        /// <returns>Discount validation result</returns>
+        public override global::Nop.Services.Discounts.DiscountValidationResult ValidateDiscount(Discount discount, global::Nop.Core.Domain.Customers.Customer customer)
+        {
+            if (!_promoSettings.Enabled)
+                return base.ValidateDiscount(discount, customer);
+
+            if (discount == null)
+                throw new ArgumentNullException("discount");
+
+            if (customer == null)
+                throw new ArgumentNullException("customer");
+
+            string[] couponCodesToValidate = customer.ParseAppliedDiscountCouponCodes();
+            return ValidateDiscount(discount, customer, couponCodesToValidate);
+        }
+
+        /// <summary>
+        /// Validate discount
+        /// </summary>
+        /// <param name="discount">Discount</param>
+        /// <param name="customer">Customer</param>
+        /// <param name="couponCodesToValidate">Coupon codes to validate</param>
+        /// <returns>Discount validation result</returns>
+        public override global::Nop.Services.Discounts.DiscountValidationResult ValidateDiscount(DiscountForCaching discount, global::Nop.Core.Domain.Customers.Customer customer, string[] couponCodesToValidate)
+        {
+            if (!_promoSettings.Enabled)
+                return base.ValidateDiscount(discount, customer, couponCodesToValidate);
+
+            if (discount == null)
+                throw new ArgumentNullException("discount");
+
+            if (customer == null)
+                throw new ArgumentNullException("customer");
+
+            global::Nop.Services.Discounts.DiscountValidationResult discountValidationResult = new global::Nop.Services.Discounts.DiscountValidationResult()
+            {
+                IsValid = false,
+                Errors = new List<string>()
+            };
 
             BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
 
             if (basketResponse == null || basketResponse.Items == null || basketResponse.Summary == null)
-                return null;
+                return discountValidationResult;
 
             if (!basketResponse.Summary.ProcessingResult)
-                return null;
+                return discountValidationResult;
 
             if (basketResponse.Coupons == null)
-                return null;
+                return discountValidationResult;
+
+            if (basketResponse.Coupons == null)
+                return discountValidationResult;
 
             if (basketResponse.Coupons.Count == 0)
-                return null;
+                return discountValidationResult;
 
-            var coupon = (from c in basketResponse.Coupons where string.Compare(c.CouponCode, couponCode, StringComparison.InvariantCultureIgnoreCase) == 0 select c).FirstOrDefault();
-
-            if (coupon == null)
-                return null;
-
-            if (!coupon.Utilized)
-                return null;
-
-            // FromPreviousIteration will only be set if the company is not set to require confirming baskets - the coupon is still valid
-            //if (coupon.FromPreviousIteration)
-            //    return null;
-
-            Discount discount = new Discount()
+            List<BasketResponseCoupon> coupons = new List<BasketResponseCoupon>();
+            for (int thisCouponCodeIndex = 0; thisCouponCodeIndex < couponCodesToValidate.Length; thisCouponCodeIndex++)
             {
-                CouponCode = couponCode,
-                Name = coupon.CouponName,
-                RequiresCouponCode = true
-            };
+                BasketResponseCoupon coupon = (from c in basketResponse.Coupons where string.Compare(c.CouponCode, couponCodesToValidate[thisCouponCodeIndex], StringComparison.InvariantCultureIgnoreCase) == 0 select c).FirstOrDefault();
+                if (coupon != null)
+                    coupons.Add(coupon);
+            }
 
-            return discount;
+            if (!coupons.Any())
+                return discountValidationResult;
+
+            coupons.ForEach(c =>
+            {
+                discountValidationResult.IsValid = discountValidationResult.IsValid && c.Utilized;
+                if (!c.Utilized)
+                {
+                    discountValidationResult.Errors.Add(_localizationService.GetResource("ShoppingCart.DiscountCouponCode.WrongDiscount"));
+                }
+            });
+
+            return discountValidationResult;
         }
 
-        public override Discount GetDiscountById(int discountId)
-        {
-            return null; // "NotSupportedException"
-        }
+        #endregion
+
+        #region Discount usage history
 
         //public override DiscountUsageHistory GetDiscountUsageHistoryById(int discountUsageHistoryId)
         //{
@@ -180,9 +312,9 @@ namespace Qixol.Nop.Promo.Services.Discounts
         //    return base.GetDiscountUsageHistoryById(discountUsageHistoryId);
         //}
 
-        public override void InsertDiscount(Discount discount)
+        public override global::Nop.Core.IPagedList<DiscountUsageHistory> GetAllDiscountUsageHistory(int? discountId, int? customerId, int? orderId, int pageIndex, int pageSize)
         {
-            throw new NotSupportedException("InsertDiscount");
+            return base.GetAllDiscountUsageHistory(discountId, customerId, orderId, pageIndex, pageSize);
         }
 
         //public override void InsertDiscountUsageHistory(DiscountUsageHistory discountUsageHistory)
@@ -198,90 +330,10 @@ namespace Qixol.Nop.Promo.Services.Discounts
         //    _eventPublisher.EntityInserted(discountUsageHistory);
         //}
 
-        public override global::Nop.Services.Discounts.DiscountValidationResult ValidateDiscount(Discount discount, global::Nop.Core.Domain.Customers.Customer customer, string couponCodeToValidate)
-        {
-            if (!_promoSettings.Enabled)
-                return base.ValidateDiscount(discount, customer, couponCodeToValidate);
-
-            global::Nop.Services.Discounts.DiscountValidationResult discountValidationResult = new global::Nop.Services.Discounts.DiscountValidationResult()
-            {
-                IsValid = false,
-                UserError = string.Empty
-            };
-
-            BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
-
-            if (basketResponse == null || basketResponse.Items == null || basketResponse.Summary == null)
-                return discountValidationResult;
-
-            if (!basketResponse.Summary.ProcessingResult)
-                return discountValidationResult;
-
-            if (basketResponse.Coupons == null)
-                    return discountValidationResult;
-
-            if (basketResponse.Coupons == null)
-                return discountValidationResult;
-
-            if (basketResponse.Coupons.Count == 0)
-                return discountValidationResult;
-
-            var coupon = (from c in basketResponse.Coupons where c.CouponCode.Equals(couponCodeToValidate, StringComparison.InvariantCultureIgnoreCase) select c).FirstOrDefault();
-
-            if (coupon == null)
-                return discountValidationResult;
-
-            discountValidationResult.IsValid = coupon.Utilized;
-            if (!coupon.Utilized)
-            {
-                discountValidationResult.UserError = _localizationService.GetResource("ShoppingCart.DiscountCouponCode.WrongDiscount");
-            }
-
-            return discountValidationResult;
-        }
-
-        public override global::Nop.Services.Discounts.DiscountValidationResult ValidateDiscount(Discount discount, global::Nop.Core.Domain.Customers.Customer customer)
-        {
-            if (!_promoSettings.Enabled)
-                return base.ValidateDiscount(discount, customer);
-
-            if (discount.RequiresCouponCode)
-            {
-                return ValidateDiscount(discount, customer, discount.CouponCode);
-            }
-            else
-            {
-                throw new NotImplementedException("ValidateDiscount");
-            }
-        }
-
-        public override IList<global::Nop.Services.Discounts.IDiscountRequirementRule> LoadAllDiscountRequirementRules()
-        {
-            if (!_promoSettings.Enabled)
-                return base.LoadAllDiscountRequirementRules();
-
-            return new List<global::Nop.Services.Discounts.IDiscountRequirementRule>(); // "NotSupportedException"
-        }
-
-        public override global::Nop.Services.Discounts.IDiscountRequirementRule LoadDiscountRequirementRuleBySystemName(string systemName)
-        {
-            if (!_promoSettings.Enabled)
-                return base.LoadDiscountRequirementRuleBySystemName(systemName);
-
-            throw new NotSupportedException("LoadDiscountRequirementRuleBySystemName");
-        }
-
-        public override void UpdateDiscount(Discount discount)
-        {
-            if (!_promoSettings.Enabled)
-            {
-                base.UpdateDiscount(discount);
-                return;
-            }
-
-            throw new NotSupportedException("UpdateDiscount");
-        }
-
+        /// <summary>
+        /// Update discount usage history record
+        /// </summary>
+        /// <param name="discountUsageHistory">Discount usage history record</param>
         public override void UpdateDiscountUsageHistory(DiscountUsageHistory discountUsageHistory)
         {
             if (!_promoSettings.Enabled)
@@ -291,6 +343,20 @@ namespace Qixol.Nop.Promo.Services.Discounts
 
             throw new NotImplementedException("UpdateDiscountUsageHistory");
         }
+
+        /// <summary>
+        /// Delete discount usage history record
+        /// </summary>
+        /// <param name="discountUsageHistory">Discount usage history record</param>
+        public override void DeleteDiscountUsageHistory(DiscountUsageHistory discountUsageHistory)
+        {
+            if (!_promoSettings.Enabled)
+                base.DeleteDiscountUsageHistory(discountUsageHistory);
+
+            throw new NotImplementedException("DeleteDiscountUsageHistory");
+        }
+
+        #endregion
 
         #endregion
     }

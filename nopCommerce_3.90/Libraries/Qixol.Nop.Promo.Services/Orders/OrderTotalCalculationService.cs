@@ -128,43 +128,69 @@ namespace Qixol.Nop.Promo.Services.Orders
 
         #endregion
 
-        #region methods
+        #region Utilities
 
-        public override decimal AdjustShippingRate(decimal shippingRate, IList<ShoppingCartItem> cart, out List<Discount> appliedDiscounts)
+        /// <summary>
+        /// Gets an order discount (applied to order subtotal)
+        /// </summary>
+        /// <param name="customer">Customer</param>
+        /// <param name="orderSubTotal">Order subtotal</param>
+        /// <param name="appliedDiscounts">Applied discounts</param>
+        /// <returns>Order discount</returns>
+        protected override decimal GetOrderSubtotalDiscount(Customer customer,
+            decimal orderSubTotal, out List<DiscountForCaching> appliedDiscounts)
         {
             if (!_promoSettings.Enabled)
-                return base.AdjustShippingRate(shippingRate, cart, out appliedDiscounts);
-
-            appliedDiscounts = new List<Discount>();
-
-            // TODO: this should set discounts in the appliedDiscounts "out" parameter
-
-            decimal additionalShippingCharge = GetShoppingCartAdditionalShippingCharge(cart);
-
-            return shippingRate + additionalShippingCharge;
-        }
-
-        public override int CalculateRewardPoints(Customer customer, decimal amount)
-        {
-            if (!_promoSettings.Enabled)
-                return base.CalculateRewardPoints(customer, amount);
+                return base.GetOrderSubtotalDiscount(customer, orderSubTotal, out appliedDiscounts);
 
             BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
-            return basketResponse.IssuedPoints();
+
+            appliedDiscounts = new List<DiscountForCaching>();
+            decimal discountAmount = decimal.Zero;
+
+            if (basketResponse == null)
+                return discountAmount;
+
+            if (!basketResponse.BasketLevelDiscountIncludesDeliveryAmount())
+            {
+                var basketLevelPromo = basketResponse.BasketLevelPromotion();
+                if (basketLevelPromo != null)
+                {
+                    discountAmount = basketLevelPromo.DiscountAmount;
+                    DiscountForCaching appliedDiscount = new DiscountForCaching()
+                    {
+                        Name = basketResponse.BasketLevelPromotion().PromotionName,
+                        DiscountAmount = discountAmount
+                    };
+                    appliedDiscounts.Add(appliedDiscount);
+                }
+            }
+
+            if (discountAmount < decimal.Zero)
+                discountAmount = decimal.Zero;
+
+            return discountAmount;
         }
 
-        protected override decimal GetShippingDiscount(Customer customer, decimal shippingTotal, out List<Discount> appliedDiscounts)
+        /// <summary>
+        /// Gets a shipping discount
+        /// </summary>
+        /// <param name="customer">Customer</param>
+        /// <param name="shippingTotal">Shipping total</param>
+        /// <param name="appliedDiscounts">Applied discounts</param>
+        /// <returns>Shipping discount</returns>
+        protected override decimal GetShippingDiscount(Customer customer, decimal shippingTotal, out List<DiscountForCaching> appliedDiscounts)
         {
             if (!_promoSettings.Enabled)
                 return base.GetShippingDiscount(customer, shippingTotal, out appliedDiscounts);
 
-            appliedDiscounts = new List<Discount>();
+            appliedDiscounts = new List<DiscountForCaching>();
 
             BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
             var discountAmount = basketResponse.DeliveryPromoDiscount();
             if (discountAmount != decimal.Zero)
             {
-                Discount appliedDiscount = new Discount()
+                DiscountForCaching appliedDiscount = new DiscountForCaching()
                 {
                     Name = basketResponse.DeliveryPromoName(),
                     DiscountAmount = discountAmount
@@ -175,110 +201,82 @@ namespace Qixol.Nop.Promo.Services.Orders
             return discountAmount;
         }
 
-        #region GetShoppingCartShippingTotal
-
-        public override decimal? GetShoppingCartShippingTotal(IList<global::Nop.Core.Domain.Orders.ShoppingCartItem> cart)
+        /// <summary>
+        /// Gets an order discount (applied to order total)
+        /// </summary>
+        /// <param name="customer">Customer</param>
+        /// <param name="orderTotal">Order total</param>
+        /// <param name="appliedDiscounts">Applied discounts</param>
+        /// <returns>Order discount</returns>
+        protected override decimal GetOrderTotalDiscount(Customer customer, decimal orderTotal, out List<DiscountForCaching> appliedDiscounts)
         {
-            bool includingTax = _workContext.TaxDisplayType == TaxDisplayType.IncludingTax;
-            return GetShoppingCartShippingTotal(cart, includingTax);
-        }
-
-        public override decimal? GetShoppingCartShippingTotal(IList<global::Nop.Core.Domain.Orders.ShoppingCartItem> cart, bool includingTax)
-        {
-            decimal taxRate = decimal.Zero;
-            return GetShoppingCartShippingTotal(cart, includingTax, out taxRate);
-        }
-
-        public override decimal? GetShoppingCartShippingTotal(IList<global::Nop.Core.Domain.Orders.ShoppingCartItem> cart, bool includingTax, out decimal taxRate)
-        {
-            List<Discount> appliedDiscounts = new List<Discount>();
-            return GetShoppingCartShippingTotal(cart, includingTax, out taxRate, out appliedDiscounts);
-        }
-
-        public override decimal? GetShoppingCartShippingTotal(IList<global::Nop.Core.Domain.Orders.ShoppingCartItem> cart, bool includingTax,
-            out decimal taxRate, out List<global::Nop.Core.Domain.Discounts.Discount> appliedDiscounts)
-        {
-            if (!_promoSettings.Enabled)
-                return base.GetShoppingCartShippingTotal(cart, includingTax, out taxRate, out appliedDiscounts);
-
-            #region old code
+            if (!_rewardPointsSettings.Enabled)
+                return base.GetOrderTotalDiscount(customer, orderTotal, out appliedDiscounts);
 
             BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
-            decimal? shippingTotal = null;
+
+            appliedDiscounts = new List<DiscountForCaching>();
+            decimal discountAmount = decimal.Zero;
 
             if (basketResponse == null)
+                return discountAmount;
+
+            if (basketResponse.BasketLevelDiscountIncludesDeliveryAmount())
             {
-                return base.GetShoppingCartShippingTotal(cart, includingTax, out taxRate, out appliedDiscounts);
-            }
-
-            taxRate = Decimal.Zero;
-            appliedDiscounts = new List<Discount>();
-
-            var shippingOption = _workContext.CurrentCustomer.GetAttribute<ShippingOption>(SystemCustomerAttributeNames.SelectedShippingOption, _storeContext.CurrentStore.Id);
-
-            if (shippingOption == null)
-            {
-                // Where there are items in the basket that are not for shipping, we need to ensure we return a zero.
-                if (cart.Any(sci => sci.IsShipEnabled))
-                    return null;
-                else
-                    return Decimal.Zero;
-            }                
-
-            shippingTotal = basketResponse.DeliveryPrice;
-
-            if ((basketResponse.DeliveryPromotionDiscount > Decimal.Zero))
-            {
-                if (basketResponse.BasketLevelDiscountIncludesDeliveryAmount())
+                discountAmount = basketResponse.BasketLevelPromotion().DiscountAmount;
+                DiscountForCaching appliedDiscount = new DiscountForCaching()
                 {
-                    shippingTotal = basketResponse.DeliveryOriginalPrice;
-                }
-                else
-                {
-                    Discount appliedDiscount = new Discount();
-                    appliedDiscount.DiscountAmount = basketResponse.DeliveryPromotionDiscount;
-                    appliedDiscount.Name = basketResponse.DeliveryPromo().PromotionName;
-                    appliedDiscounts.Add(appliedDiscount);
-                }
+                    Name = basketResponse.BasketLevelPromotion().PromotionName,
+                    DiscountAmount = discountAmount
+                };
+                appliedDiscounts.Add(appliedDiscount);
             }
 
-            #endregion
+            if (discountAmount < decimal.Zero)
+                discountAmount = decimal.Zero;
 
-            #region new code
-
-            decimal? shippingTotalTaxed = shippingTotal;
-            Customer customer = cart.GetCustomer();
-
-            if (shippingTotal.HasValue)
-            {
-                if (shippingTotal.Value < decimal.Zero)
-                    shippingTotal = decimal.Zero;
-
-                //round
-                if (_shoppingCartSettings.RoundPricesDuringCalculation)
-                    shippingTotal = RoundingHelper.RoundPrice(shippingTotal.Value);
-
-                shippingTotalTaxed = _taxService.GetShippingPrice(shippingTotal.Value,
-                    includingTax,
-                    customer,
-                    out taxRate);
-
-                //round
-                if (_shoppingCartSettings.RoundPricesDuringCalculation)
-                    shippingTotalTaxed = RoundingHelper.RoundPrice(shippingTotalTaxed.Value);
-            }
-
-            #endregion
-
-            return shippingTotalTaxed;
+            return discountAmount;
         }
 
         #endregion
 
-        #region GetShoppingCartSubTotal
+        #region Methods
 
-        public override void GetShoppingCartSubTotal(IList<global::Nop.Core.Domain.Orders.ShoppingCartItem> cart, bool includingTax, out decimal discountAmount,
-            out List<global::Nop.Core.Domain.Discounts.Discount> appliedDiscounts, out decimal subTotalWithoutDiscount, out decimal subTotalWithDiscount, out SortedDictionary<decimal, decimal> taxRates)
+        /// <summary>
+        /// Gets shopping cart subtotal
+        /// </summary>
+        /// <param name="cart">Cart</param>
+        /// <param name="includingTax">A value indicating whether calculated price should include tax</param>
+        /// <param name="discountAmount">Applied discount amount</param>
+        /// <param name="appliedDiscounts">Applied discounts</param>
+        /// <param name="subTotalWithoutDiscount">Sub total (without discount)</param>
+        /// <param name="subTotalWithDiscount">Sub total (with discount)</param>
+        public override void GetShoppingCartSubTotal(IList<global::Nop.Core.Domain.Orders.ShoppingCartItem> cart,
+            bool includingTax,
+            out decimal discountAmount, out List<DiscountForCaching> appliedDiscounts,
+            out decimal subTotalWithoutDiscount, out decimal subTotalWithDiscount)
+        {
+            SortedDictionary<decimal, decimal> taxRates;
+            GetShoppingCartSubTotal(cart, includingTax, 
+                out discountAmount, out appliedDiscounts,
+                out subTotalWithoutDiscount, out subTotalWithDiscount, out taxRates);
+        }
+
+        /// <summary>
+        /// Gets shopping cart subtotal
+        /// </summary>
+        /// <param name="cart">Cart</param>
+        /// <param name="includingTax">A value indicating whether calculated price should include tax</param>
+        /// <param name="discountAmount">Applied discount amount</param>
+        /// <param name="appliedDiscounts">Applied discounts</param>
+        /// <param name="subTotalWithoutDiscount">Sub total (without discount)</param>
+        /// <param name="subTotalWithDiscount">Sub total (with discount)</param>
+        /// <param name="taxRates">Tax rates (of order sub total)</param>
+        public override void GetShoppingCartSubTotal(IList<global::Nop.Core.Domain.Orders.ShoppingCartItem> cart,
+            bool includingTax,
+            out decimal discountAmount, out List<DiscountForCaching> appliedDiscounts,
+            out decimal subTotalWithoutDiscount, out decimal subTotalWithDiscount,
+            out SortedDictionary<decimal, decimal> taxRates)
         {
             if (!_promoSettings.Enabled)
             {
@@ -295,21 +293,22 @@ namespace Qixol.Nop.Promo.Services.Orders
             }
 
             discountAmount = decimal.Zero;
-            appliedDiscounts = new List<Discount>();
+            appliedDiscounts = new List<DiscountForCaching>();
             subTotalWithoutDiscount = decimal.Zero;
             subTotalWithDiscount = decimal.Zero;
             taxRates = new SortedDictionary<decimal, decimal>();
 
-            Customer customer = cart.GetCustomer();
-
-            if (cart.Count == 0)
+            if (!cart.Any())
                 return;
 
+            //get the customer 
+            Customer customer = cart.GetCustomer();
+            
+            //sub totals
             decimal subTotalExclTaxWithoutDiscount = decimal.Zero;
             decimal subTotalInclTaxWithoutDiscount = decimal.Zero;
             foreach (var shoppingCartItem in cart)
             {
-                decimal usePrice = _priceCalculationService.GetUnitPrice(shoppingCartItem, false);
                 decimal sciSubTotal = _promosPriceCalculationService.GetSubTotal(shoppingCartItem, true);
 
                 decimal taxRate;
@@ -317,7 +316,8 @@ namespace Qixol.Nop.Promo.Services.Orders
                 decimal sciInclTax = _taxService.GetProductPrice(shoppingCartItem.Product, sciSubTotal, true, customer, out taxRate);
                 subTotalExclTaxWithoutDiscount += sciExclTax;
                 subTotalInclTaxWithoutDiscount += sciInclTax;
-
+                
+                //tax rates
                 decimal sciTax = sciInclTax - sciExclTax;
                 if (taxRate > decimal.Zero && sciTax > decimal.Zero)
                 {
@@ -332,12 +332,12 @@ namespace Qixol.Nop.Promo.Services.Orders
                 }
             }
 
-            // checkout attributes
+            //checkout attributes
             if (customer != null)
             {
                 var checkoutAttributesXml = customer.GetAttribute<string>(SystemCustomerAttributeNames.CheckoutAttributes, _genericAttributeService, _storeContext.CurrentStore.Id);
                 var attributeValues = _checkoutAttributeParser.ParseCheckoutAttributeValues(checkoutAttributesXml);
-                if (attributeValues != null && attributeValues.Count > 0)
+                if (attributeValues != null)
                 {
                     foreach (var attributeValue in attributeValues)
                     {
@@ -433,42 +433,291 @@ namespace Qixol.Nop.Promo.Services.Orders
 
             if (_shoppingCartSettings.RoundPricesDuringCalculation)
                 subTotalWithDiscount = RoundingHelper.RoundPrice(subTotalWithDiscount);
-
         }
 
-        public override void GetShoppingCartSubTotal(IList<global::Nop.Core.Domain.Orders.ShoppingCartItem> cart, bool includingTax, out decimal discountAmount,
-            out List<global::Nop.Core.Domain.Discounts.Discount> appliedDiscounts, out decimal subTotalWithoutDiscount, out decimal subTotalWithDiscount)
-        {
-            SortedDictionary<decimal, decimal> taxRates = new SortedDictionary<decimal, decimal>();
-            GetShoppingCartSubTotal(cart, includingTax, out discountAmount, out appliedDiscounts, out subTotalWithoutDiscount, out subTotalWithDiscount, out taxRates);
-        }
-
-        #endregion
-
-        #region GetShoppingCartTotal
-
-        public override decimal? GetShoppingCartTotal(IList<global::Nop.Core.Domain.Orders.ShoppingCartItem> cart, out decimal discountAmount,
-            out List<global::Nop.Core.Domain.Discounts.Discount> appliedDiscounts, out List<AppliedGiftCard> appliedGiftCards, out int redeemedRewardPoints, out decimal redeemedRewardPointsAmount, bool ignoreRewardPonts = false, bool usePaymentMethodAdditionalFee = true)
+        /// <summary>
+        /// Gets shopping cart additional shipping charge
+        /// </summary>
+        /// <param name="cart">Cart</param>
+        /// <returns>Additional shipping charge</returns>
+        public override decimal GetShoppingCartAdditionalShippingCharge(IList<ShoppingCartItem> cart)
         {
             if (!_promoSettings.Enabled)
-                return base.GetShoppingCartTotal(cart, out discountAmount, out appliedDiscounts, out appliedGiftCards, out redeemedRewardPoints, out redeemedRewardPointsAmount, ignoreRewardPonts, usePaymentMethodAdditionalFee);
+                return base.GetShoppingCartAdditionalShippingCharge(cart);
+
+            decimal additionalShippingCharge = decimal.Zero;
+
+            foreach (var sci in cart)
+                if (sci.IsShipEnabled && !sci.IsFreeShipping)
+                    additionalShippingCharge += sci.AdditionalShippingCharge;
+
+            return additionalShippingCharge;
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether shipping is free
+        /// </summary>
+        /// <param name="cart">Cart</param>
+        /// <param name="subTotal">Subtotal amount; pass null to calculate subtotal</param>
+        /// <returns>A value indicating whether shipping is free</returns>
+        public override bool IsFreeShipping(IList<ShoppingCartItem> cart, decimal? subTotal = null)
+        {
+            if (!_promoSettings.Enabled)
+                return base.IsFreeShipping(cart);
+
+            // not applicable when using Promo
+
+            return false;
+        }
+
+        /// <summary>
+        /// Adjust shipping rate (free shipping, additional charges, discounts)
+        /// </summary>
+        /// <param name="shippingRate">Shipping rate to adjust</param>
+        /// <param name="cart">Cart</param>
+        /// <param name="appliedDiscounts">Applied discounts</param>
+        /// <returns>Adjusted shipping rate</returns>
+        public override decimal AdjustShippingRate(decimal shippingRate,
+            IList<ShoppingCartItem> cart, out List<DiscountForCaching> appliedDiscounts)
+        {
+            if (!_promoSettings.Enabled)
+                return base.AdjustShippingRate(shippingRate, cart, out appliedDiscounts);
+
+            appliedDiscounts = new List<DiscountForCaching>();
+
+            // TODO: this should set discounts in the appliedDiscounts "out" parameter
+
+            decimal additionalShippingCharge = GetShoppingCartAdditionalShippingCharge(cart);
+
+            return shippingRate + additionalShippingCharge;
+        }
+
+        /// <summary>
+        /// Gets shopping cart shipping total
+        /// </summary>
+        /// <param name="cart">Cart</param>
+        /// <returns>Shipping total</returns>
+        public override decimal? GetShoppingCartShippingTotal(IList<global::Nop.Core.Domain.Orders.ShoppingCartItem> cart)
+        {
+            bool includingTax = _workContext.TaxDisplayType == TaxDisplayType.IncludingTax;
+            return GetShoppingCartShippingTotal(cart, includingTax);
+        }
+
+        /// <summary>
+        /// Gets shopping cart shipping total
+        /// </summary>
+        /// <param name="cart">Cart</param>
+        /// <param name="includingTax">A value indicating whether calculated price should include tax</param>
+        /// <returns>Shipping total</returns>
+        public override decimal? GetShoppingCartShippingTotal(IList<global::Nop.Core.Domain.Orders.ShoppingCartItem> cart, bool includingTax)
+        {
+            decimal taxRate = decimal.Zero;
+            return GetShoppingCartShippingTotal(cart, includingTax, out taxRate);
+        }
+
+        /// <summary>
+        /// Gets shopping cart shipping total
+        /// </summary>
+        /// <param name="cart">Cart</param>
+        /// <param name="includingTax">A value indicating whether calculated price should include tax</param>
+        /// <param name="taxRate">Applied tax rate</param>
+        /// <returns>Shipping total</returns>
+        public override decimal? GetShoppingCartShippingTotal(IList<global::Nop.Core.Domain.Orders.ShoppingCartItem> cart, bool includingTax,
+            out decimal taxRate)
+        {
+            List<DiscountForCaching> appliedDiscounts = new List<DiscountForCaching>();
+            return GetShoppingCartShippingTotal(cart, includingTax, out taxRate, out appliedDiscounts);
+        }
+
+        /// <summary>
+        /// Gets shopping cart shipping total
+        /// </summary>
+        /// <param name="cart">Cart</param>
+        /// <param name="includingTax">A value indicating whether calculated price should include tax</param>
+        /// <param name="taxRate">Applied tax rate</param>
+        /// <param name="appliedDiscounts">Applied discounts</param>
+        /// <returns>Shipping total</returns>
+        public override decimal? GetShoppingCartShippingTotal(IList<global::Nop.Core.Domain.Orders.ShoppingCartItem> cart, bool includingTax,
+            out decimal taxRate, out List<DiscountForCaching> appliedDiscounts)
+        {
+            if (!_promoSettings.Enabled)
+                return base.GetShoppingCartShippingTotal(cart, includingTax, out taxRate, out appliedDiscounts);
+
+            #region old code
+
+            BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
+            decimal? shippingTotal = null;
+
+            if (basketResponse == null)
+            {
+                return base.GetShoppingCartShippingTotal(cart, includingTax, out taxRate, out appliedDiscounts);
+            }
+
+            taxRate = Decimal.Zero;
+            appliedDiscounts = new List<DiscountForCaching>();
+
+            var shippingOption = _workContext.CurrentCustomer.GetAttribute<ShippingOption>(SystemCustomerAttributeNames.SelectedShippingOption, _storeContext.CurrentStore.Id);
+
+            if (shippingOption == null)
+            {
+                // Where there are items in the basket that are not for shipping, we need to ensure we return a zero.
+                if (cart.Any(sci => sci.IsShipEnabled))
+                    return null;
+                else
+                    return Decimal.Zero;
+            }
+
+            shippingTotal = basketResponse.DeliveryPrice;
+
+            if ((basketResponse.DeliveryPromotionDiscount > Decimal.Zero))
+            {
+                if (basketResponse.BasketLevelDiscountIncludesDeliveryAmount())
+                {
+                    shippingTotal = basketResponse.DeliveryOriginalPrice;
+                }
+                else
+                {
+                    DiscountForCaching appliedDiscount = new DiscountForCaching();
+                    appliedDiscount.DiscountAmount = basketResponse.DeliveryPromotionDiscount;
+                    appliedDiscount.Name = basketResponse.DeliveryPromo().PromotionName;
+                    appliedDiscounts.Add(appliedDiscount);
+                }
+            }
+
+            #endregion
+
+            #region new code
+
+            decimal? shippingTotalTaxed = shippingTotal;
+            Customer customer = cart.GetCustomer();
+
+            if (shippingTotal.HasValue)
+            {
+                if (shippingTotal.Value < decimal.Zero)
+                    shippingTotal = decimal.Zero;
+
+                //round
+                if (_shoppingCartSettings.RoundPricesDuringCalculation)
+                    shippingTotal = RoundingHelper.RoundPrice(shippingTotal.Value);
+
+                shippingTotalTaxed = _taxService.GetShippingPrice(shippingTotal.Value,
+                    includingTax,
+                    customer,
+                    out taxRate);
+
+                //round
+                if (_shoppingCartSettings.RoundPricesDuringCalculation)
+                    shippingTotalTaxed = RoundingHelper.RoundPrice(shippingTotalTaxed.Value);
+            }
+
+            #endregion
+
+            return shippingTotalTaxed;
+        }
+
+
+
+
+
+        /// <summary>
+        /// Gets tax
+        /// </summary>
+        /// <param name="cart">Shopping cart</param>
+        /// <param name="usePaymentMethodAdditionalFee">A value indicating whether we should use payment method additional fee when calculating tax</param>
+        /// <returns>Tax total</returns>
+        //public override decimal GetTaxTotal(IList<Nop.Core.Domain.Orders.ShoppingCartItem> cart, bool usePaymentMethodAdditionalFee = true)
+        //{
+        //    if (cart == null)
+        //        throw new ArgumentNullException("cart");
+
+        //    SortedDictionary<decimal, decimal> taxRates = null;
+        //    return GetTaxTotal(cart, out taxRates, usePaymentMethodAdditionalFee);
+        //}
+
+        /// <summary>
+        /// Gets tax
+        /// </summary>
+        /// <param name="cart">Shopping cart</param>
+        /// <param name="taxRates">Tax rates</param>
+        /// <param name="usePaymentMethodAdditionalFee">A value indicating whether we should use payment method additional fee when calculating tax</param>
+        /// <returns>Tax total</returns>
+        //public override decimal GetTaxTotal(IList<Nop.Core.Domain.Orders.ShoppingCartItem> cart,
+        //out SortedDictionary<decimal, decimal> taxRates, bool usePaymentMethodAdditionalFee = true)
+        //{
+        //    if (cart == null)
+        //        throw new ArgumentNullException("cart");
+
+        //    return base.GetTaxTotal(cart, out taxRates, usePaymentMethodAdditionalFee);
+        //}
+
+
+
+
+
+
+        /// <summary>
+        /// Gets shopping cart total
+        /// </summary>
+        /// <param name="cart">Cart</param>
+        /// <param name="useRewardPoints">A value indicating reward points should be used; null to detect current choice of the customer</param>
+        /// <param name="usePaymentMethodAdditionalFee">A value indicating whether we should use payment method additional fee when calculating order total</param>
+        /// <returns>Shopping cart total;Null if shopping cart total couldn't be calculated now</returns>
+        public override decimal? GetShoppingCartTotal(IList<global::Nop.Core.Domain.Orders.ShoppingCartItem> cart,
+            bool? useRewardPonts = null, bool usePaymentMethodAdditionalFee = true)
+        {
+            if (!_promoSettings.Enabled)
+                return base.GetShoppingCartTotal(cart, useRewardPonts, usePaymentMethodAdditionalFee);
+
+            BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
+
+            if (basketResponse == null || basketResponse.Items == null || basketResponse.Summary == null)
+                return base.GetShoppingCartTotal(cart, useRewardPonts, usePaymentMethodAdditionalFee);
+
+            if (!basketResponse.Summary.ProcessingResult)
+                return base.GetShoppingCartTotal(cart, useRewardPonts, usePaymentMethodAdditionalFee);
+
+            decimal tax = GetTaxTotal(cart);
+
+            return basketResponse.BasketTotal + tax;
+        }
+
+        /// <summary>
+        /// Gets shopping cart total
+        /// </summary>
+        /// <param name="cart">Cart</param>
+        /// <param name="appliedGiftCards">Applied gift cards</param>
+        /// <param name="discountAmount">Applied discount amount</param>
+        /// <param name="appliedDiscounts">Applied discounts</param>
+        /// <param name="redeemedRewardPoints">Reward points to redeem</param>
+        /// <param name="redeemedRewardPointsAmount">Reward points amount in primary store currency to redeem</param>
+        /// <param name="useRewardPoints">A value indicating reward points should be used; null to detect current choice of the customer</param>
+        /// <param name="usePaymentMethodAdditionalFee">A value indicating whether we should use payment method additional fee when calculating order total</param>
+        /// <returns>Shopping cart total;Null if shopping cart total couldn't be calculated now</returns>
+        public override decimal? GetShoppingCartTotal(IList<global::Nop.Core.Domain.Orders.ShoppingCartItem> cart,
+            out decimal discountAmount, out List<DiscountForCaching> appliedDiscounts,
+            out List<AppliedGiftCard> appliedGiftCards,
+            out int redeemedRewardPoints, out decimal redeemedRewardPointsAmount,
+            bool? useRewardPonts = null, bool usePaymentMethodAdditionalFee = true)
+        {
+            if (!_promoSettings.Enabled)
+                return base.GetShoppingCartTotal(cart, out discountAmount, out appliedDiscounts, out appliedGiftCards, out redeemedRewardPoints, out redeemedRewardPointsAmount, useRewardPonts, usePaymentMethodAdditionalFee);
 
             BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
 
             if (basketResponse == null || basketResponse.Items == null || basketResponse.Summary == null)
             {
-                return base.GetShoppingCartTotal(cart, out discountAmount, out appliedDiscounts, out appliedGiftCards, out redeemedRewardPoints, out redeemedRewardPointsAmount, ignoreRewardPonts, usePaymentMethodAdditionalFee);
+                return base.GetShoppingCartTotal(cart, out discountAmount, out appliedDiscounts, out appliedGiftCards, out redeemedRewardPoints, out redeemedRewardPointsAmount, useRewardPonts, usePaymentMethodAdditionalFee);
             }
 
             if (!basketResponse.Summary.ProcessingResult)
             {
-                return base.GetShoppingCartTotal(cart, out discountAmount, out appliedDiscounts, out appliedGiftCards, out redeemedRewardPoints, out redeemedRewardPointsAmount, ignoreRewardPonts, usePaymentMethodAdditionalFee);
+                return base.GetShoppingCartTotal(cart, out discountAmount, out appliedDiscounts, out appliedGiftCards, out redeemedRewardPoints, out redeemedRewardPointsAmount, useRewardPonts, usePaymentMethodAdditionalFee);
             }
 
             Customer customer = cart.GetCustomer();
 
             discountAmount = decimal.Zero;
-            appliedDiscounts = new List<Discount>();
+            appliedDiscounts = new List<DiscountForCaching>();
             decimal resultTemp = basketResponse.BasketTotal;
 
             #region Applied gift cards
@@ -514,7 +763,7 @@ namespace Qixol.Nop.Promo.Services.Orders
             #region Reward points
 
             if (_rewardPointsSettings.Enabled &&
-                !ignoreRewardPonts &&
+                useRewardPonts.HasValue && useRewardPonts.Value &&
                 customer.GetAttribute<bool>(SystemCustomerAttributeNames.UseRewardPointsDuringCheckout,
                     _genericAttributeService, _storeContext.CurrentStore.Id))
             {
@@ -544,14 +793,14 @@ namespace Qixol.Nop.Promo.Services.Orders
             if (shippingOption == null)
             {
                 // Where there are items in the basket that are not for shipping, ensure we carry on, otherwise placing orders gets stuck.
-                if(cart.Any(sci => sci.IsShipEnabled))
-                    return null;                
+                if (cart.Any(sci => sci.IsShipEnabled))
+                    return null;
             }
 
             discountAmount = basketResponse.OrderDiscountTotal();
             if (discountAmount > 0)
             {
-                Discount appliedDiscount = new Discount()
+                DiscountForCaching appliedDiscount = new DiscountForCaching()
                 {
                     Name = basketResponse.BasketLevelPromotion().PromotionName,
                     DiscountAmount = discountAmount
@@ -564,153 +813,20 @@ namespace Qixol.Nop.Promo.Services.Orders
             return basketResponse.BasketTotal + tax - appliedGiftCards.Sum(agc => agc.AmountCanBeUsed) - redeemedRewardPointsAmount;
         }
 
-        public override decimal? GetShoppingCartTotal(IList<global::Nop.Core.Domain.Orders.ShoppingCartItem> cart, bool ignoreRewardPonts = false, bool usePaymentMethodAdditionalFee = true)
+        /// <summary>
+        /// Calculate how much reward points will be earned/reduced based on certain amount spent
+        /// </summary>
+        /// <param name="customer">Customer</param>
+        /// <param name="amount">Amount (in primary store currency)</param>
+        /// <returns>Number of reward points</returns>
+        public override int CalculateRewardPoints(Customer customer, decimal amount)
         {
             if (!_promoSettings.Enabled)
-                return base.GetShoppingCartTotal(cart, ignoreRewardPonts, usePaymentMethodAdditionalFee);
+                return base.CalculateRewardPoints(customer, amount);
 
             BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
-
-            if (basketResponse == null || basketResponse.Items == null || basketResponse.Summary == null)
-                return base.GetShoppingCartTotal(cart, ignoreRewardPonts, usePaymentMethodAdditionalFee);
-
-            if (!basketResponse.Summary.ProcessingResult)
-                return base.GetShoppingCartTotal(cart, ignoreRewardPonts, usePaymentMethodAdditionalFee);
-
-            decimal tax = GetTaxTotal(cart);
-
-            return basketResponse.BasketTotal + tax;
+            return basketResponse.IssuedPoints();
         }
-
-        #endregion
-
-        #region GetTaxTotal
-
-        //public override decimal GetTaxTotal(IList<Nop.Core.Domain.Orders.ShoppingCartItem> cart, bool usePaymentMethodAdditionalFee = true)
-        //{
-        //    if (cart == null)
-        //        throw new ArgumentNullException("cart");
-
-        //    SortedDictionary<decimal, decimal> taxRates = null;
-        //    return GetTaxTotal(cart, out taxRates, usePaymentMethodAdditionalFee);
-        //}
-
-        //public override decimal GetTaxTotal(IList<Nop.Core.Domain.Orders.ShoppingCartItem> cart, out SortedDictionary<decimal, decimal> taxRates, bool usePaymentMethodAdditionalFee = true)
-        //{
-        //    if (cart == null)
-        //        throw new ArgumentNullException("cart");
-
-        //    return base.GetTaxTotal(cart, out taxRates, usePaymentMethodAdditionalFee);
-        //}
-
-        #endregion
-
-        public override decimal GetShoppingCartAdditionalShippingCharge(IList<ShoppingCartItem> cart)
-        {
-            if (!_promoSettings.Enabled)
-                return base.GetShoppingCartAdditionalShippingCharge(cart);
-
-            decimal additionalShippingCharge = decimal.Zero;
-
-            foreach (var sci in cart)
-                if (sci.IsShipEnabled && !sci.IsFreeShipping)
-                    additionalShippingCharge += sci.AdditionalShippingCharge;
-
-            return additionalShippingCharge;
-        }
-
-        public override bool IsFreeShipping(IList<ShoppingCartItem> cart, decimal? subTotal = null)
-        {
-            if (!_promoSettings.Enabled)
-                return base.IsFreeShipping(cart);
-
-            // not applicable when using Promo
-
-            return false;
-        }
-
-        #region Utilities
-
-        //public override decimal GetShoppingCartAdditionalShippingCharge(IList<ShoppingCartItem> cart)
-        //{
-        //    decimal additionalShippingCharge = decimal.Zero;
-
-        //    bool isFreeShipping = IsFreeShipping(cart);
-        //    if (isFreeShipping)
-        //        return decimal.Zero;
-
-        //    foreach (var sci in cart)
-        //        if (sci.IsShipEnabled && !sci.IsFreeShipping)
-        //            additionalShippingCharge += sci.AdditionalShippingCharge;
-
-        //    return additionalShippingCharge;
-        //}
-
-        protected override decimal GetOrderSubtotalDiscount(Customer customer,
-            decimal orderSubTotal, out List<Discount> appliedDiscounts)
-        {
-            if (!_promoSettings.Enabled)
-                return base.GetOrderSubtotalDiscount(customer, orderSubTotal, out appliedDiscounts);
-
-            BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
-
-            appliedDiscounts = new List<Discount>();
-            decimal discountAmount = decimal.Zero;
-
-            if (basketResponse == null)
-                return discountAmount;
-
-            if (!basketResponse.BasketLevelDiscountIncludesDeliveryAmount())
-            {
-                var basketLevelPromo = basketResponse.BasketLevelPromotion();
-                if (basketLevelPromo != null)
-                {
-                    discountAmount = basketLevelPromo.DiscountAmount;
-                    Discount appliedDiscount = new Discount()
-                    {
-                        Name = basketResponse.BasketLevelPromotion().PromotionName,
-                        DiscountAmount = discountAmount
-                    };
-                    appliedDiscounts.Add(appliedDiscount);
-                }
-            }
-
-            if (discountAmount < decimal.Zero)
-                discountAmount = decimal.Zero;
-
-            return discountAmount;
-        }
-
-        protected override decimal GetOrderTotalDiscount(Customer customer, decimal orderTotal, out List<Discount> appliedDiscounts)
-        {
-            if (!_rewardPointsSettings.Enabled)
-                return base.GetOrderTotalDiscount(customer, orderTotal, out appliedDiscounts);
-
-            BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
-
-            appliedDiscounts = new List<Discount>();
-            decimal discountAmount = decimal.Zero;
-
-            if (basketResponse == null)
-                return discountAmount;
-
-            if (basketResponse.BasketLevelDiscountIncludesDeliveryAmount())
-            {
-                discountAmount = basketResponse.BasketLevelPromotion().DiscountAmount;
-                Discount appliedDiscount = new Discount()
-                {
-                    Name = basketResponse.BasketLevelPromotion().PromotionName,
-                    DiscountAmount = discountAmount
-                };
-                appliedDiscounts.Add(appliedDiscount);
-            }
-
-            if (discountAmount < decimal.Zero)
-                discountAmount = decimal.Zero;
-
-            return discountAmount;
-        }
-        #endregion
 
         #endregion
     }

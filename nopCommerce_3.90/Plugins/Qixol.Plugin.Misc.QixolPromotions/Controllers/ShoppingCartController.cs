@@ -47,6 +47,8 @@ using Qixol.Nop.Promo.Core.Domain.Promo;
 using Qixol.Plugin.Misc.Promo.Models.Checkout;
 using Nop.Web.Models.Catalog;
 using Qixol.Promo.Integration.Lib.Basket;
+using Nop.Web.Factories;
+using Nop.Services.Shipping.Date;
 
 namespace Qixol.Plugin.Misc.Promo.Controllers
 {
@@ -54,6 +56,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
     {
         #region Fields
 
+        private readonly IShoppingCartModelFactory _shoppingCartModelFactory;
         private readonly IProductService _productService;
         private readonly IWorkContext _workContext;
         private readonly IStoreContext _storeContext;
@@ -61,7 +64,6 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
         private readonly IPictureService _pictureService;
         private readonly ILocalizationService _localizationService;
         private readonly IProductAttributeService _productAttributeService;
-        private readonly IProductAttributeFormatter _productAttributeFormatter;
         private readonly IProductAttributeParser _productAttributeParser;
         private readonly ITaxService _taxService;
         private readonly ICurrencyService _currencyService;
@@ -69,17 +71,10 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
         private readonly IPromosPriceCalculationService _promosPriceCalculationService;
         private readonly IPriceFormatter _priceFormatter;
         private readonly ICheckoutAttributeParser _checkoutAttributeParser;
-        private readonly ICheckoutAttributeFormatter _checkoutAttributeFormatter;
-        private readonly IOrderProcessingService _orderProcessingService;
         private readonly IDiscountService _discountService;
         private readonly ICustomerService _customerService;
         private readonly IGiftCardService _giftCardService;
-        private readonly ICountryService _countryService;
-        private readonly IStateProvinceService _stateProvinceService;
-        private readonly IShippingService _shippingService;
-        private readonly IOrderTotalCalculationService _orderTotalCalculationService;
         private readonly ICheckoutAttributeService _checkoutAttributeService;
-        private readonly IPaymentService _paymentService;
         private readonly IWorkflowMessageService _workflowMessageService;
         private readonly IPermissionService _permissionService;
         private readonly IDownloadService _downloadService;
@@ -87,18 +82,12 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
         private readonly IWebHelper _webHelper;
         private readonly ICustomerActivityService _customerActivityService;
         private readonly IGenericAttributeService _genericAttributeService;
-        private readonly IAddressAttributeFormatter _addressAttributeFormatter;
-        private readonly HttpContextBase _httpContext;
 
         private readonly MediaSettings _mediaSettings;
         private readonly ShoppingCartSettings _shoppingCartSettings;
         private readonly CatalogSettings _catalogSettings;
         private readonly OrderSettings _orderSettings;
-        private readonly ShippingSettings _shippingSettings;
-        private readonly TaxSettings _taxSettings;
         private readonly CaptchaSettings _captchaSettings;
-        private readonly AddressSettings _addressSettings;
-        private readonly RewardPointsSettings _rewardPointsSettings;
 
         private readonly PromoSettings _promoSettings;
         private readonly IPromoService _promoService;
@@ -108,31 +97,25 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
 
         #region Constructors
 
-        public ShoppingCartController(IProductService productService,
+        public ShoppingCartController(IShoppingCartModelFactory shoppingCartModelFactory,
+            IProductService productService,
             IStoreContext storeContext,
             IWorkContext workContext,
             IShoppingCartService shoppingCartService,
             IPictureService pictureService,
             ILocalizationService localizationService,
             IProductAttributeService productAttributeService,
-            IProductAttributeFormatter productAttributeFormatter,
             IProductAttributeParser productAttributeParser,
-            ITaxService taxService, ICurrencyService currencyService,
+            ITaxService taxService,
+            ICurrencyService currencyService,
             IPriceCalculationService priceCalculationService,
-            IPromosPriceCalculationService promosPriceCalculationService,
             IPriceFormatter priceFormatter,
             ICheckoutAttributeParser checkoutAttributeParser,
-            ICheckoutAttributeFormatter checkoutAttributeFormatter,
-            IOrderProcessingService orderProcessingService,
             IDiscountService discountService,
             ICustomerService customerService,
             IGiftCardService giftCardService,
-            ICountryService countryService,
-            IStateProvinceService stateProvinceService,
-            IShippingService shippingService,
-            IOrderTotalCalculationService orderTotalCalculationService,
+            IDateRangeService dateRangeService,
             ICheckoutAttributeService checkoutAttributeService,
-            IPaymentService paymentService,
             IWorkflowMessageService workflowMessageService,
             IPermissionService permissionService,
             IDownloadService downloadService,
@@ -140,36 +123,30 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             IWebHelper webHelper,
             ICustomerActivityService customerActivityService,
             IGenericAttributeService genericAttributeService,
-            IAddressAttributeFormatter addressAttributeFormatter,
-            HttpContextBase httpContext,
             MediaSettings mediaSettings,
             ShoppingCartSettings shoppingCartSettings,
             CatalogSettings catalogSettings,
             OrderSettings orderSettings,
-            ShippingSettings shippingSettings,
-            TaxSettings taxSettings,
             CaptchaSettings captchaSettings,
-            AddressSettings addressSettings,
-            RewardPointsSettings rewardPointsSettings,
             CustomerSettings customerSettings,
             PromoSettings promoSettings,
             IPromoService promoService,
-            IPromoUtilities promoUtilities)
-            : base (productService, storeContext, workContext,
+            IPromoUtilities promoUtilities,
+            IPromosPriceCalculationService promosPriceCalculationService)
+            : base (shoppingCartModelFactory,
+                    productService, storeContext, workContext,
                     shoppingCartService, pictureService, localizationService,
-                    productAttributeService, productAttributeFormatter,
-                    productAttributeParser, taxService, currencyService,
+                    productAttributeService, productAttributeParser,
+                    taxService, currencyService,
                     priceCalculationService, priceFormatter, checkoutAttributeParser,
-                    checkoutAttributeFormatter, orderProcessingService, discountService,
-                    customerService, giftCardService, countryService,
-                    stateProvinceService, shippingService, orderTotalCalculationService,
-                    checkoutAttributeService, paymentService, workflowMessageService,
+                    discountService, customerService,
+                    giftCardService, dateRangeService,
+                    checkoutAttributeService, workflowMessageService,
                     permissionService, downloadService, cacheManager, webHelper,
                     customerActivityService, genericAttributeService,
-                    addressAttributeFormatter, httpContext, mediaSettings,
-                    shoppingCartSettings, catalogSettings, orderSettings, shippingSettings,
-                    taxSettings, captchaSettings, addressSettings,
-                    rewardPointsSettings, customerSettings)
+                    mediaSettings, shoppingCartSettings,
+                    orderSettings, 
+                    captchaSettings, customerSettings)
         {
             this._productService = productService;
             this._workContext = workContext;
@@ -178,7 +155,6 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             this._pictureService = pictureService;
             this._localizationService = localizationService;
             this._productAttributeService = productAttributeService;
-            this._productAttributeFormatter = productAttributeFormatter;
             this._productAttributeParser = productAttributeParser;
             this._taxService = taxService;
             this._currencyService = currencyService;
@@ -186,17 +162,10 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             this._promosPriceCalculationService = promosPriceCalculationService;
             this._priceFormatter = priceFormatter;
             this._checkoutAttributeParser = checkoutAttributeParser;
-            this._checkoutAttributeFormatter = checkoutAttributeFormatter;
-            this._orderProcessingService = orderProcessingService;
             this._discountService = discountService;
             this._customerService = customerService;
             this._giftCardService = giftCardService;
-            this._countryService = countryService;
-            this._stateProvinceService = stateProvinceService;
-            this._shippingService = shippingService;
-            this._orderTotalCalculationService = orderTotalCalculationService;
             this._checkoutAttributeService = checkoutAttributeService;
-            this._paymentService = paymentService;
             this._workflowMessageService = workflowMessageService;
             this._permissionService = permissionService;
             this._downloadService = downloadService;
@@ -204,18 +173,12 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             this._webHelper = webHelper;
             this._customerActivityService = customerActivityService;
             this._genericAttributeService = genericAttributeService;
-            this._addressAttributeFormatter = addressAttributeFormatter;
-            this._httpContext = httpContext;
 
             this._mediaSettings = mediaSettings;
             this._shoppingCartSettings = shoppingCartSettings;
             this._catalogSettings = catalogSettings;
             this._orderSettings = orderSettings;
-            this._shippingSettings = shippingSettings;
-            this._taxSettings = taxSettings;
             this._captchaSettings = captchaSettings;
-            this._addressSettings = addressSettings;
-            this._rewardPointsSettings = rewardPointsSettings;
 
             this._promoSettings = promoSettings;
             this._promoService = promoService;
@@ -225,102 +188,6 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
         internal void PromoParseAndSaveCheckoutAttributes(List<ShoppingCartItem> cart, FormCollection form)
         {
             base.ParseAndSaveCheckoutAttributes(cart, form);
-        }
-
-        #endregion
-
-        #region Utilities
-
-        public PictureModel PrepareCartItemPictureModel(ShoppingCartItem shoppingCartItem, string productName)
-        {
-            return base.PrepareCartItemPictureModel(shoppingCartItem, _mediaSettings.CartThumbPictureSize, true, productName);
-        }
-
-        /// <summary>
-        /// Prepare shopping cart model
-        /// </summary>
-        /// <param name="model">Model instance</param>
-        /// <param name="cart">Shopping cart</param>
-        /// <param name="isEditable">A value indicating whether cart is editable</param>
-        /// <param name="validateCheckoutAttributes">A value indicating whether we should validate checkout attributes when preparing the model</param>
-        /// <param name="prepareEstimateShippingIfEnabled">A value indicating whether we should prepare "Estimate shipping" model</param>
-        /// <param name="setEstimateShippingDefaultAddress">A value indicating whether we should prefill "Estimate shipping" model with the default customer address</param>
-        /// <param name="prepareAndDisplayOrderReviewData">A value indicating whether we should prepare review data (such as billing/shipping address, payment or shipping data entered during checkout)</param>
-        /// <returns>Model</returns>
-        [NonAction]
-        protected override void PrepareShoppingCartModel(ShoppingCartModel model,
-            IList<ShoppingCartItem> cart, bool isEditable = true,
-            bool validateCheckoutAttributes = false,
-            bool prepareEstimateShippingIfEnabled = true, bool setEstimateShippingDefaultAddress = true,
-            bool prepareAndDisplayOrderReviewData = false)
-        {
-
-            if (_promoSettings.Enabled)
-            {
-                List<string> cartWarnings = _promoService.ProcessShoppingCart();
-                // refresh the cart, in case any changes were made
-                cart = (from cartItem in _workContext.CurrentCustomer.ShoppingCartItems where cartItem.ShoppingCartType.Equals(ShoppingCartType.ShoppingCart) select cartItem).ToList();
-                foreach (string cartWarning in cartWarnings)
-                {
-                    model.Warnings.Add(cartWarning);
-                }
-            }
-
-            // Get the base to do most of the work...
-            base.PrepareShoppingCartModel(model, cart, isEditable, validateCheckoutAttributes, prepareEstimateShippingIfEnabled, setEstimateShippingDefaultAddress, prepareAndDisplayOrderReviewData);
-
-            if (_promoSettings.Enabled)
-            {
-                var basketResponse = _promoUtilities.GetBasketResponse();
-                if (basketResponse.IsValid())
-                {
-                    if (basketResponse.TotalDiscount != decimal.Zero)
-                    {
-                        cart.Where(sci => !sci.Product.CallForPrice)
-                            .ToList()
-                            .ForEach(sci =>
-                            {
-                                var cartItemModel = model.Items.Where(mi => mi.Id == sci.Id).FirstOrDefault();
-
-                                //sub total
-                                List<Discount> scDiscounts;
-                                decimal shoppingCartItemDiscountBase;
-                                decimal taxRate;
-                                decimal tempSubTotal = _promosPriceCalculationService.GetSubTotal(sci, true, out shoppingCartItemDiscountBase, out scDiscounts);
-                                decimal shoppingCartItemSubTotalWithDiscountBase = _taxService.GetProductPrice(sci.Product, tempSubTotal, out taxRate);
-                                decimal shoppingCartItemSubTotalWithDiscount = _currencyService.ConvertFromPrimaryStoreCurrency(shoppingCartItemSubTotalWithDiscountBase, _workContext.WorkingCurrency);
-                                cartItemModel.SubTotal = _priceFormatter.FormatPrice(shoppingCartItemSubTotalWithDiscount);
-
-                                //display an applied discount amount
-                                if (shoppingCartItemSubTotalWithDiscountBase > decimal.Zero)
-                                {
-                                    shoppingCartItemDiscountBase = _taxService.GetProductPrice(sci.Product, shoppingCartItemDiscountBase, out taxRate);
-                                    if (shoppingCartItemDiscountBase > decimal.Zero)
-                                    {
-                                        decimal shoppingCartItemDiscount = _currencyService.ConvertFromPrimaryStoreCurrency(shoppingCartItemDiscountBase, _workContext.WorkingCurrency);
-                                        cartItemModel.Discount = _priceFormatter.FormatPrice(shoppingCartItemDiscount);
-                                    }
-                                }
-                            });
-                    }
-
-                    model.DiscountBox.Message = string.Empty;
-                    model.DiscountBox.CurrentCode = _workContext.CurrentCustomer.GetAttribute<string>(SystemCustomerAttributeNames.DiscountCouponCode);
-                    if (!string.IsNullOrEmpty(model.DiscountBox.CurrentCode))
-                    {
-                        if (basketResponse.CouponIsValid(model.DiscountBox.CurrentCode))
-                        {
-                            model.DiscountBox.IsApplied = true;
-                            model.DiscountBox.Message = _localizationService.GetResource("ShoppingCart.DiscountCouponCode.Applied");
-                        }
-                        else
-                        {
-                            model.DiscountBox.IsApplied = false;
-                            model.DiscountBox.Message = _localizationService.GetResource("ShoppingCart.DiscountCouponCode.WrongDiscount");
-                        }
-                    }
-                }
-            }
         }
 
         #endregion

@@ -7,6 +7,7 @@ using global::Nop.Core.Domain.Shipping;
 using global::Nop.Services.Catalog;
 using global::Nop.Services.Common;
 using global::Nop.Services.Directory;
+using global::Nop.Services.Discounts;
 using global::Nop.Services.Localization;
 using global::Nop.Services.Orders;
 using global::Nop.Services.Shipping;
@@ -212,7 +213,7 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
 
             if (cart.RequiresShipping())
             {
-                List<global::Nop.Core.Domain.Discounts.Discount> appliedDiscounts;
+                List<DiscountForCaching> appliedDiscounts;
                 deliveryPrice = _orderTotalCalculationService.AdjustShippingRate(selectedShippingOption != null ? selectedShippingOption.Rate : 0M, cart, out appliedDiscounts);
 
                 // DM Cope with baskets in current currency

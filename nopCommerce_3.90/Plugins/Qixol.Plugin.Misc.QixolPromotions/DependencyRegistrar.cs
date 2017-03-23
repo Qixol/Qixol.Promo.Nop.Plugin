@@ -29,6 +29,7 @@ using Nop.Core.Caching;
 using Qixol.Nop.Promo.Data.Mapping;
 using Qixol.Nop.Promo.Services.Common;
 using Qixol.Nop.Promo.Core.Domain.Orders;
+using Qixol.Plugin.Misc.Promo.Factories;
 
 namespace Qixol.Plugin.Misc.Promo
 {
@@ -60,6 +61,9 @@ namespace Qixol.Plugin.Misc.Promo
             builder.RegisterType<TaxService>().As<global::Nop.Services.Tax.ITaxService>().InstancePerLifetimeScope();
             builder.RegisterType<MessageTokenProvider>().As<global::Nop.Services.Messages.IMessageTokenProvider>().InstancePerLifetimeScope();
             builder.RegisterType<PdfService>().As<global::Nop.Services.Common.IPdfService>().InstancePerLifetimeScope();
+
+            builder.RegisterType<CheckoutModelFactory>().As<Qixol.Plugin.Misc.Promo.Factories.ICheckoutModelFactory>().InstancePerLifetimeScope();
+            builder.RegisterType<ShoppingCartModelFactory>().As<Qixol.Plugin.Misc.Promo.Factories.IShoppingCartModelFactory>().InstancePerLifetimeScope();
 
             //data layer
             var dataSettingsManager = new DataSettingsManager();
