@@ -89,6 +89,9 @@ namespace Qixol.Nop.Promo.Services.Orders
                         string promotionType = string.Empty;
                         string promotionName = string.Empty;
                         string promotionDisplayText = string.Empty;
+                        string externalIdentifier = string.Empty;
+                        string reportingGroupCode = string.Empty;
+
                         var appliedPromo = (from sap in basketResponse.Summary.AppliedPromotions where sap.PromotionId == ap.PromotionId select sap).FirstOrDefault();
                         if (appliedPromo != null)
                         {
@@ -96,6 +99,8 @@ namespace Qixol.Nop.Promo.Services.Orders
                             promotionType = appliedPromo.PromotionType;
                             promotionTypeDisplay = appliedPromo.PromotionTypeDisplay;
                             promotionDisplayText = appliedPromo.DisplayText;
+                            externalIdentifier = appliedPromo.ExternalIdentifier;
+                            reportingGroupCode = appliedPromo.ReportingGroupCode;
                         }
 
                         PromoOrderItemPromotion promoOrderItemPromotion = new PromoOrderItemPromotion()
@@ -111,8 +116,8 @@ namespace Qixol.Nop.Promo.Services.Orders
                             PromotionTypeDisplay = promotionTypeDisplay,
                             PromotionName = promotionName,
                             PromotionType = promotionType,
-                            ExternalIdentifier = ap.ExternalIdentifier,
-                            ReportingGroupCode = ap.ReportingGroupCode
+                            ExternalIdentifier = externalIdentifier,
+                            ReportingGroupCode = reportingGroupCode
                         };
                         promoOrderItem.PromoOrderItemPromotions.Add(promoOrderItemPromotion);
                         _promoOrderService.UpdatePromoOrder(promoOrder);

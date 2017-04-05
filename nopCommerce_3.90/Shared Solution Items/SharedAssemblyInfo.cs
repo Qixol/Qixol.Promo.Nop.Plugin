@@ -22,5 +22,5 @@ using System.Runtime.InteropServices;
 //
 // *** NOTE: Ensure the 'Description.txt' in the Plugin and Widget folders are also updated. ***
 //
-[assembly: AssemblyVersion("3.0.1.01")]
-[assembly: AssemblyFileVersion("3.0.1.01")]
+[assembly: AssemblyVersion("3.90.0.1")]
+[assembly: AssemblyFileVersion("3.90.0.1")]
