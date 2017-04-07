@@ -45,15 +45,12 @@ namespace Qixol.Nop.Promo.Services.Tax
             ShippingSettings shippingSettings,
             AddressSettings addressSettings,
             PromoSettings promoSettings,
-            //IpromoService promoService,
-            IPromoUtilities promoUtilities,
-            ITaxServiceExtensions taxServiceExtensions)
+            IPromoUtilities promoUtilities)
             : base(addressService, workContext, storeContext, taxSettings,
                                                     pluginFinder, geoLookupService, countryService, stateProvinceService,
                                                     logger, customerSettings, shippingSettings, addressSettings)
         {
             this._promoSettings = promoSettings;
-            //this._promoService = promoService;
             this._promoUtilities = promoUtilities;
             this._taxSettings = taxSettings;
         }

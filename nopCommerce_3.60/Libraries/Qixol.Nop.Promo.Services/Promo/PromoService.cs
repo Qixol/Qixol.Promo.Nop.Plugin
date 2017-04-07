@@ -149,6 +149,11 @@ namespace Qixol.Nop.Promo.Services.Promo
 
         public List<string> ProcessShoppingCart()
         {
+            return ProcessShoppingCart(false);
+        }
+
+        public List<string> ProcessShoppingCart(bool getMissedPromotions = false)
+        {
             var addToCartWarnings = new List<string>();
             Customer customer = _workContext.CurrentCustomer;
 
@@ -164,6 +169,8 @@ namespace Qixol.Nop.Promo.Services.Promo
             try
             {
                 BasketRequest basketRequest = cart.ToQixolPromosBasketRequest();
+
+                basketRequest.GetMissedPromotions = getMissedPromotions;
 
                 if (basketRequest != null)
                 {
@@ -420,7 +427,7 @@ namespace Qixol.Nop.Promo.Services.Promo
             response.DeliveryPrice = _currencyService.ConvertToPrimaryExchangeRateCurrency(response.DeliveryPrice, fromCurrency);
             response.DeliveryPromotionDiscount = _currencyService.ConvertToPrimaryExchangeRateCurrency(response.DeliveryPromotionDiscount, fromCurrency);
             response.DeliveryTotalDiscount = _currencyService.ConvertToPrimaryExchangeRateCurrency(response.DeliveryTotalDiscount, fromCurrency);
-            response.LinesDiscount = _currencyService.ConvertToPrimaryExchangeRateCurrency(response.LinesDiscount, fromCurrency);
+            response.LinesTotalDiscount = _currencyService.ConvertToPrimaryExchangeRateCurrency(response.LinesTotalDiscount, fromCurrency);
             response.OriginalBasketTotal = _currencyService.ConvertToPrimaryExchangeRateCurrency(response.OriginalBasketTotal, fromCurrency);
             response.TotalDiscount = _currencyService.ConvertToPrimaryExchangeRateCurrency(response.TotalDiscount, fromCurrency);
             //response.DeliveryManualDiscount

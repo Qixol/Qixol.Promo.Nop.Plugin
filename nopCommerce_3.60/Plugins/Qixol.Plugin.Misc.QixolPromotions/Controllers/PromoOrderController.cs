@@ -173,7 +173,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             if(promoOrder!=null)
             {
                 var orderItem = _orderService.GetOrderItemById(orderItemModel.Id);
-                var promoNamesList = promoOrder.GetLineDiscountNames(orderItem.Product, _promoSettings, orderItem.AttributesXml);
+                var promoNamesList = promoOrder.GetLineDiscountNames(orderItem, _promoSettings);
                 if(promoNamesList != null && promoNamesList.Count > 0)
                     return Content(string.Join("<br />", promoNamesList.Select(n => _localizationService.GetValidatedResource(n)).ToArray()));
             }
@@ -190,7 +190,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             if (promoOrder != null)
             {
                 var orderItem = _orderService.GetOrderItemById(orderItemModel.Id);
-                decimal linePromoDiscount = promoOrder.GetLineDiscountAmount(orderItem.Product, _promoSettings, orderItem.AttributesXml);
+                decimal linePromoDiscount = promoOrder.GetLineDiscountAmount(orderItem, _promoSettings);
                 if (linePromoDiscount != decimal.Zero)
                 {
                     linePromoDiscount = _currencyService.ConvertCurrency(linePromoDiscount, orderItem.Order.CurrencyRate);

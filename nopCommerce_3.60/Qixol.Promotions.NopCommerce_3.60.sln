@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.24627.0
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "Website", "Website\", "{DB3F1977-0F44-4D75-9951-82DB112800BA}"
 	ProjectSection(WebsiteProperties) = preProject
@@ -51,6 +51,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utilities", "Utilities", "{
 		Utilities\Upgrade_from_3.60.4_to_3.60.5.sql = Utilities\Upgrade_from_3.60.4_to_3.60.5.sql
 		Utilities\Upgrade_from_3.60.5_to_3.60.6.sql = Utilities\Upgrade_from_3.60.5_to_3.60.6.sql
 		Utilities\Upgrade_from_3.60.6_to_3.60.7.sql = Utilities\Upgrade_from_3.60.6_to_3.60.7.sql
+		Utilities\Upgrade_from_3.60.7_to_3.60.8.0.sql = Utilities\Upgrade_from_3.60.7_to_3.60.8.0.sql
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared Solution Items", "Shared Solution Items", "{FC372C95-D84F-4D00-A5E9-FB47AB64E731}"
