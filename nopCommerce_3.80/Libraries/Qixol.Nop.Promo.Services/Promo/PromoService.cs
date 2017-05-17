@@ -149,10 +149,19 @@ namespace Qixol.Nop.Promo.Services.Promo
 
         public List<string> ProcessShoppingCart()
         {
-            return ProcessShoppingCart(false);
+            return ProcessShoppingCart(false, null);
         }
 
+        public List<string> ProcessShoppingCart(ShippingOption shippingOption = null)
+        {
+            return ProcessShoppingCart(false, shippingOption);
+        }
         public List<string> ProcessShoppingCart(bool getMissedPromotions = false)
+        {
+            return ProcessShoppingCart(getMissedPromotions, null);
+        }
+
+        public List<string> ProcessShoppingCart(bool getMissedPromotions = false, ShippingOption shippingOption = null)
         {
             var addToCartWarnings = new List<string>();
             Customer customer = _workContext.CurrentCustomer;
@@ -170,10 +179,15 @@ namespace Qixol.Nop.Promo.Services.Promo
             {
                 BasketRequest basketRequest = cart.ToQixolPromosBasketRequest();
 
-                basketRequest.GetMissedPromotions = getMissedPromotions;
 
                 if (basketRequest != null)
                 {
+                    basketRequest.GetMissedPromotions = getMissedPromotions;
+
+                    if (shippingOption != null)
+                    {
+                        basketRequest = basketRequest.SetShipping(cart, shippingOption);
+                    }
 
                     BasketResponse basketResponse = SendBasketRequestTopromoService(basketRequest);
                     if ((basketResponse != null) &&
@@ -277,7 +291,7 @@ namespace Qixol.Nop.Promo.Services.Promo
         }
 
         public void SendConfirmedBasket(global::Nop.Core.Domain.Orders.Order placedOrder)
-        {            
+        {
             var customer = _workContext.CurrentCustomer;
             BasketRequest basketRequest = BasketRequest.FromXml(customer.GetAttribute<string>(PromoCustomerAttributeNames.PromoBasketRequest, _storeContext.CurrentStore.Id));
             basketRequest.Confirmed = true;
@@ -292,7 +306,7 @@ namespace Qixol.Nop.Promo.Services.Promo
                 Name = "orderid",
                 Value = placedOrder.Id.ToString()
             });
-            
+
             // Reward points
             if (placedOrder.RedeemedRewardPointsEntry != null)
             {

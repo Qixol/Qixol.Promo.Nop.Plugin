@@ -108,7 +108,6 @@ namespace Qixol.Nop.Promo.Services.Orders
                             BasketLevel = ap.BasketLevelPromotion,
                             DeliveryLevel = ap.DeliveryLevelPromotion,
                             DiscountAmount = ap.DiscountAmount,
-                            ForLineId = ap.AssociatedLine,
                             Instance = ap.InstanceId,
                             PointsIssued = ap.PointsIssued,
                             PromotionId = ap.PromotionId,

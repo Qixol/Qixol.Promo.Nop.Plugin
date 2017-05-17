@@ -244,7 +244,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                     decimal shippingTotal = _orderTotalCalculationService.AdjustShippingRate(shippingOption.Rate, cart, out appliedDiscounts);
 
                     if (_promoSettings.Enabled)
-                        _promoService.ProcessShoppingCart();
+                        _promoService.ProcessShoppingCart(shippingOption);
 
                     BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
 

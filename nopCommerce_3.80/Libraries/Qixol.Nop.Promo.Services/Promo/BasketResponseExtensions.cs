@@ -349,22 +349,19 @@ namespace Qixol.Nop.Promo.Services.Promo
                 {
                     foreach (var appliedPromotion in responseItem.AppliedPromotions)
                     {
-                        if (appliedPromotion.AssociatedLine == responseItem.Id)
+                        if (!appliedPromotion.BasketLevelPromotion && !appliedPromotion.DeliveryLevelPromotion)
                         {
-                            if (!appliedPromotion.BasketLevelPromotion && !appliedPromotion.DeliveryLevelPromotion)
+                            totalDiscountsForLines += appliedPromotion.DiscountAmount;
+                        }
+                        else
+                        {
+                            // check if we have a free product
+                            var summaryAppliedPromotion = (from sap in basketResponse.Summary.AppliedPromotions where sap.PromotionId == appliedPromotion.PromotionId && sap.InstanceId == appliedPromotion.InstanceId select sap).FirstOrDefault();
+                            if (summaryAppliedPromotion != null)
                             {
-                                totalDiscountsForLines += appliedPromotion.DiscountAmount;
-                            }
-                            else
-                            {
-                                // check if we have a free product
-                                var summaryAppliedPromotion = (from sap in basketResponse.Summary.AppliedPromotions where sap.PromotionId == appliedPromotion.PromotionId && sap.InstanceId == appliedPromotion.InstanceId select sap).FirstOrDefault();
-                                if (summaryAppliedPromotion != null)
+                                if (summaryAppliedPromotion.PromotionType.Equals("FREEPRODUCT", StringComparison.InvariantCultureIgnoreCase))
                                 {
-                                    if (summaryAppliedPromotion.PromotionType.Equals("FREEPRODUCT", StringComparison.InvariantCultureIgnoreCase))
-                                    {
-                                        totalDiscountsForLines += appliedPromotion.DiscountAmount; // We only want the amount for this line, not for the promotion which could be applied across multiple lines
-                                    }
+                                    totalDiscountsForLines += appliedPromotion.DiscountAmount; // We only want the amount for this line, not for the promotion which could be applied across multiple lines
                                 }
                             }
                         }

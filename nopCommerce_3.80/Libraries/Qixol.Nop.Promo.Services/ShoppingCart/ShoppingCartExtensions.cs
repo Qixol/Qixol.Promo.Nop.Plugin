@@ -28,6 +28,7 @@ using Qixol.Nop.Promo.Services.Orders;
 using Nop.Core.Domain.Common;
 using Nop.Core.Infrastructure;
 using Nop.Core.Plugins;
+using Qixol.Nop.Promo.Core.Domain;
 
 namespace Qixol.Nop.Promo.Services.ShoppingCart
 {
@@ -157,7 +158,7 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
                     Id = shoppingCartItem.Id,
                     Price = usePrice,
                     ProductCode = productCode,
-                    Quantity = (byte)shoppingCartItem.Quantity,
+                    Quantity = (byte) shoppingCartItem.Quantity,
                     VariantCode = variantCode
                 };
 
@@ -184,43 +185,6 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
                     Code = discountcouponcode,
                 };
                 coupons.Add(coupon);
-            }
-
-            #endregion
-
-            #region shipping
-
-            ShippingOption shippingOption = (selectedShippingOption != null ? selectedShippingOption :
-                GetDefaultShippingOption(_shippingService, _workContext, _storeContext, _countryService, _stateProvinceService, _genericAttributeService));
-            string shippingOptionName = (shippingOption != null ? shippingOption.Name : string.Empty);
-
-            string shippingIntegrationCode = shippingOptionName;
-
-            // Is there an Integration code for the specified shipping option?
-            IList<ShippingMethod> shippingMethods = _shippingService.GetAllShippingMethods();
-            var specifiedShippingMethod = (from sm in shippingMethods where sm.Name.Equals(shippingOptionName, StringComparison.InvariantCultureIgnoreCase) select sm).FirstOrDefault();
-            if (specifiedShippingMethod != null)
-            {
-                // TODO: why is there a namespace issue here?
-                Qixol.Nop.Promo.Core.Domain.AttributeValues.AttributeValueMappingItem integrationMappingItem = _attributeValueService.Retrieve(specifiedShippingMethod.Id, EntityAttributeName.DeliveryMethod);
-                if (integrationMappingItem != null && !string.IsNullOrEmpty(integrationMappingItem.Code))
-                    shippingIntegrationCode = integrationMappingItem.Code;
-            }
-
-            decimal deliveryPrice = 0M;
-            string deliveryMethod = string.Empty;
-
-            if (cart.RequiresShipping())
-            {
-                List<global::Nop.Core.Domain.Discounts.Discount> appliedDiscounts;
-                deliveryPrice = _orderTotalCalculationService.AdjustShippingRate(selectedShippingOption != null ? selectedShippingOption.Rate : 0M, cart, out appliedDiscounts);
-
-                // DM Cope with baskets in current currency
-                if (_promoSettings.UseSelectedCurrencyWhenSubmittingBaskets && _workContext.WorkingCurrency.Rate != 1)
-                    deliveryPrice = _currencyService.ConvertFromPrimaryExchangeRateCurrency(deliveryPrice, _workContext.WorkingCurrency);
-
-                deliveryMethod = shippingIntegrationCode;
-                orderTotal += deliveryPrice;
             }
 
             #endregion
@@ -412,8 +376,8 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
                 StoreGroup = _promoSettings.StoreGroup,
                 Channel = _promoSettings.Channel,
                 CustomerGroup = customerGroupIntegrationCode,
-                DeliveryPrice = deliveryPrice,
-                DeliveryMethod = shippingIntegrationCode,
+                //DeliveryPrice = deliveryPrice,
+                //DeliveryMethod = shippingIntegrationCode,
                 Coupons = coupons.ToList(),
                 Items = items.ToList(),
                 //CustomAttributes = customAttributes,
@@ -439,46 +403,13 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
 
             #endregion
 
+            #region shipping
+
+            basketRequest = basketRequest.SetShipping(cart, selectedShippingOption);
+
+            #endregion
+
             return basketRequest;
-        }
-
-        private static ShippingOption GetDefaultShippingOption(
-            IShippingService shippingService,
-            IWorkContext workContext,
-            IStoreContext storeContext,
-            ICountryService countryService,
-            IStateProvinceService stateProvinceService,
-            IGenericAttributeService genericAttributeService)
-        {
-            // TODO: set these values in the config? - like EstimateShipping but default values are provided?
-            int countryId = 80; // UK
-            int? stateProvinceId = null;
-            string zipPostalCode = "SB2 8BW";
-            Address address = new Address
-            {
-                CountryId = countryId,
-                Country = countryService.GetCountryById(countryId),
-                StateProvinceId = stateProvinceId,
-                StateProvince = stateProvinceId.HasValue ? stateProvinceService.GetStateProvinceById(stateProvinceId.Value) : null,
-                ZipPostalCode = zipPostalCode,
-            };
-
-            if (workContext.CurrentCustomer.ShippingAddress != null)
-            {
-                address = workContext.CurrentCustomer.ShippingAddress;
-            }
-
-            List<ShoppingCartItem> cart = workContext.CurrentCustomer.ShoppingCartItems
-                .Where(sci => sci.ShoppingCartType == ShoppingCartType.ShoppingCart)
-                .LimitPerStore(storeContext.CurrentStore.Id)
-                .ToList();
-
-            GetShippingOptionResponse shippingOptionResponse = shippingService.GetShippingOptions(cart, address);
-
-            ShippingOption selectedShippingOption = shippingOptionResponse.ShippingOptions.FirstOrDefault();
-            genericAttributeService.SaveAttribute(workContext.CurrentCustomer, SystemCustomerAttributeNames.SelectedShippingOption, selectedShippingOption, storeContext.CurrentStore.Id);
-
-            return selectedShippingOption;
         }
 
         #endregion

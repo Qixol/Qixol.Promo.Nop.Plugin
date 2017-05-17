@@ -15,6 +15,8 @@ namespace Qixol.Nop.Promo.Core.Domain.Orders
         public decimal DiscountAmount { get; set; }
         public bool BasketLevel { get; set; }
         public bool DeliveryLevel { get; set; }
+
+        [Obsolete("no longer used", false)]
         public int ForLineId { get; set; }
         public int Instance { get; set; }
         public decimal PointsIssued { get; set; }
