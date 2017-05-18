@@ -333,6 +333,105 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             return base.OrderSummary(prepareAndDisplayOrderReviewData);
         }
 
+        [ValidateInput(false)]
+        [PublicAntiForgery]
+        [HttpPost]
+        public ActionResult PromoGetEstimateShipping(int? countryId, int? stateProvinceId, string zipPostalCode, FormCollection form)
+        {
+            var cart = _workContext.CurrentCustomer.ShoppingCartItems
+                .Where(sci => sci.ShoppingCartType == ShoppingCartType.ShoppingCart)
+                .LimitPerStore(_storeContext.CurrentStore.Id)
+                .ToList();
+
+            //parse and save checkout attributes
+            ParseAndSaveCheckoutAttributes(cart, form);
+
+            var model = new EstimateShippingResultModel();
+
+            if (cart.RequiresShipping())
+            {
+                var address = new Address
+                {
+                    CountryId = countryId,
+                    Country = countryId.HasValue ? _countryService.GetCountryById(countryId.Value) : null,
+                    StateProvinceId = stateProvinceId,
+                    StateProvince = stateProvinceId.HasValue ? _stateProvinceService.GetStateProvinceById(stateProvinceId.Value) : null,
+                    ZipPostalCode = zipPostalCode,
+                };
+                GetShippingOptionResponse getShippingOptionResponse = _shippingService
+                    .GetShippingOptions(cart, address, "", _storeContext.CurrentStore.Id);
+                if (getShippingOptionResponse.Success)
+                {
+                    if (getShippingOptionResponse.ShippingOptions.Any())
+                    {
+                        foreach (var shippingOption in getShippingOptionResponse.ShippingOptions)
+                        {
+                            var soModel = new EstimateShippingResultModel.ShippingOptionModel
+                            {
+                                Name = shippingOption.Name,
+                                Description = shippingOption.Description,
+
+                            };
+                            //calculate discounted and taxed rate
+                            List<Discount> appliedDiscounts = null;
+                            decimal shippingTotal = _orderTotalCalculationService.AdjustShippingRate(shippingOption.Rate,
+                                cart, out appliedDiscounts);
+
+                            if (_promoSettings.Enabled)
+                                _promoService.ProcessShoppingCart(shippingOption);
+
+                            BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
+
+                            if (basketResponse != null && basketResponse.Summary != null && basketResponse.Summary.ProcessingResult)
+                            {
+                                var deliveryPromo = basketResponse.DeliveryPromo();
+                                if (deliveryPromo != null)
+                                    shippingTotal = basketResponse.DeliveryPrice;
+                            }
+
+                            decimal rateBase = _taxService.GetShippingPrice(shippingTotal, _workContext.CurrentCustomer);
+                            decimal rate = _currencyService.ConvertFromPrimaryStoreCurrency(rateBase, _workContext.WorkingCurrency);
+                            soModel.Price = _priceFormatter.FormatShippingPrice(rate, true);
+                            model.ShippingOptions.Add(soModel);
+                        }
+                    }
+                }
+                else
+                    foreach (var error in getShippingOptionResponse.Errors)
+                        model.Warnings.Add(error);
+
+                if (_shippingSettings.AllowPickUpInStore)
+                {
+                    var pickupPointsResponse = _shippingService.GetPickupPoints(address, null, _storeContext.CurrentStore.Id);
+                    if (pickupPointsResponse.Success)
+                    {
+                        if (pickupPointsResponse.PickupPoints.Any())
+                        {
+                            var soModel = new EstimateShippingResultModel.ShippingOptionModel
+                            {
+                                Name = _localizationService.GetResource("Checkout.PickupPoints"),
+                                Description = _localizationService.GetResource("Checkout.PickupPoints.Description"),
+                            };
+                            var pickupFee = pickupPointsResponse.PickupPoints.Min(x => x.PickupFee);
+                            if (pickupFee > 0)
+                            {
+                                pickupFee = _taxService.GetShippingPrice(pickupFee, _workContext.CurrentCustomer);
+                                pickupFee = _currencyService.ConvertFromPrimaryStoreCurrency(pickupFee, _workContext.WorkingCurrency);
+                            }
+                            soModel.Price = _priceFormatter.FormatShippingPrice(pickupFee, true);
+                            model.ShippingOptions.Add(soModel);
+                        }
+                    }
+                    else
+                        foreach (var error in pickupPointsResponse.Errors)
+                            model.Warnings.Add(error);
+                }
+
+            }
+
+            return PartialView("_EstimateShippingResult", model);
+        }
+
         #endregion
     }
 }

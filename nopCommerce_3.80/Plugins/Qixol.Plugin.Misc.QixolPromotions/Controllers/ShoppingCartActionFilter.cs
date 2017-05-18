@@ -30,12 +30,18 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
 {
     public class ShoppingCartActionFilter : ActionFilterAttribute, IFilterProvider
     {
+        private readonly List<string> _actionNames = new List<string>()
+        {
+            "cart",
+            "ordersummary",
+            "getestimateshipping"
+        };
+
         public IEnumerable<Filter> GetFilters(ControllerContext controllerContext, ActionDescriptor actionDescriptor)
         {
             if (controllerContext.Controller is global::Nop.Web.Controllers.ShoppingCartController)
             {
-                if (actionDescriptor.ActionName.Equals("cart", StringComparison.InvariantCultureIgnoreCase) ||
-                    actionDescriptor.ActionName.Equals("ordersummary", StringComparison.InvariantCultureIgnoreCase))
+                if (_actionNames.Contains(actionDescriptor.ActionName, StringComparer.InvariantCultureIgnoreCase))
                 {
                     return new List<Filter>() { new Filter(this, FilterScope.Action, 0) };
                 }
@@ -69,6 +75,43 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
 
             if (filterContext.Controller is global::Nop.Web.Controllers.ShoppingCartController)
             {
+                if (actionName.Equals("getestimateshipping", StringComparison.InvariantCultureIgnoreCase))
+                {
+
+                    int? countryId = null;
+                    int? stateProvinceId = null;
+                    string zipPostalCode = string.Empty;
+                    FormCollection form = new FormCollection();
+
+                    if ((filterContext.ActionParameters.Count > 0) && (filterContext.ActionParameters["form"] != null))
+                    {
+                        form = (FormCollection) filterContext.ActionParameters["form"];
+                        if (form.AllKeys.Contains("CountryId"))
+                        {
+                            int c;
+                            if (int.TryParse(form["CountryId"], out c))
+                            {
+                                countryId = c;
+                            }
+                        }
+                        if (form.AllKeys.Contains("StateProvinceId"))
+                        {
+                            int sp;
+                            if (int.TryParse(form["StateProvinceId"].ToString(), out sp))
+                            {
+                                stateProvinceId = sp;
+                            }
+                        }
+                        if (form.AllKeys.Contains("ZipPostalCode"))
+                        {
+                            zipPostalCode = form["ZipPostalCode"].ToString();
+                        }
+                    }
+                    var promoShoppingCartController = EngineContext.Current.Resolve<Qixol.Plugin.Misc.Promo.Controllers.ShoppingCartController>();
+
+                    filterContext.Result = promoShoppingCartController.PromoGetEstimateShipping(countryId, stateProvinceId, zipPostalCode, form);
+                }
+
                 if (actionName.Equals("ordersummary", StringComparison.InvariantCultureIgnoreCase))
                 {
                     bool prepareAndDisplayOrderReviewData = false;
@@ -89,7 +132,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
 
                     if ((filterContext.ActionParameters.Count > 0) && (filterContext.ActionParameters["form"] != null))
                     {
-                        var form = (FormCollection)filterContext.ActionParameters["form"];
+                        var form = (FormCollection) filterContext.ActionParameters["form"];
 
                         if (form.AllKeys.Contains("applydiscountcouponcode"))
                         {
