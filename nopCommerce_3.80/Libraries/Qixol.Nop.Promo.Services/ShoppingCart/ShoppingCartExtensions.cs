@@ -81,9 +81,6 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
             #region remove any items added by promo engine
             // remove any items added by promo engine that were NOT split from the original basket
 
-            // get the selectedShippingOption - if it's not null will need to save this after removing products from the cart
-            ShippingOption selectedShippingOption = _workContext.CurrentCustomer.GetAttribute<ShippingOption>(SystemCustomerAttributeNames.SelectedShippingOption, _storeContext.CurrentStore.Id);
-
             if (basketResponse != null && basketResponse.Items != null)
             {
                 var generatedItems = (from bri in basketResponse.Items where bri.SplitFromLineId == 0 && bri.Generated && !bri.IsDelivery select bri).ToList();
@@ -113,17 +110,20 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
                         {
                             int generatedItemQuantity = Decimal.ToInt32(generatedItem.Quantity);
                             int newQuantity = addedItem.Quantity - generatedItemQuantity;
-                            _shoppingCartService.UpdateShoppingCartItem(_workContext.CurrentCustomer, addedItem.Id, addedItem.AttributesXml,
-                                addedItem.CustomerEnteredPrice, addedItem.RentalStartDateUtc, addedItem.RentalEndDateUtc, newQuantity, false);
+                            _shoppingCartService.UpdateShoppingCartItem(customer: _workContext.CurrentCustomer,
+                                shoppingCartItemId: addedItem.Id,
+                                attributesXml: addedItem.AttributesXml,
+                                customerEnteredPrice: addedItem.CustomerEnteredPrice,
+                                rentalStartDate: addedItem.RentalStartDateUtc,
+                                rentalEndDate: addedItem.RentalEndDateUtc,
+                                quantity: newQuantity,
+                                resetCheckoutData: false);
                         }
                     }
                 }
             }
 
             cart = customer.ShoppingCartItems.ToList();
-
-            if (selectedShippingOption != null)
-                _genericAttributeService.SaveAttribute<ShippingOption>(_workContext.CurrentCustomer, SystemCustomerAttributeNames.SelectedShippingOption, selectedShippingOption, _storeContext.CurrentStore.Id);
 
             #endregion
 
@@ -397,15 +397,19 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
             var promoPlugin = _pluginFinder.GetPluginDescriptorBySystemName("Misc.QixolPromo");
             basketRequest.AddCustomAttribute("integrationsource", string.Format("nopCommerce - plugin v{0}", promoPlugin.Version));
 
-            string basketRequestString = basketRequest.ToXml();
-
-            _genericAttributeService.SaveAttribute<string>(customer, PromoCustomerAttributeNames.PromoBasketRequest, basketRequestString, _storeContext.CurrentStore.Id);
-
             #endregion
 
             #region shipping
 
+            ShippingOption selectedShippingOption = _workContext.CurrentCustomer.GetAttribute<ShippingOption>(SystemCustomerAttributeNames.SelectedShippingOption, _storeContext.CurrentStore.Id);
             basketRequest = basketRequest.SetShipping(cart, selectedShippingOption);
+
+            #endregion
+
+            #region save request
+
+            string basketRequestString = basketRequest.ToXml();
+            _genericAttributeService.SaveAttribute<string>(customer, PromoCustomerAttributeNames.PromoBasketRequest, basketRequestString, _storeContext.CurrentStore.Id);
 
             #endregion
 
