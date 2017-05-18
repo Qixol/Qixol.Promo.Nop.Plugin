@@ -82,7 +82,7 @@
        </div>
        }     
        @*we add enctype = "multipart/form-data" because "File upload" attribute control type requires it*@
-       using (Html.BeginRouteForm("ShoppingCart", FormMethod.Post, new { enctype = "multipart/form-data" }))
+       using (Html.BeginRouteForm("ShoppingCart", FormMethod.Post, new { enctype = "multipart/form-data", id = "shopping-cart-form" }))
        {
            @Html.AntiForgeryToken()
        <div class="table-wrapper">
@@ -337,7 +337,6 @@
                                });
                            </script>
                         <button type="submit" id="checkout" name="checkout" value="checkout" class="button-1 checkout-button">
-                            @*<button type="submit" id="missed-promotions" name="missed-promotions" value="missed-promotions" class="button-1 checkout-button">*@
                                 @T("Checkout.Button")
                             </button>
                             }
