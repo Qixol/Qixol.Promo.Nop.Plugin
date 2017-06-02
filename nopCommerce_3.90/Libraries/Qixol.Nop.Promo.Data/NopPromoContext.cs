@@ -29,7 +29,6 @@ namespace Qixol.Nop.Promo.Data.Mapping
             modelBuilder.Configurations.Add(new PromoBannerMap());
             modelBuilder.Configurations.Add(new PromoBannerPictureMap());
             modelBuilder.Configurations.Add(new PromoBannerWidgetZoneMap());
-            modelBuilder.Configurations.Add(new PromoIssuedCouponMap());
 
             modelBuilder.Configurations.Add(new PromoOrderMap());
             modelBuilder.Configurations.Add(new PromoOrderItemMap());
@@ -78,7 +77,6 @@ namespace Qixol.Nop.Promo.Data.Mapping
             CheckAndDropTable(PromoBannerMap.TABLENAME);
             CheckAndDropTable(PromoBannerPictureMap.TABLENAME);
             CheckAndDropTable(PromoBannerWidgetZoneMap.TABLENAME);
-            CheckAndDropTable(PromoIssuedCouponMap.TABLENAME);
 
             CheckAndDropTable(PromoOrderCouponMap.TABLENAME);
             CheckAndDropTable(PromoOrderItemPromotionMap.TABLENAME);

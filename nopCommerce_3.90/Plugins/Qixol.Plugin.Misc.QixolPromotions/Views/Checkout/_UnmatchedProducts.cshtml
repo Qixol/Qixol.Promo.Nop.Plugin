@@ -1,0 +1,27 @@
+﻿@model List<PromoProductOverviewModel>
+@using Nop.Web.Models.Checkout;
+
+@if (Model != null && Model.Any())
+{
+    <div class="item-box" style="width: 100%;">
+        <table class="missed-promotion">
+            <colgroup>
+                <col style="width: 100px;" />
+                <col />
+            </colgroup>
+            <thead>
+                <tr>
+                    <th class="product-picture">
+                        @T("ShoppingCart.Image")
+                    </th>
+                    <th class="product">
+                        @T("Plugins.Misc.QixolPromo.Product(s)")
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                @Html.DisplayFor(m => Model)
+            </tbody>
+        </table>
+    </div>
+}

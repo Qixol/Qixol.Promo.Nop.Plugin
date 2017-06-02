@@ -1,0 +1,104 @@
+﻿@model PromoWidgetModel
+@using Qixol.Plugin.Misc.Promo.Models.Shared;
+@using Newtonsoft.Json;
+@using global::Nop.Core;
+@using global::Nop.Core.Infrastructure;
+@using global::Nop.Web.Framework.Themes;
+
+@{
+    var webHelper = EngineContext.Current.Resolve<IWebHelper>();
+    var themeName = EngineContext.Current.Resolve<IThemeContext>().WorkingThemeName;
+
+    Html.AppendCssFileParts(ResourceLocation.Head, string.Format("~/Plugins/Misc.QixolPromo/Themes/{0}/Content/css/styles.css", themeName));
+
+    // NOTE: Use jQuery to append the script because nopCommerce does not append the scripts in print layout
+    //Html.AppendScriptParts(ResourceLocation.Head, "~/Plugins/Misc.QixolPromo/Scripts/promo.orderdetails.widget.js");
+
+    var promoOrderDetailsWidgetUrl = Url.Content("~/Plugins/Misc.QixolPromo/Scripts/promo.orderdetails.widget.js");
+    var promoOrderDetailsWidgetScript = string.Format("<script type='text/javascript' src='{0}' />", promoOrderDetailsWidgetUrl);
+
+    JsonSerializerSettings jsSettings = new JsonSerializerSettings()
+    {
+        StringEscapeHandling = StringEscapeHandling.EscapeHtml
+    };
+}
+
+<script type="text/javascript">
+
+    $("head").append("@Html.Raw(promoOrderDetailsWidgetScript)");
+
+    $(document).ready(function () {
+        PromoOrderDetailsWidget.init(@Html.Raw(JsonConvert.SerializeObject(Model)), '@T("Plugin.Misc.QixolPromo.Coupon.YouWillReceive")', '@T("Plugin.Misc.QixolPromo.Coupon.YouReceived")');
+        PromoOrderDetailsWidget.render();
+    });
+
+</script>
+
+<script id="sub-total-template" type="text/q-promo-template">
+    <tr class="order-subtotal-discount" data-promotion-id="#=promotionId#">
+        <td class="cart-total-left">
+            <span class="nobr">
+                <div class="truncate-140 sub-total-discount-name">tbc-promo-name</div> :
+            </span>
+        </td>
+        <td class="cart-total-right">
+            <span class="value-summary sub-total-discount-amount">tbc-promo-amount</span>
+        </td>
+    </tr>
+</script>
+
+<script id="shipping-template" type="text/q-promo-template">
+    <tr class="shipping-discount" data-promotion-id="#=promotionId#">
+        <td class="cart-total-left">
+            <span class="nobr">
+                <div class="truncate-140 sub-total-discount-name">tbc-promo-name</div> :
+            </span>
+        </td>
+        <td class="cart-total-right">
+            <span class="value-summary sub-total-discount-amount">tbc-promo-amount</span>
+        </td>
+    </tr>
+</script>
+
+<script id="issued-coupons-template" type="text/q-promo-template">
+    <tr class="cart-issued-coupons" style="display: none;"></tr>
+</script>
+
+<script id="issued-coupon-template" type="text/q-promo-template">
+    <div style="display: table-row;">
+        <div class="coupon-message" style="display: table-cell;">
+            @T("Plugin.Misc.QixolPromo.Coupon.YouReceived")
+            @*@T("Plugin.Misc.QixolPromo.Coupon.YouWillReceive")*@
+        </div>
+        <div class="coupon-display-text" style="display: table-cell;">
+            #=coupon-display-text#
+        </div>
+        <div class="coupon-code" style="display: table-cell;">
+            @*@if (issuedCoupon.IsConfirmed && !string.IsNullOrEmpty(issuedCoupon.Code))*@
+            <span class="nobr">@T("Plugin.Misc.QixolPromo.Coupon.Code"): </span>
+            <span class="coupon-item">#=coupon-code#</span>
+        </div>
+    </div>
+</script>
+
+<script id="issued-points-template" type="text/q-promo-template">
+    <tr class="earn-reward-points">
+        <td class="cart-total-left">
+            <label>@T("ShoppingCart.Totals.RewardPoints.WillEarn"):</label>
+        </td>
+        <td class="cart-total-right">
+            <span class="value-summary">#=IssuedPoints#</span>
+        </td>
+    </tr>
+</script>
+
+<script id="basket-total-discount" type="text/q-promo-template">
+    <tr class="basket-total-discount">
+        <td class="cart-total-left">
+            <label>@T("Plugins.Misc.QixolPromo.BasketTotalDiscountDescription"):</label>
+        </td>
+        <td class="cart-total-right">
+            <span class="value-summary">#=BasketTotalDiscount#</span>
+        </td>
+    </tr>
+</script>

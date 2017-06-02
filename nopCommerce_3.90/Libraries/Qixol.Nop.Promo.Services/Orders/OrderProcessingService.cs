@@ -227,6 +227,7 @@ namespace Qixol.Nop.Promo.Services.Orders
             this._rewardPointService = rewardPointService;
             this._genericAttributeService = genericAttributeService;
             this._countryService = countryService;
+            this._stateProvinceService = stateProvinceService;
 
             this._paymentSettings = paymentSettings;
             this._shippingSettings = shippingSettings;

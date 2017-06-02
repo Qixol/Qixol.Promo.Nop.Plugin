@@ -15,21 +15,17 @@ namespace Qixol.Nop.Promo.Services.Orders
     {
         private int CalculateRewardPoints(Order order)
         {
-            var attributes = _genericAttributeService.GetAttributesForEntity(order.Id, "Order");
-
-            if (attributes == null)
+            if (order == null)
                 return 0;
 
-            var basketResponseAttribute = (from a in attributes where string.Compare(a.Key, PromoCustomerAttributeNames.PromoBasketResponse, StringComparison.InvariantCultureIgnoreCase) == 0 select a).FirstOrDefault();
+            var promoOrder = _promoOrderService.GetPromoOrderByOrderId(order.Id);
 
-            if (basketResponseAttribute == null || string.IsNullOrEmpty(basketResponseAttribute.Value))
+            if (promoOrder == null)
                 return 0;
 
-            BasketResponse basketResponse = BasketResponse.FromXml(basketResponseAttribute.Value);
-            if (basketResponse == null)
-                return 0;
+            var basketResponse = BasketResponse.FromXml(promoOrder.ResponseXml);
 
-            return Convert.ToInt32(basketResponse.TotalIssuedPoints);
+            return (int)basketResponse.TotalIssuedPoints;
         }
 
         private BasketResponse PromoSaveOrderDetails(Order order)
@@ -50,6 +46,7 @@ namespace Qixol.Nop.Promo.Services.Orders
                     RequestXml = _workContext.CurrentCustomer.GetAttribute<string>(PromoCustomerAttributeNames.PromoBasketRequest, _genericAttributeService, _storeContext.CurrentStore.Id),
                     ResponseXml = basketResponse.ToXml(),
                     OrderId = order.Id,
+                    CustomerId = order.CustomerId,
                     DeliveryOriginalPrice = basketResponse.DeliveryOriginalPrice
                 };
 
@@ -108,7 +105,6 @@ namespace Qixol.Nop.Promo.Services.Orders
                             BasketLevel = ap.BasketLevelPromotion,
                             DeliveryLevel = ap.DeliveryLevelPromotion,
                             DiscountAmount = ap.DiscountAmount,
-                            ForLineId = ap.AssociatedLine,
                             Instance = ap.InstanceId,
                             PointsIssued = ap.PointsIssued,
                             PromotionId = ap.PromotionId,

@@ -10,6 +10,11 @@
 
     $(document).ready(function () {
 
+        $('input[type="checkbox"][id!="SynchronizeAllWhenSaving"]').click(function () {
+            alert('The synchronization to Qixol Promo will run when this change is saved');
+            $('#SynchronizeAllWhenSaving').prop('checked', true);
+        });
+
         bindBootstrapTabSelectEvent('qixolpromotionsbase-configure');
 
         @{

@@ -151,23 +151,26 @@ namespace Qixol.Nop.Promo.Services.Orders
             if (basketResponse == null)
                 return discountAmount;
 
-            if (!basketResponse.BasketLevelDiscountIncludesDeliveryAmount())
+            var currentDiscountAmount = decimal.Zero;
+            var currentAppliedDiscounts = new List<DiscountForCaching>();
+            var basketLevelPromos = basketResponse.BasketLevelPromotions();
+            if (basketLevelPromos != null)
             {
-                var basketLevelPromo = basketResponse.BasketLevelPromotion();
-                if (basketLevelPromo != null)
-                {
-                    discountAmount = basketLevelPromo.DiscountAmount;
-                    DiscountForCaching appliedDiscount = new DiscountForCaching()
+                basketLevelPromos.ForEach(basketLevelPromo =>
                     {
-                        Name = basketResponse.BasketLevelPromotion().PromotionName,
-                        DiscountAmount = discountAmount
-                    };
-                    appliedDiscounts.Add(appliedDiscount);
-                }
+                        discountAmount = basketLevelPromo.DiscountAmount;
+                        DiscountForCaching appliedDiscount = new DiscountForCaching()
+                        {
+                            Name = basketLevelPromo.PromotionName,
+                            DiscountAmount = basketLevelPromo.DiscountAmount
+                        };
+                        currentDiscountAmount += basketLevelPromo.DiscountAmount;
+                        currentAppliedDiscounts.Add(appliedDiscount);
+                    });
             }
 
-            if (discountAmount < decimal.Zero)
-                discountAmount = decimal.Zero;
+            appliedDiscounts.AddRange(currentAppliedDiscounts);
+            discountAmount = currentDiscountAmount;
 
             return discountAmount;
         }
@@ -187,56 +190,66 @@ namespace Qixol.Nop.Promo.Services.Orders
             appliedDiscounts = new List<DiscountForCaching>();
 
             BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
-            var discountAmount = basketResponse.DeliveryPromoDiscount();
-            if (discountAmount != decimal.Zero)
-            {
-                DiscountForCaching appliedDiscount = new DiscountForCaching()
-                {
-                    Name = basketResponse.DeliveryPromoName(),
-                    DiscountAmount = discountAmount
-                };
-                appliedDiscounts.Add(appliedDiscount);
-            }
+            var deliveryPromos = basketResponse.DeliveryPromos();
+            var currentAppliedDiscounts = new List<DiscountForCaching>();
+            var currentDiscountAmount = decimal.Zero;
 
-            return discountAmount;
+            deliveryPromos.ToList().ForEach(dp =>
+            {
+                var discountAmount = dp.DiscountAmount;
+                if (discountAmount != decimal.Zero)
+                {
+                    DiscountForCaching appliedDiscount = new DiscountForCaching()
+                    {
+                        Name = dp.DisplayDetails(),
+                        DiscountAmount = discountAmount
+                    };
+                    currentAppliedDiscounts.Add(appliedDiscount);
+                    currentDiscountAmount += appliedDiscount.DiscountAmount;
+                }
+            });
+
+            appliedDiscounts.AddRange(currentAppliedDiscounts);
+
+            return currentDiscountAmount;
         }
 
-        /// <summary>
-        /// Gets an order discount (applied to order total)
-        /// </summary>
-        /// <param name="customer">Customer</param>
-        /// <param name="orderTotal">Order total</param>
-        /// <param name="appliedDiscounts">Applied discounts</param>
-        /// <returns>Order discount</returns>
-        protected override decimal GetOrderTotalDiscount(Customer customer, decimal orderTotal, out List<DiscountForCaching> appliedDiscounts)
-        {
-            if (!_rewardPointsSettings.Enabled)
-                return base.GetOrderTotalDiscount(customer, orderTotal, out appliedDiscounts);
+        ///// <summary>
+        ///// Gets an order discount (applied to order total)
+        ///// </summary>
+        ///// <param name="customer">Customer</param>
+        ///// <param name="orderTotal">Order total</param>
+        ///// <param name="appliedDiscounts">Applied discounts</param>
+        ///// <returns>Order discount</returns>
+        //protected override decimal GetOrderTotalDiscount(Customer customer, decimal orderTotal, out List<DiscountForCaching> appliedDiscounts)
+        //{
+        //    if (!_rewardPointsSettings.Enabled)
+        //        return base.GetOrderTotalDiscount(customer, orderTotal, out appliedDiscounts);
 
-            BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
+        //    BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
 
-            appliedDiscounts = new List<DiscountForCaching>();
-            decimal discountAmount = decimal.Zero;
+        //    appliedDiscounts = new List<DiscountForCaching>();
+        //    decimal discountAmount = decimal.Zero;
 
-            if (basketResponse == null)
-                return discountAmount;
+        //    if (basketResponse == null)
+        //        return discountAmount;
 
-            if (basketResponse.BasketLevelDiscountIncludesDeliveryAmount())
-            {
-                discountAmount = basketResponse.BasketLevelPromotion().DiscountAmount;
-                DiscountForCaching appliedDiscount = new DiscountForCaching()
-                {
-                    Name = basketResponse.BasketLevelPromotion().PromotionName,
-                    DiscountAmount = discountAmount
-                };
-                appliedDiscounts.Add(appliedDiscount);
-            }
+        //    if (basketResponse.BasketLevelDiscountIncludesDeliveryAmount())
+        //    {
+        //        discountAmount = basketResponse.BasketLevelPromotion().DiscountAmount;
+        //        DiscountForCaching appliedDiscount = new DiscountForCaching()
+        //        {
+        //            Name = basketResponse.BasketLevelPromotion().PromotionName,
+        //            DiscountAmount = discountAmount
+        //        };
+        //        appliedDiscounts.Add(appliedDiscount);
+        //    }
 
-            if (discountAmount < decimal.Zero)
-                discountAmount = decimal.Zero;
+        //    if (discountAmount < decimal.Zero)
+        //        discountAmount = decimal.Zero;
 
-            return discountAmount;
-        }
+        //    return discountAmount;
+        //}
 
         #endregion
 
@@ -257,7 +270,7 @@ namespace Qixol.Nop.Promo.Services.Orders
             out decimal subTotalWithoutDiscount, out decimal subTotalWithDiscount)
         {
             SortedDictionary<decimal, decimal> taxRates;
-            GetShoppingCartSubTotal(cart, includingTax, 
+            GetShoppingCartSubTotal(cart, includingTax,
                 out discountAmount, out appliedDiscounts,
                 out subTotalWithoutDiscount, out subTotalWithDiscount, out taxRates);
         }
@@ -303,7 +316,7 @@ namespace Qixol.Nop.Promo.Services.Orders
 
             //get the customer 
             Customer customer = cart.GetCustomer();
-            
+
             //sub totals
             decimal subTotalExclTaxWithoutDiscount = decimal.Zero;
             decimal subTotalInclTaxWithoutDiscount = decimal.Zero;
@@ -316,7 +329,7 @@ namespace Qixol.Nop.Promo.Services.Orders
                 decimal sciInclTax = _taxService.GetProductPrice(shoppingCartItem.Product, sciSubTotal, true, customer, out taxRate);
                 subTotalExclTaxWithoutDiscount += sciExclTax;
                 subTotalInclTaxWithoutDiscount += sciInclTax;
-                
+
                 //tax rates
                 decimal sciTax = sciInclTax - sciExclTax;
                 if (taxRate > decimal.Zero && sciTax > decimal.Zero)
@@ -569,20 +582,20 @@ namespace Qixol.Nop.Promo.Services.Orders
 
             shippingTotal = basketResponse.DeliveryPrice;
 
-            if ((basketResponse.DeliveryPromotionDiscount > Decimal.Zero))
-            {
-                if (basketResponse.BasketLevelDiscountIncludesDeliveryAmount())
-                {
-                    shippingTotal = basketResponse.DeliveryOriginalPrice;
-                }
-                else
-                {
-                    DiscountForCaching appliedDiscount = new DiscountForCaching();
-                    appliedDiscount.DiscountAmount = basketResponse.DeliveryPromotionDiscount;
-                    appliedDiscount.Name = basketResponse.DeliveryPromo().PromotionName;
-                    appliedDiscounts.Add(appliedDiscount);
-                }
-            }
+            //if ((basketResponse.DeliveryPromotionDiscount > Decimal.Zero))
+            //{
+            //    if (basketResponse.BasketLevelDiscountIncludesDeliveryAmount())
+            //    {
+            //        shippingTotal = basketResponse.DeliveryOriginalPrice;
+            //    }
+            //    else
+            //    {
+            //        DiscountForCaching appliedDiscount = new DiscountForCaching();
+            //        appliedDiscount.DiscountAmount = basketResponse.DeliveryPromotionDiscount;
+            //        appliedDiscount.Name = basketResponse.DeliveryPromo().PromotionName;
+            //        appliedDiscounts.Add(appliedDiscount);
+            //    }
+            //}
 
             #endregion
 
@@ -797,16 +810,16 @@ namespace Qixol.Nop.Promo.Services.Orders
                     return null;
             }
 
-            discountAmount = basketResponse.OrderDiscountTotal();
-            if (discountAmount > 0)
-            {
-                DiscountForCaching appliedDiscount = new DiscountForCaching()
-                {
-                    Name = basketResponse.BasketLevelPromotion().PromotionName,
-                    DiscountAmount = discountAmount
-                };
-                appliedDiscounts.Add(appliedDiscount);
-            }
+            discountAmount = decimal.Zero; //basketResponse.OrderDiscountTotal();
+            //if (discountAmount > 0)
+            //{
+            //    DiscountForCaching appliedDiscount = new DiscountForCaching()
+            //    {
+            //        Name = basketResponse.BasketLevelPromotion().PromotionName,
+            //        DiscountAmount = discountAmount
+            //    };
+            //    appliedDiscounts.Add(appliedDiscount);
+            //}
 
             decimal tax = GetTaxTotal(cart);
 

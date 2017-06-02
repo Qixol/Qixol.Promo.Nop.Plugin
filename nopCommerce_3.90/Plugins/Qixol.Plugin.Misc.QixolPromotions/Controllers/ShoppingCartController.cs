@@ -49,6 +49,7 @@ using Nop.Web.Models.Catalog;
 using Qixol.Promo.Integration.Lib.Basket;
 using Nop.Web.Factories;
 using Nop.Services.Shipping.Date;
+using Qixol.Plugin.Misc.Promo.Factories;
 
 namespace Qixol.Plugin.Misc.Promo.Controllers
 {
@@ -57,41 +58,41 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
         #region Fields
 
         private readonly IShoppingCartModelFactory _shoppingCartModelFactory;
-        private readonly IProductService _productService;
+        //private readonly IProductService _productService;
         private readonly IWorkContext _workContext;
         private readonly IStoreContext _storeContext;
-        private readonly IShoppingCartService _shoppingCartService;
-        private readonly IPictureService _pictureService;
-        private readonly ILocalizationService _localizationService;
-        private readonly IProductAttributeService _productAttributeService;
-        private readonly IProductAttributeParser _productAttributeParser;
-        private readonly ITaxService _taxService;
-        private readonly ICurrencyService _currencyService;
-        private readonly IPriceCalculationService _priceCalculationService;
-        private readonly IPromosPriceCalculationService _promosPriceCalculationService;
-        private readonly IPriceFormatter _priceFormatter;
-        private readonly ICheckoutAttributeParser _checkoutAttributeParser;
-        private readonly IDiscountService _discountService;
-        private readonly ICustomerService _customerService;
-        private readonly IGiftCardService _giftCardService;
-        private readonly ICheckoutAttributeService _checkoutAttributeService;
-        private readonly IWorkflowMessageService _workflowMessageService;
+        //private readonly IShoppingCartService _shoppingCartService;
+        //private readonly IPictureService _pictureService;
+        //private readonly ILocalizationService _localizationService;
+        //private readonly IProductAttributeService _productAttributeService;
+        //private readonly IProductAttributeParser _productAttributeParser;
+        //private readonly ITaxService _taxService;
+        //private readonly ICurrencyService _currencyService;
+        //private readonly IPriceCalculationService _priceCalculationService;
+        //private readonly IPromosPriceCalculationService _promosPriceCalculationService;
+        //private readonly IPriceFormatter _priceFormatter;
+        //private readonly ICheckoutAttributeParser _checkoutAttributeParser;
+        //private readonly IDiscountService _discountService;
+        //private readonly ICustomerService _customerService;
+        //private readonly IGiftCardService _giftCardService;
+        //private readonly ICheckoutAttributeService _checkoutAttributeService;
+        //private readonly IWorkflowMessageService _workflowMessageService;
         private readonly IPermissionService _permissionService;
-        private readonly IDownloadService _downloadService;
-        private readonly ICacheManager _cacheManager;
-        private readonly IWebHelper _webHelper;
-        private readonly ICustomerActivityService _customerActivityService;
-        private readonly IGenericAttributeService _genericAttributeService;
+        //private readonly IDownloadService _downloadService;
+        //private readonly ICacheManager _cacheManager;
+        //private readonly IWebHelper _webHelper;
+        //private readonly ICustomerActivityService _customerActivityService;
+        //private readonly IGenericAttributeService _genericAttributeService;
 
-        private readonly MediaSettings _mediaSettings;
-        private readonly ShoppingCartSettings _shoppingCartSettings;
-        private readonly CatalogSettings _catalogSettings;
-        private readonly OrderSettings _orderSettings;
-        private readonly CaptchaSettings _captchaSettings;
+        //private readonly MediaSettings _mediaSettings;
+        //private readonly ShoppingCartSettings _shoppingCartSettings;
+        //private readonly CatalogSettings _catalogSettings;
+        //private readonly OrderSettings _orderSettings;
+        //private readonly CaptchaSettings _captchaSettings;
 
-        private readonly PromoSettings _promoSettings;
-        private readonly IPromoService _promoService;
-        private readonly IPromoUtilities _promoUtilities;
+        //private readonly PromoSettings _promoSettings;
+        //private readonly IPromoService _promoService;
+        //private readonly IPromoUtilities _promoUtilities;
 
         #endregion
 
@@ -148,41 +149,42 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                     orderSettings, 
                     captchaSettings, customerSettings)
         {
-            this._productService = productService;
+            this._shoppingCartModelFactory = shoppingCartModelFactory;
+            //this._productService = productService;
             this._workContext = workContext;
             this._storeContext = storeContext;
-            this._shoppingCartService = shoppingCartService;
-            this._pictureService = pictureService;
-            this._localizationService = localizationService;
-            this._productAttributeService = productAttributeService;
-            this._productAttributeParser = productAttributeParser;
-            this._taxService = taxService;
-            this._currencyService = currencyService;
-            this._priceCalculationService = priceCalculationService;
-            this._promosPriceCalculationService = promosPriceCalculationService;
-            this._priceFormatter = priceFormatter;
-            this._checkoutAttributeParser = checkoutAttributeParser;
-            this._discountService = discountService;
-            this._customerService = customerService;
-            this._giftCardService = giftCardService;
-            this._checkoutAttributeService = checkoutAttributeService;
-            this._workflowMessageService = workflowMessageService;
+            //this._shoppingCartService = shoppingCartService;
+            //this._pictureService = pictureService;
+            //this._localizationService = localizationService;
+            //this._productAttributeService = productAttributeService;
+            //this._productAttributeParser = productAttributeParser;
+            //this._taxService = taxService;
+            //this._currencyService = currencyService;
+            //this._priceCalculationService = priceCalculationService;
+            //this._promosPriceCalculationService = promosPriceCalculationService;
+            //this._priceFormatter = priceFormatter;
+            //this._checkoutAttributeParser = checkoutAttributeParser;
+            //this._discountService = discountService;
+            //this._customerService = customerService;
+            //this._giftCardService = giftCardService;
+            //this._checkoutAttributeService = checkoutAttributeService;
+            //this._workflowMessageService = workflowMessageService;
             this._permissionService = permissionService;
-            this._downloadService = downloadService;
-            this._cacheManager = cacheManager;
-            this._webHelper = webHelper;
-            this._customerActivityService = customerActivityService;
-            this._genericAttributeService = genericAttributeService;
+            //this._downloadService = downloadService;
+            //this._cacheManager = cacheManager;
+            //this._webHelper = webHelper;
+            //this._customerActivityService = customerActivityService;
+            //this._genericAttributeService = genericAttributeService;
 
-            this._mediaSettings = mediaSettings;
-            this._shoppingCartSettings = shoppingCartSettings;
-            this._catalogSettings = catalogSettings;
-            this._orderSettings = orderSettings;
-            this._captchaSettings = captchaSettings;
+            //this._mediaSettings = mediaSettings;
+            //this._shoppingCartSettings = shoppingCartSettings;
+            //this._catalogSettings = catalogSettings;
+            //this._orderSettings = orderSettings;
+            //this._captchaSettings = captchaSettings;
 
-            this._promoSettings = promoSettings;
-            this._promoService = promoService;
-            this._promoUtilities = promoUtilities;
+            //this._promoSettings = promoSettings;
+            //this._promoService = promoService;
+            //this._promoUtilities = promoUtilities;
         }
 
         internal void PromoParseAndSaveCheckoutAttributes(List<ShoppingCartItem> cart, FormCollection form)
@@ -192,13 +194,13 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
 
         #endregion
 
-        #region Shopping Cart
+        #region Utilities
 
-        [ChildActionOnly]
-        public ActionResult PromoOrderSummary(bool? prepareAndDisplayOrderReviewData)
-        {
-            return base.OrderSummary(prepareAndDisplayOrderReviewData);
-        }
+        // the Prepare..Model methods are now in the factories
+
+        #endregion
+
+        #region Shopping Cart
 
         #endregion
     }

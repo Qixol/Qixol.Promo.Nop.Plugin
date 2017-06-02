@@ -1,0 +1,42 @@
+﻿@model PromoEstimateShippingResultModel
+@using Qixol.Plugin.Misc.Promo.Models.ShoppingCart;
+@using global::Nop.Services.Localization;
+@{
+    var ILS = EngineContext.Current.Resolve<ILocalizationService>();
+}
+
+@if (Model.PromoShippingOptions.Count > 0)
+            {
+    <ul class="shipping-results">
+        @foreach (var shippingOption in Model.PromoShippingOptions)
+        {
+            <li class="shipping-option-item">
+                <strong class="option-name">
+                    @T("ShoppingCart.EstimateShipping.ShippingOptionWithRate", shippingOption.Name, shippingOption.Price)
+                </strong>
+                @if (shippingOption.Promotions.Count > 0)
+                {
+                    <text><span>@(string.Format(ILS.GetResource("ShoppingCart.ItemYouSave"), shippingOption.DiscountAmount))</span><br /></text>
+                    foreach (var promotion in shippingOption.Promotions)
+                    {
+                        <span>@promotion.PromotionName</span><br />
+                    }
+                }
+                <span class="option-description">
+                    @Html.Raw(shippingOption.Description)
+                </span>
+            </li>
+        }
+    </ul>
+}
+else if (Model.Warnings.Count > 0)
+{
+    <div class="message-error">
+        <ul>
+            @foreach (var error in Model.Warnings)
+            {
+                <li>@error</li>
+            }
+        </ul>
+    </div>
+}

@@ -7,7 +7,6 @@ using global::Nop.Core.Domain.Shipping;
 using global::Nop.Services.Catalog;
 using global::Nop.Services.Common;
 using global::Nop.Services.Directory;
-using global::Nop.Services.Discounts;
 using global::Nop.Services.Localization;
 using global::Nop.Services.Orders;
 using global::Nop.Services.Shipping;
@@ -29,6 +28,7 @@ using Qixol.Nop.Promo.Services.Orders;
 using Nop.Core.Domain.Common;
 using Nop.Core.Infrastructure;
 using Nop.Core.Plugins;
+using Qixol.Nop.Promo.Core.Domain;
 
 namespace Qixol.Nop.Promo.Services.ShoppingCart
 {
@@ -59,7 +59,6 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
             IShoppingCartService _shoppingCartService = EngineContext.Current.Resolve<IShoppingCartService>();
             IProductMappingService _productMappingService = EngineContext.Current.Resolve<IProductMappingService>();
             IAttributeValueService _attributeValueService = EngineContext.Current.Resolve<IAttributeValueService>();
-            IShippingService _shippingService = EngineContext.Current.Resolve<IShippingService>();
             ICheckoutAttributeParser _checkoutAttributeParser = EngineContext.Current.Resolve<ICheckoutAttributeParser>();
             ICheckoutAttributeService _checkoutAttributeService = EngineContext.Current.Resolve<ICheckoutAttributeService>();
             IGiftCardService _giftCardService = EngineContext.Current.Resolve<IGiftCardService>();
@@ -80,9 +79,6 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
 
             #region remove any items added by promo engine
             // remove any items added by promo engine that were NOT split from the original basket
-
-            // get the selectedShippingOption - if it's not null will need to save this after removing products from the cart
-            ShippingOption selectedShippingOption = _workContext.CurrentCustomer.GetAttribute<ShippingOption>(SystemCustomerAttributeNames.SelectedShippingOption, _storeContext.CurrentStore.Id);
 
             if (basketResponse != null && basketResponse.Items != null)
             {
@@ -113,17 +109,20 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
                         {
                             int generatedItemQuantity = Decimal.ToInt32(generatedItem.Quantity);
                             int newQuantity = addedItem.Quantity - generatedItemQuantity;
-                            _shoppingCartService.UpdateShoppingCartItem(_workContext.CurrentCustomer, addedItem.Id, addedItem.AttributesXml,
-                                addedItem.CustomerEnteredPrice, addedItem.RentalStartDateUtc, addedItem.RentalEndDateUtc, newQuantity, false);
+                            _shoppingCartService.UpdateShoppingCartItem(customer: _workContext.CurrentCustomer,
+                                shoppingCartItemId: addedItem.Id,
+                                attributesXml: addedItem.AttributesXml,
+                                customerEnteredPrice: addedItem.CustomerEnteredPrice,
+                                rentalStartDate: addedItem.RentalStartDateUtc,
+                                rentalEndDate: addedItem.RentalEndDateUtc,
+                                quantity: newQuantity,
+                                resetCheckoutData: false);
                         }
                     }
                 }
             }
 
             cart = customer.ShoppingCartItems.ToList();
-
-            if (selectedShippingOption != null)
-                _genericAttributeService.SaveAttribute<ShippingOption>(_workContext.CurrentCustomer, SystemCustomerAttributeNames.SelectedShippingOption, selectedShippingOption, _storeContext.CurrentStore.Id);
 
             #endregion
 
@@ -158,7 +157,7 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
                     Id = shoppingCartItem.Id,
                     Price = usePrice,
                     ProductCode = productCode,
-                    Quantity = (byte)shoppingCartItem.Quantity,
+                    Quantity = (byte) shoppingCartItem.Quantity,
                     VariantCode = variantCode
                 };
 
@@ -185,43 +184,6 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
                     Code = discountcouponcode,
                 };
                 coupons.Add(coupon);
-            }
-
-            #endregion
-
-            #region shipping
-
-            ShippingOption shippingOption = (selectedShippingOption != null ? selectedShippingOption :
-                GetDefaultShippingOption(_shippingService, _workContext, _storeContext, _countryService, _stateProvinceService, _genericAttributeService));
-            string shippingOptionName = (shippingOption != null ? shippingOption.Name : string.Empty);
-
-            string shippingIntegrationCode = shippingOptionName;
-
-            // Is there an Integration code for the specified shipping option?
-            IList<ShippingMethod> shippingMethods = _shippingService.GetAllShippingMethods();
-            var specifiedShippingMethod = (from sm in shippingMethods where sm.Name.Equals(shippingOptionName, StringComparison.InvariantCultureIgnoreCase) select sm).FirstOrDefault();
-            if (specifiedShippingMethod != null)
-            {
-                // TODO: why is there a namespace issue here?
-                Qixol.Nop.Promo.Core.Domain.AttributeValues.AttributeValueMappingItem integrationMappingItem = _attributeValueService.Retrieve(specifiedShippingMethod.Id, EntityAttributeName.DeliveryMethod);
-                if (integrationMappingItem != null && !string.IsNullOrEmpty(integrationMappingItem.Code))
-                    shippingIntegrationCode = integrationMappingItem.Code;
-            }
-
-            decimal deliveryPrice = 0M;
-            string deliveryMethod = string.Empty;
-
-            if (cart.RequiresShipping())
-            {
-                List<DiscountForCaching> appliedDiscounts;
-                deliveryPrice = _orderTotalCalculationService.AdjustShippingRate(selectedShippingOption != null ? selectedShippingOption.Rate : 0M, cart, out appliedDiscounts);
-
-                // DM Cope with baskets in current currency
-                if (_promoSettings.UseSelectedCurrencyWhenSubmittingBaskets && _workContext.WorkingCurrency.Rate != 1)
-                    deliveryPrice = _currencyService.ConvertFromPrimaryExchangeRateCurrency(deliveryPrice, _workContext.WorkingCurrency);
-
-                deliveryMethod = shippingIntegrationCode;
-                orderTotal += deliveryPrice;
             }
 
             #endregion
@@ -413,8 +375,8 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
                 StoreGroup = _promoSettings.StoreGroup,
                 Channel = _promoSettings.Channel,
                 CustomerGroup = customerGroupIntegrationCode,
-                DeliveryPrice = deliveryPrice,
-                DeliveryMethod = shippingIntegrationCode,
+                //DeliveryPrice = deliveryPrice,
+                //DeliveryMethod = shippingIntegrationCode,
                 Coupons = coupons.ToList(),
                 Items = items.ToList(),
                 //CustomAttributes = customAttributes,
@@ -434,8 +396,18 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
             var promoPlugin = _pluginFinder.GetPluginDescriptorBySystemName("Misc.QixolPromo");
             basketRequest.AddCustomAttribute("integrationsource", string.Format("nopCommerce - plugin v{0}", promoPlugin.Version));
 
-            string basketRequestString = basketRequest.ToXml();
+            #endregion
 
+            #region shipping
+
+            ShippingOption selectedShippingOption = _workContext.CurrentCustomer.GetAttribute<ShippingOption>(SystemCustomerAttributeNames.SelectedShippingOption, _storeContext.CurrentStore.Id);
+            basketRequest = basketRequest.SetShipping(cart, selectedShippingOption);
+
+            #endregion
+
+            #region save request
+
+            string basketRequestString = basketRequest.ToXml();
             _genericAttributeService.SaveAttribute<string>(customer, PromoCustomerAttributeNames.PromoBasketRequest, basketRequestString, _storeContext.CurrentStore.Id);
 
             #endregion
@@ -443,43 +415,224 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
             return basketRequest;
         }
 
-        private static ShippingOption GetDefaultShippingOption(
-            IShippingService shippingService,
-            IWorkContext workContext,
-            IStoreContext storeContext,
-            ICountryService countryService,
-            IStateProvinceService stateProvinceService,
-            IGenericAttributeService genericAttributeService)
-        {
-            // TODO: set these values in the config? - like EstimateShipping but default values are provided?
-            int countryId = 80; // UK
-            int? stateProvinceId = null;
-            string zipPostalCode = "SB2 8BW";
-            Address address = new Address
-            {
-                CountryId = countryId,
-                Country = countryService.GetCountryById(countryId),
-                StateProvinceId = stateProvinceId,
-                StateProvince = stateProvinceId.HasValue ? stateProvinceService.GetStateProvinceById(stateProvinceId.Value) : null,
-                ZipPostalCode = zipPostalCode,
-            };
 
-            if (workContext.CurrentCustomer.ShippingAddress != null)
+        public static List<BasketResponseAppliedPromotion> Promotions(this ShoppingCartItem shoppingCartItem)
+        {
+            var linePromotions = new List<BasketResponseAppliedPromotion>();
+
+            var basketResponseItems = MatchedResponseItems(shoppingCartItem);
+
+            if (!basketResponseItems.Any())
+                return linePromotions;
+
+            var promoUtilities = (IPromoUtilities) EngineContext.Current.Resolve<IPromoUtilities>();
+            var basketResponse = promoUtilities.GetBasketResponse();
+
+            foreach (var item in basketResponseItems)
             {
-                address = workContext.CurrentCustomer.ShippingAddress;
+                item.AppliedPromotions.ForEach(ap =>
+                {
+                    if ((!ap.BasketLevelPromotion && !ap.DeliveryLevelPromotion) && ap.DiscountAmount > decimal.Zero)
+                    {
+                        var existingPromo = (from lp in linePromotions where lp.PromotionId == ap.PromotionId select lp).FirstOrDefault();
+                        if (existingPromo != null)
+                        {
+                            existingPromo.DiscountAmount += ap.DiscountAmount;
+                        }
+                        else
+                        {
+                            linePromotions.Add(ap);
+                        }
+                    }
+                    else
+                    {
+                        // treat basket level free product promotions as line level
+                        if (ap.BasketLevelPromotion && (ap.DiscountAmount > decimal.Zero))
+                        {
+                            var summaryAppliedPromo = (from p in basketResponse.Summary.AppliedPromotions
+                                                       where p.PromotionId == ap.PromotionId && p.InstanceId == ap.InstanceId
+                                                       select p).FirstOrDefault();
+                            if (summaryAppliedPromo != null && summaryAppliedPromo.PromotionType.Equals(PromotionTypeName.FreeProduct, StringComparison.InvariantCultureIgnoreCase))
+                            {
+                                var existingPromo = (from lp in linePromotions where lp.PromotionId == ap.PromotionId select lp).FirstOrDefault();
+                                if (existingPromo != null)
+                                {
+                                    existingPromo.DiscountAmount += ap.DiscountAmount;
+                                }
+                                else
+                                {
+                                    linePromotions.Add(ap);
+                                }
+                            }
+                        }
+                    }
+                });
             }
 
-            List<ShoppingCartItem> cart = workContext.CurrentCustomer.ShoppingCartItems
-                .Where(sci => sci.ShoppingCartType == ShoppingCartType.ShoppingCart)
-                .LimitPerStore(storeContext.CurrentStore.Id)
-                .ToList();
+            return linePromotions;
+        }
 
-            GetShippingOptionResponse shippingOptionResponse = shippingService.GetShippingOptions(cart, address);
+        public static Decimal LineAmount(this ShoppingCartItem shoppingCartItem)
+        {
+            if (shoppingCartItem == null)
+                return decimal.Zero;
 
-            ShippingOption selectedShippingOption = shippingOptionResponse.ShippingOptions.FirstOrDefault();
-            genericAttributeService.SaveAttribute(workContext.CurrentCustomer, SystemCustomerAttributeNames.SelectedShippingOption, selectedShippingOption, storeContext.CurrentStore.Id);
+            var basketResponseItems = MatchedResponseItems(shoppingCartItem);
 
-            return selectedShippingOption;
+            if (!basketResponseItems.Any())
+                return decimal.Zero;
+
+            var promoUtilities = (IPromoUtilities) EngineContext.Current.Resolve<IPromoUtilities>();
+            var basketResponse = promoUtilities.GetBasketResponse();
+
+            if (!basketResponse.IsValid())
+                return decimal.Zero;
+
+            decimal lineTotal = decimal.Zero;
+
+            basketResponseItems.ForEach(bri =>
+            {
+                lineTotal += bri.LineAmount;
+
+                // convert Free Product at basket level into Free Product at line level
+                bri.AppliedPromotions.ForEach(ap =>
+                {
+                    if (ap.BasketLevelPromotion && ap.DiscountAmount > decimal.Zero)
+                    {
+                        basketResponse.Summary.AppliedPromotions.Where(p => p.PromotionId == ap.PromotionId && p.InstanceId == ap.InstanceId).ToList().ForEach(sap =>
+                        {
+                            if (sap.PromotionType.Equals(PromotionTypeName.FreeProduct, StringComparison.InvariantCultureIgnoreCase))
+                            {
+                                lineTotal -= ap.DiscountAmount;
+                            }
+                        });
+                    }
+                });
+            });
+
+
+            return lineTotal;
+        }
+
+        public static Decimal LineDiscountAmount(this ShoppingCartItem shoppingCartItem)
+        {
+            if (shoppingCartItem == null)
+                return decimal.Zero;
+
+            var basketResponseItems = MatchedResponseItems(shoppingCartItem);
+
+            if (!basketResponseItems.Any())
+                return decimal.Zero;
+
+            var promoUtilities = (IPromoUtilities) EngineContext.Current.Resolve<IPromoUtilities>();
+            var basketResponse = promoUtilities.GetBasketResponse();
+
+            if (!basketResponse.IsValid())
+                return decimal.Zero;
+
+            decimal lineTotalDiscount = decimal.Zero;
+
+            basketResponseItems.ForEach(bri =>
+            {
+                lineTotalDiscount += bri.LinePromotionDiscount;
+
+                // convert Free Product at basket level into Free Product at line level
+                bri.AppliedPromotions.ForEach(ap =>
+                {
+                    if (ap.BasketLevelPromotion && ap.DiscountAmount > decimal.Zero)
+                    {
+                        basketResponse.Summary.AppliedPromotions.Where(p => p.PromotionId == ap.PromotionId && p.InstanceId == ap.InstanceId).ToList().ForEach(sap =>
+                        {
+                            if (sap.PromotionType.Equals(PromotionTypeName.FreeProduct, StringComparison.InvariantCultureIgnoreCase))
+                            {
+                                lineTotalDiscount += ap.DiscountAmount;
+                            }
+                        });
+                    }
+                });
+            });
+
+
+            return lineTotalDiscount;
+        }
+
+        public static Decimal SubTotal(this IList<ShoppingCartItem> shoppingCartItems)
+        {
+            decimal subTotal = decimal.Zero;
+            IPromoUtilities promoUtilities = EngineContext.Current.Resolve<IPromoUtilities>();
+
+            if (shoppingCartItems == null)
+                return subTotal;
+
+            if (!shoppingCartItems.Any())
+                return subTotal;
+
+            // sum line totals
+            shoppingCartItems.ToList().ForEach(sci =>
+            {
+                subTotal += sci.LineAmount();
+            });
+
+            // include any checkout attributes
+            var basketResponse = promoUtilities.GetBasketResponse();
+            if (basketResponse == null)
+                return subTotal;
+
+            basketResponse.CheckoutAttributeItems().ToList().ForEach(cai =>
+            {
+                subTotal += cai.LineAmount;
+                // handle "free product" at basket level 
+                cai.AppliedPromotions.ForEach(ap =>
+                {
+                    if (ap.BasketLevelPromotion && ap.DiscountAmount > decimal.Zero)
+                    {
+                        basketResponse.Summary.AppliedPromotions.Where(p => p.PromotionId == ap.PromotionId && p.InstanceId == ap.InstanceId).ToList().ForEach(sap =>
+                        {
+                            if (sap.PromotionType.Equals(PromotionTypeName.FreeProduct, StringComparison.InvariantCultureIgnoreCase))
+                            {
+                                subTotal -= ap.DiscountAmount;
+                            }
+                        });
+                    }
+                });
+            });
+
+
+            return subTotal;
+        }
+
+        #endregion
+
+        #region helpers
+
+        private static List<BasketResponseItem> MatchedResponseItems(ShoppingCartItem shoppingCartItem)
+        {
+            var basketResponseItems = new List<BasketResponseItem>();
+
+            if (shoppingCartItem == null)
+                return basketResponseItems;
+
+            var promoUtilities = (IPromoUtilities) EngineContext.Current.Resolve<IPromoUtilities>();
+            var productMappingService = (IProductMappingService) EngineContext.Current.Resolve<IProductMappingService>();
+            var basketResponse = promoUtilities.GetBasketResponse();
+
+            if (!basketResponse.IsValid())
+                return basketResponseItems;
+
+            ProductMappingItem productMappingItem = productMappingService.RetrieveFromShoppingCartItem(shoppingCartItem);
+            if (productMappingItem != null)
+            {
+                basketResponseItems = (from i in basketResponse.Items
+                                       where
+                                           i.ProductCode.Equals(productMappingItem.EntityId.ToString(), StringComparison.InvariantCultureIgnoreCase) &&
+                                           ((productMappingItem.NoVariants ||
+                                           (!productMappingItem.NoVariants &&
+                                           !string.IsNullOrEmpty(productMappingItem.VariantCode) &&
+                                           i.VariantCode.Equals(productMappingItem.VariantCode, StringComparison.InvariantCultureIgnoreCase))))
+                                       select i).ToList();
+            }
+
+            return basketResponseItems;
         }
 
         #endregion

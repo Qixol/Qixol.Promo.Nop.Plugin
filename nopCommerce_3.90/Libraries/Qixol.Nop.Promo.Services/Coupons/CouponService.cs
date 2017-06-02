@@ -2,7 +2,7 @@
 using global::Nop.Services.Logging;
 using Nop.Core.Data;
 using Nop.Services.Events;
-using Qixol.Nop.Promo.Core.Domain.Coupons;
+using Qixol.Nop.Promo.Core.Domain.Orders;
 using Qixol.Nop.Promo.Core.Domain.Promo;
 using Qixol.Nop.Promo.Services.Promo;
 using Qixol.Promo.Integration.Lib;
@@ -20,7 +20,8 @@ namespace Qixol.Nop.Promo.Services.Coupons
         private readonly ILogger _logger;
         private readonly IWorkContext _workContext;
         private readonly PromoSettings _promoSettings;
-        private readonly IRepository<IssuedCoupon> _issuedCouponRepository;
+        private readonly IRepository<PromoOrder> _promoOrderRepository;
+        private readonly IRepository<PromoOrderCoupon> _promoOrderCouponRepository;
         private readonly IEventPublisher _eventPublisher;
 
         #endregion
@@ -31,13 +32,15 @@ namespace Qixol.Nop.Promo.Services.Coupons
             ILogger logger,
             IWorkContext workContext,
             PromoSettings promoSettings,
-            IRepository<IssuedCoupon> issuedCouponRepository,
+            IRepository<PromoOrder> promoOrderRepository,
+            IRepository<PromoOrderCoupon> promoOrderCouponRepository,
             IEventPublisher eventPublisher)
         {
             this._logger = logger;
             this._workContext = workContext;
             this._promoSettings = promoSettings;
-            this._issuedCouponRepository = issuedCouponRepository;
+            this._promoOrderRepository = promoOrderRepository;
+            this._promoOrderCouponRepository = promoOrderCouponRepository;
             this._eventPublisher = eventPublisher;
         }
 
@@ -70,27 +73,27 @@ namespace Qixol.Nop.Promo.Services.Coupons
             return validatedCouponResponse.Coupon.Codes.First();
         }
 
-        public IPagedList<IssuedCoupon> IssuedCoupons(int customerId, int pageIndex = 0, int pageSize = int.MaxValue)
+        public IPagedList<PromoOrderCoupon> IssuedCoupons(int customerId, int pageIndex = 0, int pageSize = int.MaxValue)
         {
-            var query = (from ic in _issuedCouponRepository.Table where ic.CustomerId == customerId select ic).OrderBy(c => c.Id);
-            return new PagedList<IssuedCoupon>(query, pageIndex, pageSize);
+            var issuedCoupons = (from c in _promoOrderCouponRepository.Table
+                                 where c.Issued
+                                 select c).ToList();
+
+            var query = (from o in _promoOrderRepository.Table
+                         join c in _promoOrderCouponRepository.Table
+                         on o.Id equals c.PromoOrderId
+                         where o.CustomerId == customerId
+                         && c.Issued
+                         select c).OrderBy(c => c.Id);
+
+            return new PagedList<PromoOrderCoupon>(query, pageIndex, pageSize);
         }
 
-        public IPagedList<IssuedCoupon> IssuedCoupons(int pageIndex = 0, int pageSize = int.MaxValue)
-        {
-            var query = (from ic in _issuedCouponRepository.Table select ic).OrderBy(c => c.Id);
-            return new PagedList<IssuedCoupon>(query, pageIndex, pageSize);
-        }
-
-        public void InsertIssuedCoupon(IssuedCoupon issuedCoupon)
-        {
-            if (issuedCoupon == null)
-                throw new ArgumentNullException("issuedCoupon");
-
-            _issuedCouponRepository.Insert(issuedCoupon);
-
-            _eventPublisher.EntityInserted(issuedCoupon);
-        }
+        //public IPagedList<PromoOrderCoupon> IssuedCoupons(int pageIndex = 0, int pageSize = int.MaxValue)
+        //{
+        //    var query = (from ic in _promoOrderCouponRepository.Table select ic).OrderBy(c => c.Id);
+        //    return new PagedList<PromoOrderCoupon>(query, pageIndex, pageSize);
+        //}
 
         #endregion
     }

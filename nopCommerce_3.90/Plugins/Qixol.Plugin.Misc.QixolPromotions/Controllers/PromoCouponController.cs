@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web.Mvc;
 using Qixol.Nop.Promo.Services.ProductMapping;
-using Qixol.Nop.Promo.Services.Coupons;
 using Qixol.Promo.Integration.Lib.Coupon;
 using Nop.Services.Helpers;
 using Qixol.Nop.Promo.Services.Promo;
@@ -16,6 +15,9 @@ using Qixol.Nop.Promo.Core.Domain.Promo;
 using Qixol.Promo.Integration.Lib.Basket;
 using Qixol.Nop.Promo.Services.Orders;
 using Qixol.Nop.Promo.Core.Domain.Orders;
+using Nop.Services.Orders;
+using Qixol.Plugin.Misc.Promo.Factories;
+using Qixol.Nop.Promo.Services.Coupons;
 
 namespace Qixol.Plugin.Misc.Promo.Controllers
 {
@@ -23,37 +25,45 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
     {
         #region Fields
 
+        private readonly IIssuedCouponsModelFactory _issuedCouponsModelFactory;
+
         private readonly IPromoUtilities _promoUtilities;
+        private readonly IOrderService _orderService;
         private readonly IPromoOrderService _promoOrderService;
         private readonly IPriceFormatter _priceFormatter;
         private readonly IWorkContext _workContext;
         private readonly IProductMappingService _productMappingService;
-        private readonly ICouponService _couponService;
         private readonly PromoSettings _promoSettings;
         private readonly IDateTimeHelper _dateTimeHelper;
+        private readonly ICouponService _couponService;
 
         #endregion
 
         #region constructor
 
         public PromoCouponController(
+            IIssuedCouponsModelFactory issuedCouponsModelFactory,
+
             IPromoUtilities promoUtilities,
             IPromoOrderService promoOrderService,
+            IOrderService orderService,
             IPriceFormatter priceFormatter,
             IWorkContext workContext,
             PromoSettings promoSettings,
             IProductMappingService productMappingService,
-            ICouponService couponService,
-            IDateTimeHelper dateTimeHelper)
+            IDateTimeHelper dateTimeHelper,
+            ICouponService couponService)
         {
+            this._issuedCouponsModelFactory = issuedCouponsModelFactory;
+
             this._promoUtilities = promoUtilities;
             this._promoOrderService = promoOrderService;
+            this._orderService = orderService;
             this._priceFormatter = priceFormatter;
             this._workContext = workContext;
             this._productMappingService = productMappingService;
-            this._couponService = couponService;
             this._dateTimeHelper = dateTimeHelper;
-
+            this._couponService = couponService;
             this._promoSettings = promoSettings;
         }
 
@@ -67,81 +77,48 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             if (!_promoSettings.Enabled)
                 return new EmptyResult();
 
-            IssuedCouponsModel issuedCouponsModel = new IssuedCouponsModel()
-            {
-                IsEditable = shoppingCartModel.IsEditable,
-                ShowProductImages = shoppingCartModel.ShowProductImages,
-                ShowSku = shoppingCartModel.ShowSku
-            };
-
             var basketResponse = _promoUtilities.GetBasketResponse();
-            BuildCouponsModel(issuedCouponsModel, basketResponse);
+
+            var issuedCouponsModel = _issuedCouponsModelFactory.PrepareIssuedCouponsModel(basketResponse, shoppingCartModel.ShowSku);
+
             return View(issuedCouponsModel);
         }
 
-        [ChildActionOnly]
-        public ActionResult IssuedCouponsForOrder(int orderId, bool showSku)
+        public ActionResult CustomerIssuedCoupons()
         {
-            if (!_promoSettings.Enabled || orderId <= 0)
+            if (!_promoSettings.Enabled)
                 return new EmptyResult();
 
-            IssuedCouponsModel issuedCouponsModel = new IssuedCouponsModel()
+            IssuedCouponsModel issuedCouponsModel = new IssuedCouponsModel();
+
+            issuedCouponsModel.IsEditable = false;
+            issuedCouponsModel.ShowProductImages = false;
+            issuedCouponsModel.ShowSku = false;
+
+            var customer = _workContext.CurrentCustomer;
+
+            int pageIndex = 0;
+            int pageSize = int.MaxValue;
+            var issuedCoupons = _couponService.IssuedCoupons(customer.Id, pageIndex, pageSize).ToList();
+
+            foreach (var issuedCoupon in issuedCoupons)
             {
-                IsEditable = false,
-                ShowProductImages = false,
-                ShowSku = showSku
-            };
-
-            PromoOrder promoOrder = _promoOrderService.GetPromoOrderByOrderId(orderId);
-            BuildCouponsModel(issuedCouponsModel, promoOrder);
-            return View("IssuedCoupons", issuedCouponsModel);
-
-        }
-
-        private void BuildCouponsModel(IssuedCouponsModel model, PromoOrder promoOrder)
-        {
-            if (promoOrder != null)
-            {
-                var issuedCoupons = (from ic in promoOrder.PromoOrderCoupons where ic.Issued select ic).ToList();
-
-                foreach (var issuedCoupon in issuedCoupons)
+                string couponName = string.Empty;
+                ValidatedCouponCode validatedCouponCode = _couponService.ValidateCouponCode(_promoSettings.CompanyKey, issuedCoupon.CouponCode, out couponName);
+                if (validatedCouponCode != null)
                 {
-                    model.Coupons.Add(new IssuedCouponModel()
+                    issuedCouponsModel.Coupons.Add(new IssuedCouponModel()
                     {
-                        Name = issuedCoupon.CouponName,
-                        // Never show the coupon code until the transaction is complete
-                        ValidTo = DateTime.MinValue,
-                        Status = string.Empty,
-                        IsConfirmed = issuedCoupon.IssuedConfirmed,
-                        Code = issuedCoupon.IssuedConfirmed == true ? issuedCoupon.CouponCode : string.Empty,
-                        DisplayText = issuedCoupon.DisplayText
+                        Code = validatedCouponCode.Code,
+                        Status = validatedCouponCode.Status,
+                        Name = couponName,
+                        IsConfirmed = true,
+                        ValidTo = _dateTimeHelper.ConvertToUserTime(validatedCouponCode.ValidTo, DateTimeKind.Utc),
+                        DisplayText =  issuedCoupon.DisplayText
                     });
                 }
             }
-
-        }
-
-        private void BuildCouponsModel(IssuedCouponsModel model, BasketResponse basketResponse)
-        {
-            if (basketResponse != null)
-            {
-                var issuedCoupons = (from ic in basketResponse.Coupons where ic.Issued select ic).ToList();
-
-                foreach (var issuedCoupon in issuedCoupons)
-                {
-                    model.Coupons.Add(new IssuedCouponModel()
-                    {
-                        Name = issuedCoupon.CouponName,
-                        // Never show the coupon code until the transaction is complete
-                        ValidTo = DateTime.MinValue,
-                        Status = string.Empty,
-                        IsConfirmed = issuedCoupon.IssuedConfirmed,
-                        Code = issuedCoupon.IssuedConfirmed == true ? issuedCoupon.CouponCode : string.Empty,
-                        DisplayText = issuedCoupon.DisplayText
-                    });
-                }
-            }
-
+            return View(issuedCouponsModel);
         }
 
         #endregion

@@ -8,16 +8,19 @@ namespace Qixol.Plugin.Misc.Promo.Models
 {
     public partial class IssuedCouponsModel
     {
-        public IList<IssuedCouponModel> Coupons;
+        private IList<IssuedCouponModel> _issuedCoupons;
+
+        public IList<IssuedCouponModel> Coupons
+        {
+            get
+            {
+                return _issuedCoupons ?? (_issuedCoupons = new List<IssuedCouponModel>());
+            }
+        }
 
         public bool IsEditable { get; set; }
         public bool ShowSku { get; set; }
         public bool ShowProductImages { get; set; }
-
-        public IssuedCouponsModel()
-        {
-            Coupons = new List<IssuedCouponModel>();
-        }
     }
 
     #region nested classes

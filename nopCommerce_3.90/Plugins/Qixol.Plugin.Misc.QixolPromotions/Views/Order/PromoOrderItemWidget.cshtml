@@ -1,0 +1,48 @@
+﻿@model PromoOrderItemWidgetModel
+@using Qixol.Plugin.Misc.Promo.Models.Order;
+@using Newtonsoft.Json;
+@using global::Nop.Core;
+@using global::Nop.Core.Infrastructure;
+@using global::Nop.Web.Framework.Themes;
+
+@{
+    @*
+        var webHelper = EngineContext.Current.Resolve<IWebHelper>();
+        var themeName = EngineContext.Current.Resolve<IThemeContext>().WorkingThemeName;
+
+        Html.AppendCssFileParts(ResourceLocation.Head, string.Format("~/Plugins/Misc.QixolPromo/Themes/{0}/Content/css/styles.css", themeName));
+
+        // NOTE: Use jQuery to append the script because nopCommerce does not append the scripts in print layout
+        //Html.AppendScriptParts(ResourceLocation.Head, "~/Plugins/Misc.QixolPromo/Scripts/promo.orderdetails.widget.js");
+
+        var promoOrderDetailsWidgetUrl = Url.Content("~/Plugins/Misc.QixolPromo/Scripts/promo.orderdetails.widget.js");
+        var promoOrderDetailsWidgetScript = string.Format("<script type='text/javascript' src='{0}' />", promoOrderDetailsWidgetUrl);
+    *@
+JsonSerializerSettings jsSettings = new JsonSerializerSettings()
+{
+    StringEscapeHandling = StringEscapeHandling.EscapeHtml
+};
+}
+
+<script type="text/javascript">
+
+    $(document).ready(function () {
+        var orderItemDetails = @Html.Raw(JsonConvert.SerializeObject(Model));
+        try {
+            if (orderItemDetails.Promotions.length) {
+                var promotions = orderItemDetails.Promotions;
+                for (var i in promotions) {
+                    var promotionsHtml = $('#orderItem_@(Model.OrderItemId)').html();
+                    $('#orderItem_@(Model.OrderItemId)').html(promotionsHtml + '<div class="promotion-item">' + promotions[i].PromotionName + '</div>');
+                    var totalCell = $('#orderItem_@(Model.OrderItemId)').closest('tr').children('td.total');
+                    var youSaveText = '@T("ShoppingCart.ItemYouSave")'.replace('{0}', promotions[i].DiscountAmount);
+                    totalCell.children().filter(':last').after('<div class="discount">' + youSaveText + '</div>');
+                }
+            }
+        }
+        catch (e) { /* fail silently */ }
+    });
+
+</script>
+
+<div id="orderItem_@(Model.OrderItemId)"></div>

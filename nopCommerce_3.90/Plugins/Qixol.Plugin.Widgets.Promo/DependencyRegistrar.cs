@@ -9,7 +9,6 @@ using System.Web.Mvc;
 using Nop.Web.Framework.Mvc;
 using Qixol.Nop.Promo.Core.Domain.Promo;
 using Qixol.Nop.Promo.Services.Discounts;
-using Qixol.Nop.Promo.Services.Coupons;
 using Qixol.Nop.Promo.Services.Orders;
 using Qixol.Nop.Promo.Services.Catalog;
 using Qixol.Nop.Promo.Services.ExportQueue;
@@ -28,7 +27,6 @@ using Nop.Core.Caching;
 using Qixol.Nop.Promo.Data.Mapping;
 using Qixol.Nop.Promo.Core.Domain.Banner;
 using Qixol.Nop.Promo.Services.Banner;
-using Qixol.Nop.Promo.Core.Domain.Coupons;
 
 namespace Qixol.Plugin.Widgets.Promo
 {
@@ -86,11 +84,6 @@ namespace Qixol.Plugin.Widgets.Promo
 
             builder.RegisterType<EfRepository<PromoBannerWidgetZone>>()
                 .As<IRepository<PromoBannerWidgetZone>>()
-                .WithParameter(ResolvedParameter.ForNamed<IDbContext>("nop_object_context_promo"))
-                .InstancePerLifetimeScope();
-
-            builder.RegisterType<EfRepository<IssuedCoupon>>()
-                .As<IRepository<IssuedCoupon>>()
                 .WithParameter(ResolvedParameter.ForNamed<IDbContext>("nop_object_context_promo"))
                 .InstancePerLifetimeScope();
         }

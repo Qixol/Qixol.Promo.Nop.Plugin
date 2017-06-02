@@ -110,8 +110,8 @@
       <HintPath>..\..\packages\Owin.1.0\lib\net40\Owin.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Qixol.Promo.Integration.Lib, Version=2.7.0.5, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Qixol.Promo.Integration.Lib.2.7.0.5\lib\net45\Qixol.Promo.Integration.Lib.dll</HintPath>
+    <Reference Include="Qixol.Promo.Integration.Lib, Version=2.7.0.6, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Qixol.Promo.Integration.Lib.2.7.0.6\lib\net45\Qixol.Promo.Integration.Lib.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -207,23 +207,25 @@
     <Compile Include="Controllers\CheckoutController.cs" />
     <Compile Include="Controllers\PromoCheckoutController.cs" />
     <Compile Include="Controllers\PromoCouponController.cs" />
-    <Compile Include="Controllers\PromoProductController.cs" />
-    <Compile Include="Controllers\ShoppingCartController.cs" />
-    <Compile Include="Controllers\PromoOrderController.cs" />
     <Compile Include="Controllers\PromoAdminController.cs" />
     <Compile Include="Controllers\AdminDiscountController.cs" />
     <Compile Include="Controllers\CheckoutActionFilter.cs" />
     <Compile Include="Controllers\PromoController.cs" />
     <Compile Include="Controllers\ShoppingCartActionFilter.cs" />
+    <Compile Include="Controllers\ShoppingCartController.cs" />
     <Compile Include="DependencyRegistrar.cs" />
     <Compile Include="Extensions\MappingExtensions\ProductAttributeConfigItemExtensions.cs" />
     <Compile Include="Factories\CatalogModelFactory.cs" />
+    <Compile Include="Factories\PromoProductDetailsModelFactory.cs" />
+    <Compile Include="Factories\IPromoProductDetailsModelFactory.cs" />
+    <Compile Include="Factories\IssuedCouponsModelFactory.cs" />
+    <Compile Include="Factories\IIssuedCouponsModelFactory.cs" />
+    <Compile Include="Factories\IMissedPromotionsModelFactory.cs" />
+    <Compile Include="Factories\MissedPromotionsModelFactory.cs" />
     <Compile Include="Factories\CheckoutModelFactory.cs" />
-    <Compile Include="Factories\ICatalogModelFactory.cs" />
-    <Compile Include="Factories\IShoppingCartModelFactory.cs" />
-    <Compile Include="Factories\ICheckoutModelFactory.cs" />
     <Compile Include="Factories\ShoppingCartModelFactory.cs" />
-    <Compile Include="Models\Catalog\PromoProductDetailsModel.cs" />
+    <Compile Include="Models\Catalog\PromoProductOverviewModel.cs" />
+    <Compile Include="Models\Checkout\PromoCheckoutShippingMethodModel.cs" />
     <Compile Include="Models\Checkout\MissedPromotionBaseModel.cs" />
     <Compile Include="Models\Checkout\MissedPromotionBasketReductionModel.cs" />
     <Compile Include="Models\Checkout\MissedPromotionBogofModel.cs" />
@@ -240,11 +242,16 @@
     <Compile Include="Models\Checkout\PromoCheckoutProgressModel.cs" />
     <Compile Include="Models\Checkout\PromoOnePageCheckoutModel.cs" />
     <Compile Include="Models\IntegrationCodeItemModel.cs" />
-    <Compile Include="Models\IssuedCouponsModel.cs">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Compile>
+    <Compile Include="Models\IssuedCouponsModel.cs" />
+    <Compile Include="Models\Order\PromoOrderItemWidgetModel.cs" />
     <Compile Include="Models\ProductAttributeConfigItemModel.cs" />
     <Compile Include="Models\PromotionsConfigureModel.cs" />
+    <Compile Include="Models\Shared\CheckoutAttributeModel.cs" />
+    <Compile Include="Models\Shared\LineItemDiscountModel.cs" />
+    <Compile Include="Models\Shared\PromotionModel.cs" />
+    <Compile Include="Models\Shared\PromoWidgetModel.cs" />
+    <Compile Include="Models\Shared\ShippingModel.cs" />
+    <Compile Include="Models\ShoppingCart\PromoEstimateShippingResultModel.cs" />
     <Compile Include="Models\ShoppingCart\BasketTotalDiscountModel.cs" />
     <Compile Include="Models\StatusUpdateJsonModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -260,6 +267,15 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Scripts\promo.onepagecheckout.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Scripts\promo.shoppingcart.keys.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Scripts\promo.orderdetails.widget.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Scripts\promo.shoppingcart.widget.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Themes\DefaultClean\Content\css\styles.css">
@@ -302,42 +318,60 @@
     <None Include="Views\Checkout\DisplayTemplates\MissedPromotionBundleModel.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="Views\Checkout\DisplayTemplates\PromoProductOverviewModel.cshtml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="Views\Checkout\DisplayTemplates\MissedPromotionDealModel.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="Views\Checkout\DisplayTemplates\MissedPromotionUnknownModel.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="Views\Checkout\MissedPromotions.cshtml">
+    <None Include="Views\Checkout\DisplayTemplates\MissedPromotionsModel.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="Views\Checkout\MissedPromotionsSummary.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="Views\Checkout\OnePageCheckout.cshtml">
+    <None Include="Views\Checkout\OpcShippingAddress.cshtml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Views\Checkout\OpcShippingMethods.cshtml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Views\Checkout\_UnmatchedProducts.cshtml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Views\Checkout\PromoOnePageCheckout.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="Views\Checkout\OpcMissedPromotions.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="Views\Order\Details.cshtml">
+    <None Include="Views\Customer\CustomerIssuedCoupons.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="Views\ShoppingCart\BasketTotalDiscount.cshtml">
+    <None Include="Views\Customer\CustomerNavigationExtension.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="Views\ShoppingCart\IssuedCoupons.cshtml">
+    <None Include="Views\Customer\DisplayTemplates\IssuedCouponModel.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="Views\ShoppingCart\OrderSummary.cshtml">
+    <None Include="Views\Order\PromoOrderItemWidget.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="Views\ShoppingCart\OrderTotals.cshtml">
+    <None Include="Views\Order\PromoWidget.cshtml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Views\ShoppingCart\PromoWidget.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <Content Include="Views\web.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <None Include="Views\ShoppingCart\_EstimateShippingResult.cshtml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

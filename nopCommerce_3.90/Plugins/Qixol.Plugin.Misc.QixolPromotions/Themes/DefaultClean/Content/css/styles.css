@@ -1,6 +1,7 @@
 ﻿.promotion-item {
-    color: green;
-    font-weight: bold;
+    color: #4ab2f1;
+    font-style: italic;
+    font-weight: normal;
 }
 
 .no-bottom-border td {
@@ -11,11 +12,119 @@
     line-height: 15px !important;
 }
 
-.promo-product-picture {
-    vertical-align: top;
+.cart-coupon-row td {
+    line-height: 15px !important;
 }
 
-/* admin styles */
-.disabled {
-    color: #999;
+.truncate-140 {
+    float: left;
+    max-width: 140px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+    .truncate-140:hover {
+        overflow: visible;
+    }
+
+.subtotal .discount {
+    display: block;
+}
+
+.cart-total .basket-total-discount {
+    font-style: italic;
+}
+
+.coupon-item {
+    font-weight: bold;
+}
+
+td.product.missed-promotion {
+    width: 200px;
+}
+
+.product.missed-promotion .add-to-cart-button {
+    min-width: 160px;
+    border: none;
+    background-color: #4ab2f1;
+    padding: 10px 20px;
+    font-size: 16px;
+    color: #fff;
+    text-transform: uppercase;
+}
+
+.promo-product-picture {
+    vertical-align: top;
+    width: 100px;
+}
+
+.line-promotion {
+    font-style: italic;
+    color: #4ab2f1;
+}
+
+    .line-promotion:before {
+        content: "\a";
+        white-space: pre;
+    }
+
+.order-details-page td.total .discount, .order-details-page td.total .discount-additional-info {
+    font-style: italic;
+    color: #4ab2f1;
+}
+
+.missed-promotions {
+    text-align: left;
+}
+
+    .missed-promotions th {
+        border-width: 1px 1px 0;
+        border-style: solid;
+        border-color: #ddd;
+        background-color: #f6f6f6;
+        padding: 10px;
+        white-space: nowrap;
+        font-weight: normal;
+    }
+
+    .missed-promotions td {
+        min-width: 50px;
+        border-width: 1px;
+        border-style: solid;
+        border-color: transparent #ddd #ddd;
+        background-color: #fff;
+        padding: 20px;
+        color: #444;
+    }
+
+    .missed-promotions .product a {
+        font-weight: bold;
+        color: #444;
+    }
+
+        .missed-promotions .product a:hover {
+            color: #4ab2f1;
+            text-decoration: none;
+        }
+
+    .missed-promotions .product .edit-item {
+        margin: 10px 0 0;
+    }
+
+        .missed-promotions .product .edit-item a {
+            font-weight: normal;
+            color: #4ab2f1;
+        }
+
+            .missed-promotions .product .edit-item a:hover {
+                text-decoration: underline;
+            }
+
+.item-box .product-box-add-to-cart-button {
+    width: 150px;
+}
+
+.selected-checkout-attributes {
+    text-align: right;
 }

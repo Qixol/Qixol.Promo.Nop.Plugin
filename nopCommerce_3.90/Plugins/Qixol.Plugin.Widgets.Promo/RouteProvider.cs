@@ -74,14 +74,6 @@ namespace Qixol.Plugin.Widgets.Promo
             );
             promoBannerWidgetZoneDelete.DataTokens.Add("area", "admin");
 
-            var accountIssuedCoupons = routes.MapRoute("CustomerIssuedCoupons",
-                    "customer/issuedcoupons",
-                    new { controller = "PromoCustomerCoupon", action = "CustomerIssuedCoupons" },
-                    new[] { "Qixol.Plugin.Misc.Wdigets.Controllers" }
-            );
-            routes.Remove(accountIssuedCoupons);
-            routes.Insert(0, accountIssuedCoupons);
- 
         }
 
         private void InsertNewMapRoute(RouteCollection routes, string name, string url, string controllerName, string actionName, object routeParams = null, bool isAdmin = true, bool expectsId = false, bool insertAtZeroRoute = true)

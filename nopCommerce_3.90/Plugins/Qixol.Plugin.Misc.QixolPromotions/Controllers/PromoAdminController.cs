@@ -25,7 +25,6 @@ using Nop.Services.Tasks;
 using Nop.Core.Domain.Tasks;
 using Nop.Core.Infrastructure;
 using Qixol.Nop.Promo.Core.Domain.Tasks;
-using Qixol.Nop.Promo.Services.Coupons;
 using Qixol.Nop.Promo.Services.ExportQueue;
 using Qixol.Nop.Promo.Core.Domain.ExportQueue;
 using Qixol.Nop.Promo.Core.Domain.AttributeValues;
@@ -34,7 +33,6 @@ using Qixol.Nop.Promo.Core.Domain.ProductAttributeConfig;
 using Nop.Web.Framework.Kendoui;
 using Qixol.Nop.Promo.Services.AttributeValues;
 using Nop.Web.Framework.Mvc;
-using Nop.Services.Shipping;
 using Nop.Services.Customers;
 using Nop.Services.Orders;
 using Qixol.Nop.Promo.Services.Promo;
@@ -42,6 +40,7 @@ using System.Reflection;
 using Nop.Services.Media;
 using Qixol.Nop.Promo.Core.Domain.Promo;
 using Qixol.Plugin.Misc.Promo.Extensions.MappingExtensions;
+using Nop.Services.Shipping;
 
 namespace Qixol.Plugin.Misc.Promo.Controllers
 {
@@ -329,13 +328,15 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                                               }).ToList();
 
                 case EntityAttributeName.DeliveryMethod:
-                    return _shippingService.GetAllShippingMethods()
+                    var shippingMethods = _shippingService.GetAllShippingMethods()
                                            .Select(s => new IntegrationCodeItemModel()
                                                 {
                                                     EntityId = s.Id,
                                                     EntityName = s.Name,
                                                     EntityAttributeSystemName = EntityAttributeName.DeliveryMethod
                                                 }).ToList();
+                    var pickupPoints = _shippingService.LoadAllPickupPointProviders();
+                    return shippingMethods;
 
                 case EntityAttributeName.CustomerRole:
                     return _customerService.GetAllCustomerRoles()

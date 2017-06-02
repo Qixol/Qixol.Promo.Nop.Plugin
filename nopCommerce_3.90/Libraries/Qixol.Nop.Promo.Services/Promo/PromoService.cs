@@ -23,7 +23,6 @@ using Qixol.Nop.Promo.Core.Domain.Promo;
 using global::Nop.Core.Domain.Customers;
 using global::Nop.Core.Domain.Orders;
 using Qixol.Nop.Promo.Services.ProductMapping;
-using Qixol.Nop.Promo.Services.Coupons;
 using Qixol.Promo.Integration.Lib;
 using Qixol.Promo.Integration.Lib.Basket;
 using Qixol.Nop.Promo.Services.AttributeValues;
@@ -31,7 +30,6 @@ using Qixol.Nop.Promo.Core.Domain.AttributeValues;
 using Qixol.Nop.Promo.Services.ShoppingCart;
 using Nop.Services.Customers;
 using Nop.Services.Localization;
-using Qixol.Nop.Promo.Core.Domain.Coupons;
 
 namespace Qixol.Nop.Promo.Services.Promo
 {
@@ -61,7 +59,6 @@ namespace Qixol.Nop.Promo.Services.Promo
         private readonly IPromoUtilities _promoUtilities;
         private readonly PromoSettings _promoSettings;
         private readonly IShoppingCartService _shoppingCartService;
-        private readonly ICouponService _couponService;
         private readonly IAttributeValueService _attributeValueService;
         private readonly IOrderService _orderService;
         private readonly ICustomerService _customerService;
@@ -94,7 +91,6 @@ namespace Qixol.Nop.Promo.Services.Promo
             IStoreContext storeContext,
             IProductMappingService productMappingService,
             IShoppingCartService shoppingCartService,
-            ICouponService qixolPromosCouponService,
             IAttributeValueService attributeValueService,
             IOrderService orderService,
             ICustomerService customerService,
@@ -121,7 +117,6 @@ namespace Qixol.Nop.Promo.Services.Promo
             this._storeContext = storeContext;
             this._productMappingService = productMappingService;
             this._shoppingCartService = shoppingCartService;
-            this._couponService = qixolPromosCouponService;
             this._attributeValueService = attributeValueService;
             this._orderService = orderService;
             this._promoSettings = promoSettings;
@@ -149,10 +144,19 @@ namespace Qixol.Nop.Promo.Services.Promo
 
         public List<string> ProcessShoppingCart()
         {
-            return ProcessShoppingCart(false);
+            return ProcessShoppingCart(false, null);
         }
 
+        public List<string> ProcessShoppingCart(ShippingOption shippingOption = null)
+        {
+            return ProcessShoppingCart(false, shippingOption);
+        }
         public List<string> ProcessShoppingCart(bool getMissedPromotions = false)
+        {
+            return ProcessShoppingCart(getMissedPromotions, null);
+        }
+
+        public List<string> ProcessShoppingCart(bool getMissedPromotions = false, ShippingOption shippingOption = null)
         {
             var addToCartWarnings = new List<string>();
             Customer customer = _workContext.CurrentCustomer;
@@ -170,10 +174,15 @@ namespace Qixol.Nop.Promo.Services.Promo
             {
                 BasketRequest basketRequest = cart.ToQixolPromosBasketRequest();
 
-                basketRequest.GetMissedPromotions = getMissedPromotions;
 
                 if (basketRequest != null)
                 {
+                    basketRequest.GetMissedPromotions = getMissedPromotions;
+
+                    if (shippingOption != null)
+                    {
+                        basketRequest = basketRequest.SetShipping(cart, shippingOption);
+                    }
 
                     BasketResponse basketResponse = SendBasketRequestTopromoService(basketRequest);
                     if ((basketResponse != null) &&
@@ -277,7 +286,7 @@ namespace Qixol.Nop.Promo.Services.Promo
         }
 
         public void SendConfirmedBasket(global::Nop.Core.Domain.Orders.Order placedOrder)
-        {            
+        {
             var customer = _workContext.CurrentCustomer;
             BasketRequest basketRequest = BasketRequest.FromXml(customer.GetAttribute<string>(PromoCustomerAttributeNames.PromoBasketRequest, _storeContext.CurrentStore.Id));
             basketRequest.Confirmed = true;
@@ -292,9 +301,9 @@ namespace Qixol.Nop.Promo.Services.Promo
                 Name = "orderid",
                 Value = placedOrder.Id.ToString()
             });
-            
+
             // Reward points
-            if (placedOrder.RedeemedRewardPointsEntry != null)
+            if ((placedOrder.RedeemedRewardPointsEntry != null) && (placedOrder.RedeemedRewardPointsEntry.Points > 0))
             {
                 customAttributes.Add(new BasketRequestCustomAttribute()
                 {
@@ -316,7 +325,7 @@ namespace Qixol.Nop.Promo.Services.Promo
             }
 
             // Gift cards
-            if (placedOrder.GiftCardUsageHistory != null)
+            if ((placedOrder.GiftCardUsageHistory != null) && (placedOrder.GiftCardUsageHistory.Sum(g => g.UsedValue) > decimal.Zero))
             {
                 customAttributes.Add(new BasketRequestCustomAttribute()
                 {
@@ -342,22 +351,6 @@ namespace Qixol.Nop.Promo.Services.Promo
 
             if (basketResponse == null)
                 throw new NopException("sending confirmed basket failed");
-
-            #region save issued coupons
-
-            List<string> basketIssuedCouponCodes = (from ic in basketResponse.Coupons where ic.Issued select ic.CouponCode).ToList();
-
-            basketResponse.Coupons.ForEach(coupon =>
-                {
-                    _couponService.InsertIssuedCoupon(new IssuedCoupon()
-                    {
-                        CustomerId = customer.Id,
-                        CouponCode = coupon.CouponCode,
-                        CouponDescription = coupon.DisplayText
-                    });
-                });
-
-            #endregion
         }
 
         private BasketResponse SendBasketRequestTopromoService(BasketRequest basketRequest)

@@ -32,6 +32,8 @@ using Qixol.Nop.Promo.Core.Domain.Promo;
 using Qixol.Nop.Promo.Services.Promo;
 using Qixol.Nop.Promo.Services.Catalog;
 using Nop.Services.Customers;
+using Qixol.Plugin.Misc.Promo.Models.ShoppingCart;
+using Qixol.Promo.Integration.Lib.Basket;
 
 namespace Qixol.Plugin.Misc.Promo.Factories
 {
@@ -45,6 +47,11 @@ namespace Qixol.Plugin.Misc.Promo.Factories
         private readonly ICurrencyService _currencyService;
         private readonly IPriceFormatter _priceFormatter;
         private readonly ILocalizationService _localizationService;
+        private readonly IShippingService _shippingService;
+        private readonly ICountryService _countryService;
+        private readonly IStateProvinceService _stateProvinceService;
+        private readonly IStoreContext _storeContext;
+        private readonly ShippingSettings _shippingSettings;
 
         private readonly PromoSettings _promoSettings;
         private readonly IPromoService _promoService;
@@ -56,84 +63,84 @@ namespace Qixol.Plugin.Misc.Promo.Factories
         #region Ctor
 
         public ShoppingCartModelFactory(IAddressModelFactory addressModelFactory,
-            IStoreContext storeContext, 
-            IWorkContext workContext, 
-            IShoppingCartService shoppingCartService, 
-            IPictureService pictureService, 
-            ILocalizationService localizationService, 
-            IProductAttributeFormatter productAttributeFormatter, 
-            IProductAttributeParser productAttributeParser, 
-            ITaxService taxService, 
-            ICurrencyService currencyService, 
-            IPriceCalculationService priceCalculationService, 
-            IPriceFormatter priceFormatter, 
-            ICheckoutAttributeParser checkoutAttributeParser, 
-            ICheckoutAttributeFormatter checkoutAttributeFormatter, 
-            IOrderProcessingService orderProcessingService, 
-            IDiscountService discountService, 
-            ICountryService countryService, 
-            IStateProvinceService stateProvinceService, 
-            IShippingService shippingService, 
-            IOrderTotalCalculationService orderTotalCalculationService, 
-            ICheckoutAttributeService checkoutAttributeService, 
-            IPaymentService paymentService, 
-            IPermissionService permissionService, 
-            IDownloadService downloadService, 
-            ICacheManager cacheManager, 
-            IWebHelper webHelper, 
-            IGenericAttributeService genericAttributeService, 
-            HttpContextBase httpContext, 
-            MediaSettings mediaSettings, 
-            ShoppingCartSettings shoppingCartSettings, 
-            CatalogSettings catalogSettings, 
-            OrderSettings orderSettings, 
-            ShippingSettings shippingSettings, 
-            TaxSettings taxSettings, 
-            CaptchaSettings captchaSettings, 
-            AddressSettings addressSettings, 
-            RewardPointsSettings rewardPointsSettings, 
+            IStoreContext storeContext,
+            IWorkContext workContext,
+            IShoppingCartService shoppingCartService,
+            IPictureService pictureService,
+            ILocalizationService localizationService,
+            IProductAttributeFormatter productAttributeFormatter,
+            IProductAttributeParser productAttributeParser,
+            ITaxService taxService,
+            ICurrencyService currencyService,
+            IPriceCalculationService priceCalculationService,
+            IPriceFormatter priceFormatter,
+            ICheckoutAttributeParser checkoutAttributeParser,
+            ICheckoutAttributeFormatter checkoutAttributeFormatter,
+            IOrderProcessingService orderProcessingService,
+            IDiscountService discountService,
+            ICountryService countryService,
+            IStateProvinceService stateProvinceService,
+            IShippingService shippingService,
+            IOrderTotalCalculationService orderTotalCalculationService,
+            ICheckoutAttributeService checkoutAttributeService,
+            IPaymentService paymentService,
+            IPermissionService permissionService,
+            IDownloadService downloadService,
+            ICacheManager cacheManager,
+            IWebHelper webHelper,
+            IGenericAttributeService genericAttributeService,
+            HttpContextBase httpContext,
+            MediaSettings mediaSettings,
+            ShoppingCartSettings shoppingCartSettings,
+            CatalogSettings catalogSettings,
+            OrderSettings orderSettings,
+            ShippingSettings shippingSettings,
+            TaxSettings taxSettings,
+            CaptchaSettings captchaSettings,
+            AddressSettings addressSettings,
+            RewardPointsSettings rewardPointsSettings,
             CustomerSettings customerSettings,
             PromoSettings promoSettings,
             IPromoService promoService,
             IPromoUtilities promoUtilities,
             IPromosPriceCalculationService promosPriceCalculationService)
-            : base(addressModelFactory, 
-                storeContext, 
-                workContext, 
-                shoppingCartService, 
-                pictureService, 
-                localizationService, 
-                productAttributeFormatter, 
-                productAttributeParser, 
-                taxService, 
-                currencyService, 
-                priceCalculationService, 
-                priceFormatter, 
-                checkoutAttributeParser, 
-                checkoutAttributeFormatter, 
-                orderProcessingService, 
-                discountService, 
-                countryService, 
-                stateProvinceService, 
-                shippingService, 
-                orderTotalCalculationService, 
-                checkoutAttributeService, 
-                paymentService, 
-                permissionService, 
-                downloadService, 
-                cacheManager, 
-                webHelper, 
-                genericAttributeService, 
-                httpContext, 
-                mediaSettings, 
-                shoppingCartSettings, 
-                catalogSettings, 
-                orderSettings, 
-                shippingSettings, 
-                taxSettings, 
-                captchaSettings, 
-                addressSettings, 
-                rewardPointsSettings, 
+            : base(addressModelFactory,
+                storeContext,
+                workContext,
+                shoppingCartService,
+                pictureService,
+                localizationService,
+                productAttributeFormatter,
+                productAttributeParser,
+                taxService,
+                currencyService,
+                priceCalculationService,
+                priceFormatter,
+                checkoutAttributeParser,
+                checkoutAttributeFormatter,
+                orderProcessingService,
+                discountService,
+                countryService,
+                stateProvinceService,
+                shippingService,
+                orderTotalCalculationService,
+                checkoutAttributeService,
+                paymentService,
+                permissionService,
+                downloadService,
+                cacheManager,
+                webHelper,
+                genericAttributeService,
+                httpContext,
+                mediaSettings,
+                shoppingCartSettings,
+                catalogSettings,
+                orderSettings,
+                shippingSettings,
+                taxSettings,
+                captchaSettings,
+                addressSettings,
+                rewardPointsSettings,
                 customerSettings)
         {
             this._workContext = workContext;
@@ -142,6 +149,11 @@ namespace Qixol.Plugin.Misc.Promo.Factories
             this._currencyService = currencyService;
             this._priceFormatter = priceFormatter;
             this._localizationService = localizationService;
+            this._shippingService = shippingService;
+            this._countryService = countryService;
+            this._stateProvinceService = stateProvinceService;
+            this._storeContext = storeContext;
+            this._shippingSettings = shippingSettings;
 
             this._promoSettings = promoSettings;
             this._promoService = promoService;
@@ -152,14 +164,46 @@ namespace Qixol.Plugin.Misc.Promo.Factories
         #endregion
 
         #region Utilities
+
+        private PromoEstimateShippingResultModel.PromoShippingOptionModel PrepareShippingOptionModelPromotions(ShippingOption so)
+        {
+            var psoModel = new PromoEstimateShippingResultModel.PromoShippingOptionModel()
+            {
+                Name = so.Name,
+                Description = so.Description,
+                Price = so.Description,
+                DiscountAmount = _priceFormatter.FormatShippingPrice(decimal.Zero, true)
+            };
+
+            _promoService.ProcessShoppingCart(so);
+
+            BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
+
+            if (basketResponse != null && basketResponse.IsValid())
+            {
+                var totalDiscount = 0M;
+                basketResponse.DeliveryPromos().ToList().ForEach(dp =>
+                {
+                    var discount = _currencyService.ConvertFromPrimaryStoreCurrency(dp.DiscountAmount, _workContext.WorkingCurrency);
+                    totalDiscount += discount;
+                    psoModel.Promotions.Add(new Models.Shared.PromotionModel()
+                    {
+                        PromotionName = dp.DisplayDetails(),
+                        PromotionId = dp.PromotionId.ToString(),
+                        DiscountAmount = _priceFormatter.FormatShippingPrice(discount, true)
+                    });
+                });
+                psoModel.DiscountAmount = _priceFormatter.FormatShippingPrice(totalDiscount, true);
+                var price = _currencyService.ConvertFromPrimaryStoreCurrency(basketResponse.DeliveryPrice, _workContext.WorkingCurrency);
+                psoModel.Price = _priceFormatter.FormatShippingPrice(price, true);
+            }
+
+            return psoModel;
+        }
+
         #endregion
 
         #region Methods
-
-        public PictureModel PrepareCartItemPictureModel(ShoppingCartItem shoppingCartItem, string productName)
-        {
-            return base.PrepareCartItemPictureModel(shoppingCartItem, _mediaSettings.CartThumbPictureSize, true, productName);
-        }
 
         /// <summary>
         /// Prepare shopping cart model
@@ -231,23 +275,104 @@ namespace Qixol.Plugin.Misc.Promo.Factories
 
                     model.DiscountBox.Messages = new List<string>();
 
-                    var discountCouponCodes = _workContext.CurrentCustomer.ParseAppliedDiscountCouponCodes();
-                    foreach (var couponCode in discountCouponCodes)
+                    var discountCoupons = basketResponse.Coupons.Where(c => !c.Issued);
+                    foreach (var coupon in discountCoupons)
                     {
-                        if (basketResponse.CouponIsValid(couponCode))
+                        if (basketResponse.CouponIsValid(coupon.CouponCode))
                         {
+                            int fakeId = 1;
                             model.DiscountBox.IsApplied = true;
                             model.DiscountBox.Messages.Add(_localizationService.GetResource("ShoppingCart.DiscountCouponCode.Applied"));
+                            model.DiscountBox.AppliedDiscountsWithCodes.Add(new ShoppingCartModel.DiscountBoxModel.DiscountInfoModel()
+                            {
+                                CouponCode = coupon.CouponCode,
+                                Id = fakeId
+                            });
+                            fakeId++;
                         }
                         else
                         {
+                            var message = string.Format("{0}: {1}", coupon.CouponCode, _localizationService.GetResource("ShoppingCart.DiscountCouponCode.WrongDiscount"));
                             model.DiscountBox.IsApplied = false;
-                            model.DiscountBox.Messages.Add(_localizationService.GetResource("ShoppingCart.DiscountCouponCode.WrongDiscount"));
+                            model.DiscountBox.Messages.Add(message);
                         }
                     }
                 }
             }
             return model;
+        }
+
+        public override EstimateShippingResultModel PrepareEstimateShippingResultModel(IList<ShoppingCartItem> cart, int? countryId, int? stateProvinceId, string zipPostalCode)
+        {
+            if (!_promoSettings.Enabled)
+                return base.PrepareEstimateShippingResultModel(cart, countryId, stateProvinceId, zipPostalCode); ;
+
+            if (!cart.RequiresShipping())
+                return new EstimateShippingResultModel();
+
+            var promoEstimateShippingResultModel = new PromoEstimateShippingResultModel();
+
+            var address = new Address
+            {
+                CountryId = countryId,
+                Country = countryId.HasValue ? _countryService.GetCountryById(countryId.Value) : null,
+                StateProvinceId = stateProvinceId,
+                StateProvince = stateProvinceId.HasValue ? _stateProvinceService.GetStateProvinceById(stateProvinceId.Value) : null,
+                ZipPostalCode = zipPostalCode,
+            };
+
+            var getShippingOptionResponse = _shippingService
+                    .GetShippingOptions(cart, address, _workContext.CurrentCustomer, storeId: _storeContext.CurrentStore.Id);
+
+            if (getShippingOptionResponse.Success)
+            {
+                if (getShippingOptionResponse.ShippingOptions.Any())
+                {
+                    getShippingOptionResponse.ShippingOptions.ToList().ForEach(so =>
+                    {
+                        var psoModel = PrepareShippingOptionModelPromotions(so);
+
+                        promoEstimateShippingResultModel.PromoShippingOptions.Add(psoModel);
+                        promoEstimateShippingResultModel.ShippingOptions.Add(psoModel); // for completeness
+                    });
+                }
+                else
+                    getShippingOptionResponse.Errors.ToList().ForEach(error =>
+                    {
+                        promoEstimateShippingResultModel.Warnings.Add(error);
+                    });
+
+                if (_shippingSettings.AllowPickUpInStore)
+                {
+                    var pickupPointsResponse = _shippingService.GetPickupPoints(address, _workContext.CurrentCustomer, storeId: _storeContext.CurrentStore.Id);
+                    if (pickupPointsResponse.Success)
+                    {
+                        if (pickupPointsResponse.PickupPoints.Any())
+                        {
+                            var cheapestFee = pickupPointsResponse.PickupPoints.Min(p => p.PickupFee);
+
+                            var so = new ShippingOption()
+                            {
+                                Name = _localizationService.GetResource("Checkout.PickupPoints"),
+                                Description = _localizationService.GetResource("Checkout.PickupPoints.Description"),
+                                Rate = cheapestFee
+                            };
+
+                            var psoModel = PrepareShippingOptionModelPromotions(so);
+
+                            promoEstimateShippingResultModel.PromoShippingOptions.Add(psoModel);
+                            promoEstimateShippingResultModel.ShippingOptions.Add(psoModel); // for completeness
+                        };
+                    }
+                    else
+                        pickupPointsResponse.Errors.ToList().ForEach(error =>
+                        {
+                            promoEstimateShippingResultModel.Warnings.Add(error);
+                        });
+                }
+            }
+
+            return promoEstimateShippingResultModel;
         }
 
         #endregion

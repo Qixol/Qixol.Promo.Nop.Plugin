@@ -14,7 +14,7 @@ using Nop.Services.Directory;
 using Nop.Services.Helpers;
 using Nop.Services.Localization;
 using Nop.Services.Media;
-using Nop.Services.Orders;
+using global::Nop.Services.Orders;
 using Nop.Services.Payments;
 using Nop.Services.Stores;
 using Qixol.Nop.Promo.Core.Domain.Orders;
@@ -67,23 +67,23 @@ namespace Qixol.Nop.Promo.Services.Common
 
         #region ctor
 
-        public PdfService(ILocalizationService localizationService, 
+        public PdfService(ILocalizationService localizationService,
             ILanguageService languageService,
             IWorkContext workContext,
             IOrderService orderService,
             IPaymentService paymentService,
             IDateTimeHelper dateTimeHelper,
             IPriceFormatter priceFormatter,
-            ICurrencyService currencyService, 
+            ICurrencyService currencyService,
             IMeasureService measureService,
             IPictureService pictureService,
-            IProductService productService, 
+            IProductService productService,
             IProductAttributeParser productAttributeParser,
             IStoreService storeService,
             IStoreContext storeContext,
             ISettingService settingContext,
             IAddressAttributeFormatter addressAttributeFormatter,
-            CatalogSettings catalogSettings, 
+            CatalogSettings catalogSettings,
             CurrencySettings currencySettings,
             MeasureSettings measureSettings,
             PdfSettings pdfSettings,
@@ -172,8 +172,6 @@ namespace Qixol.Nop.Promo.Services.Common
                 //so let's load it based on a store of the current order
                 var pdfSettingsByStore = _settingContext.LoadSetting<PdfSettings>(order.StoreId);
 
-                PromoOrder promoOrder = _promoOrderService.GetPromoOrderByOrderId(order.Id);
-
                 var lang = _languageService.GetLanguageById(languageId == 0 ? order.CustomerLanguageId : languageId);
                 if (lang == null || !lang.Published)
                     lang = _workContext.WorkingLanguage;
@@ -226,7 +224,7 @@ namespace Qixol.Nop.Promo.Services.Common
                     cellLogo.AddElement(logo);
                     headerTable.AddCell(cellLogo);
                 }
-                doc.Add(headerTable); 
+                doc.Add(headerTable);
 
                 #endregion
 
@@ -267,7 +265,7 @@ namespace Qixol.Nop.Promo.Services.Common
                     billingAddress.AddCell(new Paragraph("   " + String.Format(_localizationService.GetResource("PDFInvoice.VATNumber", lang.Id), order.VatNumber), font));
 
                 //custom attributes
-                var customBillingAddressAttributes = _addressAttributeFormatter.FormatAttributes( order.BillingAddress.CustomAttributes);
+                var customBillingAddressAttributes = _addressAttributeFormatter.FormatAttributes(order.BillingAddress.CustomAttributes);
                 if (!String.IsNullOrEmpty(customBillingAddressAttributes))
                 {
                     //TODO: we should add padding to each line (in case if we have sevaral custom address attributes)
@@ -345,18 +343,18 @@ namespace Qixol.Nop.Promo.Services.Common
                     }
                     else
                         if (order.PickupAddress != null)
-                        {
-                            shippingAddress.AddCell(new Paragraph(_localizationService.GetResource("PDFInvoice.Pickup", lang.Id), titleFont));
-                            if (!string.IsNullOrEmpty(order.PickupAddress.Address1))
-                                shippingAddress.AddCell(new Paragraph(string.Format("   {0}", string.Format(_localizationService.GetResource("PDFInvoice.Address", lang.Id), order.PickupAddress.Address1)), font));
-                            if (!string.IsNullOrEmpty(order.PickupAddress.City))
-                                shippingAddress.AddCell(new Paragraph(string.Format("   {0}", order.PickupAddress.City), font));
-                            if (order.PickupAddress.Country != null)
-                                shippingAddress.AddCell(new Paragraph(string.Format("   {0}", order.PickupAddress.Country.GetLocalized(x => x.Name, lang.Id)), font));
-                            if (!string.IsNullOrEmpty(order.PickupAddress.ZipPostalCode))
-                                shippingAddress.AddCell(new Paragraph(string.Format("   {0}", order.PickupAddress.ZipPostalCode), font));
-                            shippingAddress.AddCell(new Paragraph(" "));
-                        }
+                    {
+                        shippingAddress.AddCell(new Paragraph(_localizationService.GetResource("PDFInvoice.Pickup", lang.Id), titleFont));
+                        if (!string.IsNullOrEmpty(order.PickupAddress.Address1))
+                            shippingAddress.AddCell(new Paragraph(string.Format("   {0}", string.Format(_localizationService.GetResource("PDFInvoice.Address", lang.Id), order.PickupAddress.Address1)), font));
+                        if (!string.IsNullOrEmpty(order.PickupAddress.City))
+                            shippingAddress.AddCell(new Paragraph(string.Format("   {0}", order.PickupAddress.City), font));
+                        if (order.PickupAddress.Country != null)
+                            shippingAddress.AddCell(new Paragraph(string.Format("   {0}", order.PickupAddress.Country.GetLocalized(x => x.Name, lang.Id)), font));
+                        if (!string.IsNullOrEmpty(order.PickupAddress.ZipPostalCode))
+                            shippingAddress.AddCell(new Paragraph(string.Format("   {0}", order.PickupAddress.ZipPostalCode), font));
+                        shippingAddress.AddCell(new Paragraph(" "));
+                    }
                     shippingAddress.AddCell(new Paragraph("   " + String.Format(_localizationService.GetResource("PDFInvoice.ShippingMethod", lang.Id), order.ShippingMethod), font));
                     shippingAddress.AddCell(new Paragraph());
 
@@ -394,14 +392,14 @@ namespace Qixol.Nop.Promo.Services.Common
                 if (lang.Rtl)
                 {
                     productsTable.SetWidths(_catalogSettings.ShowSkuOnProductDetailsPage
-                        ? new[] {15, 10, 15, 15, 45}
-                        : new[] {20, 10, 20, 50});
+                        ? new[] { 15, 10, 15, 15, 45 }
+                        : new[] { 20, 10, 20, 50 });
                 }
                 else
                 {
                     productsTable.SetWidths(_catalogSettings.ShowSkuOnProductDetailsPage
-                        ? new[] {45, 15, 15, 10, 15}
-                        : new[] {50, 20, 10, 20});
+                        ? new[] { 45, 15, 15, 10, 15 }
+                        : new[] { 50, 20, 10, 20 });
                 }
 
                 //product name
@@ -441,6 +439,21 @@ namespace Qixol.Nop.Promo.Services.Common
                 {
                     var p = orderItem.Product;
 
+                    // promo - get details
+                    var linePromotions = orderItem.Promotions().ToList();
+                    var linePromotionNames = new List<string>();
+                    var linePromotionAmounts = new List<string>();
+                    if (linePromotions != null && linePromotions.Any())
+                    {
+                        linePromotions.ForEach(lp =>
+                        {
+                            linePromotionNames.Add(lp.DisplayDetails());
+                            var lineDiscountAmountInclTaxiInCustomerCurrency = _currencyService.ConvertCurrency(lp.DiscountAmount, order.CurrencyRate);
+                            var youSaveText = string.Format(_localizationService.GetResource("ShoppingCart.ItemYouSave"), _priceFormatter.FormatPrice(lineDiscountAmountInclTaxiInCustomerCurrency, true, order.CustomerCurrencyCode, lang, true));
+                            linePromotionAmounts.Add(youSaveText);
+                        });
+                    }
+
                     //a vendor should have access only to his products
                     if (vendorId > 0 && p.VendorId != vendorId)
                         continue;
@@ -448,7 +461,7 @@ namespace Qixol.Nop.Promo.Services.Common
                     var pAttribTable = new PdfPTable(1);
                     pAttribTable.RunDirection = GetDirection(lang);
                     pAttribTable.DefaultCell.Border = Rectangle.NO_BORDER;
-                    
+
                     //product name
                     string name = p.GetLocalized(x => x.Name, lang.Id);
                     pAttribTable.AddCell(new Paragraph(name, font));
@@ -471,16 +484,12 @@ namespace Qixol.Nop.Promo.Services.Common
                         pAttribTable.AddCell(rentalInfoParagraph);
                     }
 
-                    // promo
-                    if (promoOrder != null)
+                    // promo - line level promotions
+                    if (linePromotionNames.Any())
                     {
-                        List<string> promoNames = promoOrder.GetLineDiscountNames(orderItem, _promoSettings);
-                        if (promoNames != null && promoNames.Count > 0)
-                        {
-                            var allPromoNames = string.Join(Environment.NewLine, promoNames);
-                            var promoInfo = new Paragraph(allPromoNames, promosFont);
-                            pAttribTable.AddCell(promoInfo);
-                        }
+                        var allPromoNames = string.Join(Environment.NewLine, linePromotionNames.ToArray());
+                        var promoInfo = new Paragraph(allPromoNames, promosFont);
+                        pAttribTable.AddCell(promoInfo);
                     }
                     productsTable.AddCell(pAttribTable);
 
@@ -517,7 +526,7 @@ namespace Qixol.Nop.Promo.Services.Common
                     productsTable.AddCell(cellProductItem);
 
                     //total
-                    string subTotal; 
+                    string subTotal;
                     if (order.CustomerTaxDisplayType == TaxDisplayType.IncludingTax)
                     {
                         //including tax
@@ -531,7 +540,7 @@ namespace Qixol.Nop.Promo.Services.Common
                         subTotal = _priceFormatter.FormatPrice(priceExclTaxInCustomerCurrency, true, order.CustomerCurrencyCode, lang, false);
                     }
 
-					#region Promo
+                    #region Promo - discount amounts
 
                     var ptotalTable = new PdfPTable(1);
                     ptotalTable.RunDirection = GetDirection(lang);
@@ -539,70 +548,64 @@ namespace Qixol.Nop.Promo.Services.Common
 
                     ptotalTable.AddCell(new Paragraph(subTotal, font));
 
-                    if (promoOrder != null)
+                    if (linePromotionAmounts.Any())
                     {
-
-                        var lineTotalDiscount = promoOrder.GetLineDiscountAmount(orderItem, _promoSettings);
-                        if (lineTotalDiscount != decimal.Zero)
+                        linePromotionAmounts.ForEach(lpa =>
                         {
-                            var localLinePromoAmount = _currencyService.ConvertCurrency(lineTotalDiscount, order.CurrencyRate);
-                            var youSaveText = string.Format("{0}: {1}", _localizationService.GetResource("ShoppingCart.ItemYouSave"), _priceFormatter.FormatPrice(localLinePromoAmount, true, order.CustomerCurrencyCode, lang, true));
-                            ptotalTable.AddCell(new Paragraph(youSaveText, promosFont));
-                        }
+                            ptotalTable.AddCell(new Paragraph(lpa, promosFont));
+                        });
                     }
 
                     productsTable.AddCell(ptotalTable);
 
-					#endregion
+                    #endregion
                 }
 
                 #endregion
 
                 #region issued coupons
 
-                if (promoOrder != null && promoOrder.PromoOrderCoupons != null && promoOrder.PromoOrderCoupons.Count > 0)
+                var promoOrderIssuedCoupons = order.PromoIssuedCoupons();
+                promoOrderIssuedCoupons.ToList().ForEach(poic =>
                 {
-                    foreach (var promoOrderCoupon in promoOrder.PromoOrderCoupons)
+                    var issuedCouponTable = new PdfPTable(1);
+                    issuedCouponTable.RunDirection = GetDirection(lang);
+                    issuedCouponTable.DefaultCell.Border = Rectangle.NO_BORDER;
+
+                    // coupon details
+                    issuedCouponTable.AddCell(new Paragraph(_localizationService.GetResource("Plugin.Misc.QixolPromo.Coupon.YouReceived"), font));
+                    issuedCouponTable.AddCell(new Paragraph(poic.DisplayText, promosFont));
+                    string code = string.Format("{0}: {1}", _localizationService.GetResource("Plugin.Misc.QixolPromo.Coupon.Code"), poic.CouponCode);
+                    issuedCouponTable.AddCell(new Paragraph(code, font));
+
+                    productsTable.AddCell(issuedCouponTable);
+
+                    //SKU - empty cell
+                    if (_catalogSettings.ShowSkuOnProductDetailsPage)
                     {
-                        var issuedCouponTable = new PdfPTable(1);
-                        issuedCouponTable.RunDirection = GetDirection(lang);
-                        issuedCouponTable.DefaultCell.Border = Rectangle.NO_BORDER;
-
-                        // coupon details
-                        issuedCouponTable.AddCell(new Paragraph(_localizationService.GetResource("Plugin.Misc.QixolPromo.Coupon.YouReceived"), font));
-                        issuedCouponTable.AddCell(new Paragraph(promoOrderCoupon.DisplayText, promosFont));
-                        string code = string.Format("{0}: {1}", _localizationService.GetResource("Plugin.Misc.QixolPromo.Coupon.Code"), promoOrderCoupon.CouponCode);
-                        issuedCouponTable.AddCell(new Paragraph(code, font));
-
-                        productsTable.AddCell(issuedCouponTable);
-
-                        //SKU - empty cell
-                        if (_catalogSettings.ShowSkuOnProductDetailsPage)
-                        {
-                            var sku = string.Empty;
-                            cellProductItem = new PdfPCell(new Phrase(sku ?? String.Empty, font));
-                            cellProductItem.HorizontalAlignment = Element.ALIGN_CENTER;
-                            productsTable.AddCell(cellProductItem);
-                        }
-
-                        //price - empty cell
-                        string unitPrice = string.Empty;
-                        cellProductItem = new PdfPCell(new Phrase(unitPrice, font));
-                        cellProductItem.HorizontalAlignment = Element.ALIGN_LEFT;
-                        productsTable.AddCell(cellProductItem);
-
-                        //qty
-                        cellProductItem = new PdfPCell(new Phrase(string.Empty, font));
-                        cellProductItem.HorizontalAlignment = Element.ALIGN_LEFT;
-                        productsTable.AddCell(cellProductItem);
-
-                        //total
-                        string subTotal = string.Empty;
-                        cellProductItem = new PdfPCell(new Phrase(subTotal, font));
-                        cellProductItem.HorizontalAlignment = Element.ALIGN_LEFT;
+                        var sku = string.Empty;
+                        cellProductItem = new PdfPCell(new Phrase(sku ?? String.Empty, font));
+                        cellProductItem.HorizontalAlignment = Element.ALIGN_CENTER;
                         productsTable.AddCell(cellProductItem);
                     }
-                }
+
+                    //price - empty cell
+                    string unitPrice = string.Empty;
+                    cellProductItem = new PdfPCell(new Phrase(unitPrice, font));
+                    cellProductItem.HorizontalAlignment = Element.ALIGN_LEFT;
+                    productsTable.AddCell(cellProductItem);
+
+                    //qty
+                    cellProductItem = new PdfPCell(new Phrase(string.Empty, font));
+                    cellProductItem.HorizontalAlignment = Element.ALIGN_LEFT;
+                    productsTable.AddCell(cellProductItem);
+
+                    //total
+                    string subTotal = string.Empty;
+                    cellProductItem = new PdfPCell(new Phrase(subTotal, font));
+                    cellProductItem.HorizontalAlignment = Element.ALIGN_LEFT;
+                    productsTable.AddCell(cellProductItem);
+                });
                 doc.Add(productsTable);
 
                 #endregion
@@ -721,16 +724,19 @@ namespace Qixol.Nop.Promo.Services.Common
                         }
                     }
 
-                decimal shippingDiscount = promoOrder.GetDeliveryPromoDiscount();
-                if (shippingDiscount != decimal.Zero)
-                {
-                    shippingDiscount = _currencyService.ConvertCurrency(shippingDiscount, order.CurrencyRate);
-                    var displayShippingDiscount = _priceFormatter.FormatPrice(-shippingDiscount, true, order.CustomerCurrencyCode, false, lang);
-                    var p = new PdfPCell(new Paragraph(string.Format("{0} {1}", promoOrder.GetDeliveryPromoName(_promoSettings), displayShippingDiscount), promosFont));
-                    p.HorizontalAlignment = Element.ALIGN_RIGHT;
-                    p.Border = Rectangle.NO_BORDER;
-                    totalsTable.AddCell(p);
-                }
+                    var shippingDiscounts = order.DeliveryPromotions().ToList();
+                    if (shippingDiscounts.Any())
+                    {
+                        shippingDiscounts.ForEach(shippingDiscount =>
+                        {
+                            var shippingDiscountAmount = _currencyService.ConvertCurrency(shippingDiscount.DiscountAmount, order.CurrencyRate);
+                            var displayShippingDiscount = _priceFormatter.FormatPrice(-shippingDiscountAmount, true, order.CustomerCurrencyCode, false, lang);
+                            var p = new PdfPCell(new Paragraph(string.Format("{0} {1}", shippingDiscount.DisplayDetails(), displayShippingDiscount), promosFont));
+                            p.HorizontalAlignment = Element.ALIGN_RIGHT;
+                            p.Border = Rectangle.NO_BORDER;
+                            totalsTable.AddCell(p);
+                        });
+                    }
 
                     //payment fee
                     if (order.PaymentMethodAdditionalFeeExclTax > decimal.Zero)
@@ -807,17 +813,17 @@ namespace Qixol.Nop.Promo.Services.Common
                         }
                     }
 
-                    //discount (applied to order total)
+                    //discount (applied to order total) ("Your total savings" ???)
                     if (order.OrderDiscount > decimal.Zero)
                     {
                         string discountName = _localizationService.GetResource("PDFInvoice.Discount", lang.Id);
                         Font discountFont = font;
 
-                        if (promoOrder != null)
-                        {
-                            discountName = promoOrder.GetBasketLevelPromotionName(_promoSettings);
-                            discountFont = promosFont;
-                        }
+                        //if (promoOrder != null)
+                        //{
+                        //    discountName = promoOrder.GetBasketLevelPromotionName(_promoSettings);
+                        //    discountFont = promosFont;
+                        //}
 
                         var orderDiscountInCustomerCurrency = _currencyService.ConvertCurrency(order.OrderDiscount, order.CurrencyRate);
                         string orderDiscountInCustomerCurrencyStr = _priceFormatter.FormatPrice(-orderDiscountInCustomerCurrency, true, order.CustomerCurrencyCode, false, lang);
@@ -876,7 +882,7 @@ namespace Qixol.Nop.Promo.Services.Common
                         .OrderByDescending(on => on.CreatedOnUtc)
                         .ToList();
                     if (orderNotes.Any())
-                    { 
+                    {
                         var notesHeader = new PdfPTable(1);
                         notesHeader.RunDirection = GetDirection(lang);
                         notesHeader.WidthPercentage = 100f;
@@ -890,11 +896,11 @@ namespace Qixol.Nop.Promo.Services.Common
                         notesTable.RunDirection = GetDirection(lang);
                         if (lang.Rtl)
                         {
-                            notesTable.SetWidths(new[] {70, 30});
+                            notesTable.SetWidths(new[] { 70, 30 });
                         }
                         else
                         {
-                            notesTable.SetWidths(new[] {30, 70});
+                            notesTable.SetWidths(new[] { 30, 70 });
                         }
                         notesTable.WidthPercentage = 100f;
 

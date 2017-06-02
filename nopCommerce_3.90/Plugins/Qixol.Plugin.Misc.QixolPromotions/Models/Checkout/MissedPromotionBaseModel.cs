@@ -12,7 +12,7 @@ namespace Qixol.Plugin.Misc.Promo.Models.Checkout
     {
         private IList<MissedPromotionCriteriaModel> _criteria;
         private IList<ShoppingCartModel.ShoppingCartItemModel> _matchedCartItemModels;
-        private IList<PromoProductDetailsModel> _unmatchedProductDetailsModels;
+        private IList<PromoProductOverviewModel> _unmatchedProductOverviewModels;
         private IList<CategorySimpleModel> _categorySimpleModels;
 
         public string PromotionImageUrl { get; set; }
@@ -43,15 +43,15 @@ namespace Qixol.Plugin.Misc.Promo.Models.Checkout
             }
         }
 
-        public IList<PromoProductDetailsModel> UnmatchedProductDetailsModels
+        public IList<PromoProductOverviewModel> UnmatchedProductOverviewModels
         {
             get
             {
-                return _unmatchedProductDetailsModels ?? (_unmatchedProductDetailsModels = new List<PromoProductDetailsModel>());
+                return _unmatchedProductOverviewModels ?? (_unmatchedProductOverviewModels = new List<PromoProductOverviewModel>());
             }
             set
             {
-                _unmatchedProductDetailsModels = value;
+                _unmatchedProductOverviewModels = value;
             }
         }
 

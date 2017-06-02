@@ -1,0 +1,50 @@
+﻿@model PromoProductOverviewModel
+
+@using Qixol.Plugin.Misc.Promo.Models.Checkout;
+@using global::Nop.Web.Models.Catalog;
+@using global::Nop.Core.Domain.Orders;
+@using global::Nop.Web.Models.Media;
+
+@{
+    Layout = null;
+
+    //prepare "Add to cart" AJAX link
+    string addtocartlink = string.Empty;
+    var shoppingCartTypeId = (int) ShoppingCartType.ShoppingCart;
+    var quantity = 1; // TODO: Model.AdditionalQuantityNeededToTriggerPromotion;
+    var addToCartText = T("ShoppingCart.AddToCart").Text;
+    var addToCartFormId = "addToCartForm_" + Model.ProductOverviewModel.Id; //TODO: make this granular at ATTRIBUTES level
+}
+
+<tr>
+    <td>
+        <img alt="@Model.ProductOverviewModel.DefaultPictureModel.AlternateText" src="@Model.ProductOverviewModel.DefaultPictureModel.ImageUrl" title="@Model.ProductOverviewModel.DefaultPictureModel.Title" />
+    </td>
+    <td>
+        <span>@Model.ProductOverviewModel.Name</span>
+        @{
+            addtocartlink = Url.RouteUrl("AddProductToCart-Details", new { productId = Model.ProductOverviewModel.Id, shoppingCartTypeId = shoppingCartTypeId, quantity = quantity });
+
+            if (Model.ProductOverviewModel.ProductPrice.IsRental)
+            {
+                addToCartText = T("ShoppingCart.Rent").Text;
+            }
+            if (Model.ProductOverviewModel.ProductPrice.AvailableForPreOrder)
+            {
+                addToCartText = T("ShoppingCart.PreOrder").Text;
+            }
+        }
+        <form id="@addToCartFormId" method="post">
+            @foreach (KeyValuePair<string, string> kvp in Model.Attributes)
+            {
+                <input id="product_attribute_@(kvp.Key)" name="product_attribute_@(kvp.Key)" type="hidden" value="@(kvp.Value)">
+            }
+            <input id="addtocart_@(Model.ProductOverviewModel.Id).EnteredQuantity" name="addtocart_@(Model.ProductOverviewModel.Id).EnteredQuantity" type="hidden" value="@quantity" />
+        </form>
+
+        <span class="add-to-cart-panel" style="float: right;">
+            <input type="button" value="@(addToCartText)" class="button-2 product-box-add-to-cart-button" onclick="PromoAjaxCart.addproducttocart_missedPromotions('@addtocartlink', '#@(addToCartFormId)');return false;" />
+        </span>
+    </td>
+</tr>
+

@@ -1,39 +1,31 @@
-﻿using System;
-using Nop.Core.Domain.Media;
-using Nop.Services.Configuration;
-using Nop.Services.Tasks;
-using System.Collections.Generic;
-using System.IO;
-using System.Drawing;
-using Nop.Services.Catalog;
-using Nop.Core.Domain.Catalog;
-using System.Linq;
-using Nop.Services.Media;
+﻿using Nop.Core.Domain.Catalog;
+using Nop.Core.Domain.Tax;
+using Nop.Core.Domain.Vendors;
 using Nop.Core.Plugins;
-using Nop.Core.Domain.Stores;
-using Nop.Services.Stores;
-using Qixol.Nop.Promo.Services.ExportQueue;
-using Qixol.Nop.Promo.Core.Domain.ExportQueue;
-using Qixol.Nop.Promo.Services;
-using Qixol.Nop.Promo.Services.AttributeValues;
-using Nop.Services.Shipping;
-using Qixol.Nop.Promo.Core.Domain.AttributeValues;
+using Nop.Services.Catalog;
 using Nop.Services.Customers;
-using Qixol.Nop.Promo.Core.Domain.Import;
-using Qixol.Nop.Promo.Services.ProductAttributeConfig;
-using Qixol.Nop.Promo.Services.ProductMapping;
+using Nop.Services.Directory;
+using Nop.Services.Orders;
+using Nop.Services.Shipping;
+using Nop.Services.Stores;
+using Nop.Services.Tasks;
+using Nop.Services.Tax;
+using Nop.Services.Vendors;
+using Qixol.Nop.Promo.Core.Domain.AttributeValues;
+using Qixol.Nop.Promo.Core.Domain.ExportQueue;
 using Qixol.Nop.Promo.Core.Domain.ProductAttributeConfig;
 using Qixol.Nop.Promo.Core.Domain.Products;
-using Nop.Services.Vendors;
-using Nop.Services.Tax;
-using Nop.Core.Domain.Vendors;
-using Nop.Core.Domain.Tax;
-using Qixol.Promo.Integration.Lib.Import;
-using Nop.Services.Orders;
-using Qixol.Nop.Promo.Services.Promo;
-using Nop.Services.Directory;
 using Qixol.Nop.Promo.Core.Domain.Promo;
+using Qixol.Nop.Promo.Services.AttributeValues;
+using Qixol.Nop.Promo.Services.ExportQueue;
 using Qixol.Nop.Promo.Services.Orders;
+using Qixol.Nop.Promo.Services.ProductAttributeConfig;
+using Qixol.Nop.Promo.Services.ProductMapping;
+using Qixol.Nop.Promo.Services.Promo;
+using Qixol.Promo.Integration.Lib.Import;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Qixol.Plugin.Misc.Promo.Tasks
 {
@@ -484,7 +476,7 @@ namespace Qixol.Plugin.Misc.Promo.Tasks
                 else
                 {
                     // Deal with updating 'all' items.
-                    if (exportItems.Any(ei => ei.Action == ExportQueueAction.All))
+                    if (exportItems != null && exportItems.Any(ei => ei.Action == ExportQueueAction.All))
                     {
                         itemsToImport = (from nopItem in allNopAttributeValues
                                          join attrib in allAttributes
@@ -578,7 +570,7 @@ namespace Qixol.Plugin.Misc.Promo.Tasks
                 else
                 {
                     // In theory, if we have an 'All' action, the only other items in the queue should be deletes.
-                    if (checkoutAttributesToProcess.Any(ei => ei.Action == ExportQueueAction.All))
+                    if (checkoutAttributesToProcess != null && checkoutAttributesToProcess.Any(ei => ei.Action == ExportQueueAction.All))
                     {
                         var allCheckoutAttributes = _attributeValueService.RetrieveAllForAttribute(EntityAttributeName.CheckoutAttribute);
                         caIdsToProcess.AddRange(allCheckoutAttributes.ToList().Select(p => new KeyValuePair<int, bool>(p.Id, false)).ToList());
@@ -874,7 +866,7 @@ namespace Qixol.Plugin.Misc.Promo.Tasks
                 else
                 {
                     // In theory, if we have an 'All' action, the only other items in the queue should be deletes.
-                    if (productsToProcess.Any(ei => ei.Action == ExportQueueAction.All))
+                    if (productsToProcess != null && productsToProcess.Any(ei => ei.Action == ExportQueueAction.All))
                     {
                         var allProducts = _productService.SearchProducts(productType: ProductType.SimpleProduct, storeId: _promoSettings.StoreId);
                         productIdsToProcess.AddRange(

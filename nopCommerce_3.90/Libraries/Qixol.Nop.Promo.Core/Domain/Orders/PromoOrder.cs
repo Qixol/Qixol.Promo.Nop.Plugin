@@ -12,6 +12,7 @@ namespace Qixol.Nop.Promo.Core.Domain.Orders
         private ICollection<PromoOrderItem> _promoOrderItems;
         private ICollection<PromoOrderCoupon> _promoOrderCoupons;
 
+        public int CustomerId { get; set;  }
         public int OrderId { get; set; }
 
         public string RequestXml { get; set; }

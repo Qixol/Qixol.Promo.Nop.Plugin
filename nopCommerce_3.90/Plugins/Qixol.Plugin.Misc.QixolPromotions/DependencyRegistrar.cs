@@ -1,35 +1,32 @@
 ﻿using Autofac;
 using Autofac.Core;
+using Nop.Core.Caching;
 using Nop.Core.Data;
 using Nop.Core.Infrastructure;
 using Nop.Core.Infrastructure.DependencyManagement;
 using Nop.Data;
-using Qixol.Plugin.Misc.Promo.Controllers;
-using Qixol.Nop.Promo.Services;
-using System.Web.Mvc;
-using Nop.Web.Framework.Mvc;
-using Qixol.Nop.Promo.Core.Domain.Promo;
-using Qixol.Nop.Promo.Services.Discounts;
-using Qixol.Nop.Promo.Services.Coupons;
-using Qixol.Nop.Promo.Services.Orders;
-using Qixol.Nop.Promo.Services.Catalog;
-using Qixol.Nop.Promo.Services.ExportQueue;
-using Qixol.Nop.Promo.Data;
-using Qixol.Nop.Promo.Core.Domain.ExportQueue;
-using Qixol.Nop.Promo.Core.Domain.Products;
 using Qixol.Nop.Promo.Core.Domain.AttributeValues;
-using Qixol.Nop.Promo.Services.AttributeValues;
-using Qixol.Nop.Promo.Services.ProductAttributeConfig;
+using Qixol.Nop.Promo.Core.Domain.ExportQueue;
+using Qixol.Nop.Promo.Core.Domain.Orders;
 using Qixol.Nop.Promo.Core.Domain.ProductAttributeConfig;
+using Qixol.Nop.Promo.Core.Domain.Products;
+using Qixol.Nop.Promo.Core.Domain.Promo;
+using Qixol.Nop.Promo.Data.Mapping;
+using Qixol.Nop.Promo.Services.AttributeValues;
+using Qixol.Nop.Promo.Services.Catalog;
+using Qixol.Nop.Promo.Services.Common;
+using Qixol.Nop.Promo.Services.Coupons;
+using Qixol.Nop.Promo.Services.Discounts;
+using Qixol.Nop.Promo.Services.ExportQueue;
+using Qixol.Nop.Promo.Services.Messages;
+using Qixol.Nop.Promo.Services.Orders;
+using Qixol.Nop.Promo.Services.ProductAttributeConfig;
 using Qixol.Nop.Promo.Services.ProductMapping;
 using Qixol.Nop.Promo.Services.Promo;
 using Qixol.Nop.Promo.Services.Tax;
-using Qixol.Nop.Promo.Services.Messages;
-using Nop.Core.Caching;
-using Qixol.Nop.Promo.Data.Mapping;
-using Qixol.Nop.Promo.Services.Common;
-using Qixol.Nop.Promo.Core.Domain.Orders;
+using Qixol.Plugin.Misc.Promo.Controllers;
 using Qixol.Plugin.Misc.Promo.Factories;
+using System.Web.Mvc;
 
 namespace Qixol.Plugin.Misc.Promo
 {
@@ -62,8 +59,13 @@ namespace Qixol.Plugin.Misc.Promo
             builder.RegisterType<MessageTokenProvider>().As<global::Nop.Services.Messages.IMessageTokenProvider>().InstancePerLifetimeScope();
             builder.RegisterType<PdfService>().As<global::Nop.Services.Common.IPdfService>().InstancePerLifetimeScope();
 
-            builder.RegisterType<CheckoutModelFactory>().As<Qixol.Plugin.Misc.Promo.Factories.ICheckoutModelFactory>().InstancePerLifetimeScope();
-            builder.RegisterType<ShoppingCartModelFactory>().As<Qixol.Plugin.Misc.Promo.Factories.IShoppingCartModelFactory>().InstancePerLifetimeScope();
+            builder.RegisterType<PromoProductDetailsModelFactory>().As<IPromoProductDetailsModelFactory>().WithParameter(ResolvedParameter.ForNamed<ICacheManager>("nop_cache_static")).InstancePerLifetimeScope();
+            builder.RegisterType<MissedPromotionsModelFactory>().As<IMissedPromotionsModelFactory>().WithParameter(ResolvedParameter.ForNamed<ICacheManager>("nop_cache_static")).InstancePerLifetimeScope();
+            builder.RegisterType<CatalogModelFactory>().As<global::Nop.Web.Factories.ICatalogModelFactory>().WithParameter(ResolvedParameter.ForNamed<ICacheManager>("nop_cache_static")).InstancePerLifetimeScope();
+            builder.RegisterType<CheckoutModelFactory>().As<global::Nop.Web.Factories.ICheckoutModelFactory>().WithParameter(ResolvedParameter.ForNamed<ICacheManager>("nop_cache_static")).InstancePerLifetimeScope();
+            builder.RegisterType<ShoppingCartModelFactory>().As<global::Nop.Web.Factories.IShoppingCartModelFactory>().WithParameter(ResolvedParameter.ForNamed<ICacheManager>("nop_cache_static")).InstancePerLifetimeScope();
+            builder.RegisterType<IssuedCouponModelFactory>().As<IIssuedCouponModelFactory>().WithParameter(ResolvedParameter.ForNamed<ICacheManager>("nop_cache_static")).InstancePerLifetimeScope();
+            builder.RegisterType<IssuedCouponsModelFactory>().As<IIssuedCouponsModelFactory>().WithParameter(ResolvedParameter.ForNamed<ICacheManager>("nop_cache_static")).InstancePerLifetimeScope();
 
             //data layer
             var dataSettingsManager = new DataSettingsManager();
@@ -144,6 +146,11 @@ namespace Qixol.Plugin.Misc.Promo
 
             builder.RegisterType<EfRepository<PromoOrderItemPromotion>>()
                 .As<IRepository<PromoOrderItemPromotion>>()
+                .WithParameter(ResolvedParameter.ForNamed<IDbContext>("nop_object_context_promo"))
+                .InstancePerLifetimeScope();
+
+            builder.RegisterType<EfRepository<PromoOrderCoupon>>()
+                .As<IRepository<PromoOrderCoupon>>()
                 .WithParameter(ResolvedParameter.ForNamed<IDbContext>("nop_object_context_promo"))
                 .InstancePerLifetimeScope();
         }

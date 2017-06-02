@@ -1,0 +1,61 @@
+﻿@model PromoCheckoutShippingMethodModel
+@using Qixol.Plugin.Misc.Promo.Models.Checkout;
+@using global::Nop.Services.Localization;
+@{
+    var ILS = EngineContext.Current.Resolve<ILocalizationService>();
+}
+<div class="checkout-data">
+    <div class="section shipping-method">
+        @Html.Widget("op_checkout_shipping_method_top")
+        @if (Model.Warnings.Count == 0)
+        {
+            <ul class="method-list">
+                @{
+                    int thisMethod = 0;
+                } @* TODO: use a better variable for the field naming - if it's actually needed? *@
+                @foreach (PromoCheckoutShippingMethodModel.PromoShippingMethodModel shippingMethod in Model.PromoShippingMethods)
+                {
+                    <li>
+                        <div class="method-name">
+                            <input id="shippingoption_@(thisMethod)" type="radio" name="shippingoption" value="@(shippingMethod.Name)___@(shippingMethod.ShippingRateComputationMethodSystemName)" checked="@shippingMethod.Selected" />
+                            <label for="shippingoption_@(thisMethod)">@T("Checkout.SelectShippingMethod.MethodAndFee", shippingMethod.Name, shippingMethod.Fee)</label>
+                            @if (shippingMethod.Promotions.Count > 0)
+                            {
+                                <br /><span>@(string.Format(ILS.GetResource("ShoppingCart.ItemYouSave"), shippingMethod.DiscountAmount))</span><br />
+                                foreach (var promotion in shippingMethod.Promotions)
+                                {
+                                    <span>@promotion.PromotionName</span><br />
+                                }
+                            }
+                        </div>
+                        @if (!String.IsNullOrEmpty(shippingMethod.Description))
+                        {
+                            <div class="method-description">
+                                @Html.Raw(shippingMethod.Description)
+                            </div>
+                        }
+                    </li>
+                    @(thisMethod++)
+                }
+            </ul>
+                    if (Model.NotifyCustomerAboutShippingFromMultipleLocations)
+                    {
+                        <div class="multiple-locations">
+                            @T("Checkout.ShippingMethod.ShippingFromMultipleLocations")
+                        </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="message-error">
+                            <ul>
+                                @foreach (var warning in Model.Warnings)
+                                {
+                                    <li>@warning</li>
+                                }
+                            </ul>
+                        </div>
+                    }
+        @Html.Widget("op_checkout_shipping_method_bottom")
+    </div>
+</div>

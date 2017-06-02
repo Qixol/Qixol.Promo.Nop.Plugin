@@ -30,7 +30,7 @@ using Nop.Web.Framework.Menu;
 
 namespace Qixol.Plugin.Misc.Promo
 {
-    public class PromoPlugin : BasePlugin, IMiscPlugin, IAdminMenuPlugin
+    public class PromoPlugin : BasePlugin, IMiscPlugin, IAdminMenuPlugin, IWidgetPlugin
     {
         #region Fields
 
@@ -141,7 +141,7 @@ namespace Qixol.Plugin.Misc.Promo
 
                 VariantAttributeFormat = "{0}: {1}",
                 VariantAttributesSeperator = ", ",
-                MaximumAttributesForVariants = 2,
+                MaximumAttributesForVariants = 3,
                 ShowPromotionDetailsInBasket = 0,
                 ShowHelperMessages = true,
                 InitialSetup = true,
@@ -304,7 +304,7 @@ namespace Qixol.Plugin.Misc.Promo
             this.InsertStringResource("Plugins.Misc.QixolPromo.BasketRequestServiceEndpointAddress.Hint", "The address of the basket manager service endpoint supplied with Qixol Promo Engine");
             this.InsertStringResource("Plugins.Misc.QixolPromo.ExportServiceEndpointAddress", "Export Manager Service Address");
             this.InsertStringResource("Plugins.Misc.QixolPromo.ExportServiceEndpointAddress.Hint", "The address of the Qixol Promo export manager service endpoint supplied with Qixol Promo");
-           
+
             this.InsertStringResource("Plugins.Misc.QixolPromo.ProductPictureSize", "Product picture size");
             this.InsertStringResource("Plugins.Misc.QixolPromo.ProductPictureSize.Hint", "The size of image used for display within the Qixol Promos Engine admin pages");
             this.InsertStringResource("Plugins.Misc.QixolPromo.Store", "Store");
@@ -388,6 +388,11 @@ namespace Qixol.Plugin.Misc.Promo
             this.InsertStringResource("Plugin.Misc.QixolPromo.Coupon.YouWillReceive", "You will receive a coupon with this order");
             this.InsertStringResource("Plugin.Misc.QixolPromo.Coupon.YouReceived", "You received a coupon");
             this.InsertStringResource("Plugin.Misc.QixolPromo.Coupon.Code", "Code");
+
+            this.InsertStringResource("Plugin.Misc.QixolPromo.Coupons.Code", "Code");
+            this.InsertStringResource("Plugin.Misc.QixolPromo.Coupons.Status", "Status");
+            this.InsertStringResource("Plugin.Misc.QixolPromo.Coupons.ValidTo", "Valid To");
+            this.InsertStringResource("Plugin.Misc.QixolPromo.Coupons.Description", "Description");
 
             this.InsertStringResource("Plugin.Misc.QixolPromo.ShoppingCart.AddItemWarning", "Unable to add promo item {0} to cart.");
 
@@ -517,16 +522,16 @@ namespace Qixol.Plugin.Misc.Promo
                 }
 
                 promosNode.ChildNodes.Add(new SiteMapNode()
-                    {
-                        Title = _localizationService.GetResource("Plugins.Misc.QixolPromo.PromotionsMenu.Integration"),
-                        ControllerName = "Plugin",
-                        ActionName = "ConfigureMiscPlugin",
-                        RouteValues = new RouteValueDictionary(new { systemName = "Misc.QixolPromo" }),
-                        Visible = true
-                    });
+                {
+                    Title = _localizationService.GetResource("Plugins.Misc.QixolPromo.PromotionsMenu.Integration"),
+                    ControllerName = "Plugin",
+                    ActionName = "ConfigureMiscPlugin",
+                    RouteValues = new RouteValueDictionary(new { systemName = "Misc.QixolPromo" }),
+                    Visible = true
+                });
 
                 var installedPlugins = _pluginFinder.GetPluginDescriptors<IWidgetPlugin>(loadMode: LoadPluginsMode.InstalledOnly, group: "Qixol Promo");
-                if (installedPlugins.Any(p => p.SystemName == "Widgets.QixolPromo"))
+                if (installedPlugins != null && installedPlugins.Any(p => p.SystemName == "Widgets.QixolPromo"))
                 {
                     promosNode.ChildNodes.Add(new SiteMapNode()
                     {
@@ -549,5 +554,46 @@ namespace Qixol.Plugin.Misc.Promo
 
         #endregion
 
+        #region Widget
+
+        public void GetDisplayWidgetRoute(string widgetZone, out string actionName, out string controllerName, out RouteValueDictionary routeValues)
+        {
+            actionName = "PromoWidget";
+            controllerName = "Promo";
+            routeValues = new RouteValueDictionary()
+            {
+                {"Namespaces", "Qixol.Plugin.Misc.Promo.Controllers"},
+                {"area", null},
+                {"widgetZone", widgetZone}
+            };
+        }
+
+        public IList<string> GetWidgetZones()
+        {
+            List<string> activeWidgetZoneNames = new List<string>();
+
+            // customer account
+            activeWidgetZoneNames.Add("account_navigation_after");
+
+            // shopping cart
+            activeWidgetZoneNames.Add("order_summary_content_before");
+
+            // checkout
+            activeWidgetZoneNames.Add("opc_content_before");
+            activeWidgetZoneNames.Add("checkout_confirm_top");
+
+            // order (customer details) - main widget
+            activeWidgetZoneNames.Add("orderdetails_page_top");
+
+            // order (customer details) - line level indicator
+            activeWidgetZoneNames.Add("orderdetails_product_line");
+            
+            ////// order (admin)
+            ////activeWidgetZoneNames.Add("xxxx");
+
+            return activeWidgetZoneNames;
+
+            #endregion
+        }
     }
 }

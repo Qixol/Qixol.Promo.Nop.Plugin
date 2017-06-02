@@ -24,7 +24,6 @@ namespace Qixol.Plugin.Widgets.Promo
 
             var widgetZonesList = new List<WidgetZoneItem>();
 
-            widgetZonesList.Add(new WidgetZoneItem() { Name = "account_navigation_after", ValidForPromoBanner = false });        // Used to show coupons issued in the User's account area.
             widgetZonesList.Add(new WidgetZoneItem() { Name = "productbox_addinfo_after", ValidForPromoBanner = false });        // Used when overlaying stickers in the catalogue.
 
             widgetZonesList.Add(new WidgetZoneItem() { Name = "productdetails_add_info", ValidForProductPromos = true, DefaultForProductPromos = true });

@@ -37,6 +37,7 @@ using Qixol.Nop.Promo.Core.Domain.ProductAttributeConfig;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Infrastructure;
 using Qixol.Plugin.Misc.Promo.Factories;
+using Nop.Web.Factories;
 
 namespace Qixol.Plugin.Misc.Promo.Controllers
 {
@@ -46,6 +47,8 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
         #region Fields
 
         private readonly ICheckoutModelFactory _checkoutModelFactory;
+        private readonly IMissedPromotionsModelFactory _missedPromotionsModelFactory;
+
         private readonly IWorkContext _workContext;
         private readonly IStoreContext _storeContext;
         private readonly IShoppingCartService _shoppingCartService;
@@ -82,6 +85,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
 		#region Ctor
 
         public PromoCheckoutController(ICheckoutModelFactory checkoutModelFactory,
+            IMissedPromotionsModelFactory missedPromotionsModelFactory,
             IWorkContext workContext,
             IStoreContext storeContext,
             IShoppingCartService shoppingCartService, 
@@ -121,6 +125,8 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                     paymentSettings, shippingSettings, addressSettings, customerSettings)
         {
             this._checkoutModelFactory = checkoutModelFactory;
+            this._missedPromotionsModelFactory = missedPromotionsModelFactory;
+
             this._workContext = workContext;
             this._storeContext = storeContext;
             this._shoppingCartService = shoppingCartService;
@@ -267,7 +273,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             if (scWarnings.Count > 0)
                 return RedirectToRoute("ShoppingCart");
 
-            var model = _checkoutModelFactory.PrepareMissedPromotionsModel();
+            var model = _missedPromotionsModelFactory.PrepareMissedPromotionsModel();
 
             model.ContinueShoppingUrl = _workContext.CurrentCustomer.GetAttribute<string>(SystemCustomerAttributeNames.LastContinueShoppingPage, _storeContext.CurrentStore.Id);
             if (String.IsNullOrEmpty(model.ContinueShoppingUrl))
@@ -291,7 +297,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
         [ChildActionOnly]
         public ActionResult OpcMissedPromotionsForm()
         {
-            var missedPromotionsModel = _checkoutModelFactory.PrepareMissedPromotionsModel();
+            var missedPromotionsModel = _missedPromotionsModelFactory.PrepareMissedPromotionsModel();
             missedPromotionsModel.ContinueShoppingUrl = _workContext.CurrentCustomer.GetAttribute<string>(SystemCustomerAttributeNames.LastContinueShoppingPage, _storeContext.CurrentStore.Id);
             if (String.IsNullOrEmpty(missedPromotionsModel.ContinueShoppingUrl))
             {

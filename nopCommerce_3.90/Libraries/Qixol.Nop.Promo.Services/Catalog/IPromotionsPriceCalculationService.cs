@@ -1,7 +1,7 @@
 ﻿using global::Nop.Core.Domain.Catalog;
 using global::Nop.Core.Domain.Customers;
+using global::Nop.Core.Domain.Discounts;
 using global::Nop.Core.Domain.Orders;
-using Nop.Services.Discounts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,8 +26,8 @@ namespace Qixol.Nop.Promo.Services.Catalog
         /// <returns>Final price</returns>
         decimal GetFinalPrice(Product product,
             Customer customer,
-            decimal additionalCharge = decimal.Zero, 
-            bool includeDiscounts = true, 
+            decimal additionalCharge = decimal.Zero,
+            bool includeDiscounts = true,
             int quantity = 1);
         /// <summary>
         /// Gets the final price
@@ -46,7 +46,7 @@ namespace Qixol.Nop.Promo.Services.Catalog
             bool includeDiscounts,
             int quantity,
             out decimal discountAmount,
-            out List<DiscountForCaching> appliedDiscounts);
+            out List<global::Nop.Services.Discounts.DiscountForCaching> appliedDiscounts);
         /// <summary>
         /// Gets the final price
         /// </summary>
@@ -68,7 +68,7 @@ namespace Qixol.Nop.Promo.Services.Catalog
             DateTime? rentalStartDate,
             DateTime? rentalEndDate,
             out decimal discountAmount,
-            out List<DiscountForCaching> appliedDiscounts);
+            out List<global::Nop.Services.Discounts.DiscountForCaching> appliedDiscounts);
 
 
 
@@ -137,7 +137,7 @@ namespace Qixol.Nop.Promo.Services.Catalog
         decimal GetSubTotal(ShoppingCartItem shoppingCartItem,
             bool includeDiscounts,
             out decimal discountAmount,
-            out List<DiscountForCaching> appliedDiscounts,
+            out List<global::Nop.Services.Discounts.DiscountForCaching> appliedDiscounts,
             out int? maximumDiscountQty);
 
         /// <summary>

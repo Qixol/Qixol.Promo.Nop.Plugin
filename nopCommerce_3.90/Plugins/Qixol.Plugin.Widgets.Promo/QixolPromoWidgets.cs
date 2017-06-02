@@ -121,7 +121,7 @@ namespace Qixol.Plugin.Widgets.Promo
         {
             List<string> activeWidgetZoneNames = _promoBannerService.RetrieveAllEnabledWidgetZones().Select(cw => cw.WidgetZoneSystemName).ToList();
 
-            // Add always active zones (used for stickers & coupon account details
+            // Add always active zones for stickers
             activeWidgetZoneNames.Add("account_navigation_after");
             activeWidgetZoneNames.Add("productdetails_add_info");
             activeWidgetZoneNames.Add("productbox_addinfo_after");
@@ -213,11 +213,6 @@ namespace Qixol.Plugin.Widgets.Promo
             this.InsertStringResource("Plugins.Widgets.QixolPromo.BannerWidgets.ValidationMsg.Delete", "A problem was encountered whilst attempting to delete the widget zone.");
             this.InsertStringResource("Plugins.Widgets.QixolPromo.BannerWidgets.CustomWidgetZone", "The name of a custom widget zone");
             this.InsertStringResource("Plugins.Widgets.QixolPromo.BannerWidgets.CustomWidgetZone.Hint", "This enables a banner to be displayed in a custom widget zone.");
-
-            this.InsertStringResource("Plugins.Widgets.QixolPromo.Coupons.Code", "Code");
-            this.InsertStringResource("Plugins.Widgets.QixolPromo.Coupons.Status", "Status");
-            this.InsertStringResource("Plugins.Widgets.QixolPromo.Coupons.ValidTo", "Valid To");
-            this.InsertStringResource("Plugins.Widgets.QixolPromo.Coupons.Description", "Description");
 
             this.InsertStringResource(NivoTransition.SLICEDOWN.ResourceName, "Slice Down");
             this.InsertStringResource(NivoTransition.SLICEDOWNLEFT.ResourceName, "Slice Down Left");

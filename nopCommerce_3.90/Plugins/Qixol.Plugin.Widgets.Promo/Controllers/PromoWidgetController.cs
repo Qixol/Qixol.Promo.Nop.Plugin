@@ -112,10 +112,6 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
 
             switch (widgetZone)
             {
-                case "account_navigation_after":
-                    return PartialView("CustomerNavigationExtension");
-                    //return string.Compare(_widgetSettings.ProductPagePromoDetailsWidgetZone, widgetZone, true) == 0 ? GetProductPagePromoDetails(additionalData) : new EmptyResult();
-
                 // This one is needed, so that if we are not showing promotion details (which requires the selection of a widget zone), but we are showing 
                 // stickers on the product page, then we just need to setup for one of the zones on the product page so that the stickers are displayed.
                 case "productdetails_add_info":

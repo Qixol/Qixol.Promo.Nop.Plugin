@@ -130,6 +130,46 @@ namespace Qixol.Nop.Promo.Services.Catalog
 
         #region GetSubTotal
 
+        public override decimal GetSubTotal(ShoppingCartItem shoppingCartItem, bool includeDiscounts, out decimal discountAmount, out List<global::Nop.Services.Discounts.DiscountForCaching> appliedDiscounts, out int? maximumDiscountQty)
+        {
+            discountAmount = 0M;
+            appliedDiscounts = new List<global::Nop.Services.Discounts.DiscountForCaching>();
+            maximumDiscountQty = 0;
+            decimal lineSubTotal = _priceCalculationService.GetUnitPrice(shoppingCartItem, false) * shoppingCartItem.Quantity;
+
+            if (!_promoSettings.Enabled)
+                return base.GetSubTotal(shoppingCartItem, includeDiscounts, out discountAmount, out appliedDiscounts, out maximumDiscountQty);
+
+            BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
+            if(!basketResponse.IsValid())
+                return lineSubTotal;
+
+            discountAmount = basketResponse.GetLineTotalDiscountAmount(shoppingCartItem);
+            if (discountAmount != decimal.Zero)
+            {
+                if (discountAmount <= lineSubTotal)
+                {
+                    global::Nop.Services.Discounts.DiscountForCaching appliedDiscount = new global::Nop.Services.Discounts.DiscountForCaching()
+                    {
+                        Name = string.Join(", ", basketResponse.LineDiscountNames(shoppingCartItem)
+                                                               .Select(n => _localizationService.GetValidatedResource(n))),
+                        DiscountAmount = discountAmount
+                    };
+
+                    lineSubTotal -= discountAmount;
+                    appliedDiscounts.Add(appliedDiscount);
+                }
+                else
+                {
+                    string shortMessage = "PriceCalculationService - GetSubTotal";
+                    string fullMessage = string.Format("id: {0}, productId: {1}, attributesXml: {2}, basketResponseXml: {3}", shoppingCartItem.Id, shoppingCartItem.ProductId, shoppingCartItem.AttributesXml, basketResponse.ToXml());
+                    _logger.InsertLog(global::Nop.Core.Domain.Logging.LogLevel.Error, shortMessage, fullMessage, _workContext.CurrentCustomer);
+                }
+            }
+
+            return lineSubTotal;
+        }
+
         public override decimal GetSubTotal(ShoppingCartItem shoppingCartItem, bool includeDiscounts = true)
         {
             decimal discountAmount;

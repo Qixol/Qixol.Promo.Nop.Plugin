@@ -38,7 +38,7 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="Autofac">
-      <HintPath>..\..\packages\Autofac.3.5.2\lib\portable-net4+sl5+netcore45+wpa81+wp8+MonoAndroid1+MonoTouch1\Autofac.dll</HintPath>
+      <HintPath>..\..\packages\Autofac.4.4.0\lib\portable-net4+sl5+netcore45+wpa81+wp8+MonoAndroid1+MonoTouch1\Autofac.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Autofac.Integration.Mvc, Version=3.3.0.0, Culture=neutral, PublicKeyToken=17863af14b0044da, processorArchitecture=MSIL">
@@ -128,8 +128,8 @@
       <HintPath>..\..\packages\Owin.1.0\lib\net40\Owin.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Qixol.Promo.Integration.Lib, Version=2.7.0.5, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Qixol.Promo.Integration.Lib.2.7.0.5\lib\net45\Qixol.Promo.Integration.Lib.dll</HintPath>
+    <Reference Include="Qixol.Promo.Integration.Lib, Version=2.7.0.6, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Qixol.Promo.Integration.Lib.2.7.0.6\lib\net45\Qixol.Promo.Integration.Lib.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Recaptcha, Version=1.0.5.0, Culture=neutral, PublicKeyToken=9afc4d65b28c38c2, processorArchitecture=MSIL">
@@ -232,10 +232,12 @@
     <Compile Include="Orders\CheckoutAttributeExtensions.cs" />
     <Compile Include="Orders\CheckoutAttributeFormatter.cs" />
     <Compile Include="Orders\IPromoOrderService.cs" />
+    <Compile Include="Orders\OrderExtensions.cs" />
     <Compile Include="Orders\OrderProcessingServiceExtensions.cs" />
     <Compile Include="Orders\OrderProcessingService.cs" />
     <Compile Include="Orders\OrderTotalCalculationService.cs" />
-    <Compile Include="Orders\PromoOrderExtensions.cs" />
+    <Compile Include="Orders\OrderItemExtensions.cs" />
+    <Compile Include="Orders\PromoOrderItemPromotionExtensions.cs" />
     <Compile Include="Orders\PromoOrderService.cs" />
     <Compile Include="Orders\ShoppingCartService.cs" />
     <Compile Include="ProductAttributeConfig\IProductAttributeConfigService.cs" />
@@ -244,7 +246,9 @@
     <Compile Include="ProductMapping\IProductPromotionMappingService.cs" />
     <Compile Include="ProductMapping\ProductMappingService.cs" />
     <Compile Include="ProductMapping\ProductPromotionMappingService.cs" />
+    <Compile Include="Promo\BasketRequestExtensions.cs" />
     <Compile Include="Promo\BasketResponseExtensions.cs" />
+    <Compile Include="Promo\BasketResponseAppliedPromotionExtensions.cs" />
     <Compile Include="Promo\BasketResponseSummaryAppliedPromotionExtensions.cs" />
     <Compile Include="Promo\IPromotionDetailService.cs" />
     <Compile Include="Promo\IPromotionPictureService.cs" />
@@ -256,6 +260,7 @@
     <Compile Include="Promo\PromoUtilities.cs" />
     <Compile Include="Promo\SettingsExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Shipping\IntegrationCodeItemModel.cs" />
     <Compile Include="ShoppingCart\ShoppingCartExtensions.cs" />
     <Compile Include="Banner\IPromoBannerService.cs" />
     <Compile Include="Banner\PromoBannerService.cs" />

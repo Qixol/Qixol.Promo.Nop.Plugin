@@ -30,12 +30,26 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
 {
     public class ShoppingCartActionFilter : ActionFilterAttribute, IFilterProvider
     {
+        #region fields
+
+        private readonly List<string> _actionNames = new List<string>
+        {
+            "Cart"
+        };
+
+        #endregion
+
+        #region Utilities
+
+        #endregion
+
+        #region methods
+
         public IEnumerable<Filter> GetFilters(ControllerContext controllerContext, ActionDescriptor actionDescriptor)
         {
             if (controllerContext.Controller is global::Nop.Web.Controllers.ShoppingCartController)
             {
-                if (actionDescriptor.ActionName.Equals("cart", StringComparison.InvariantCultureIgnoreCase) ||
-                    actionDescriptor.ActionName.Equals("ordersummary", StringComparison.InvariantCultureIgnoreCase))
+                if (_actionNames.Contains(actionDescriptor.ActionName))
                 {
                     return new List<Filter>() { new Filter(this, FilterScope.Action, 0) };
                 }
@@ -69,53 +83,47 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
 
             if (filterContext.Controller is global::Nop.Web.Controllers.ShoppingCartController)
             {
-                if (actionName.Equals("ordersummary", StringComparison.InvariantCultureIgnoreCase))
-                {
-                    bool prepareAndDisplayOrderReviewData = false;
-                    var routeParameter = filterContext.RouteData.Values["prepareAndDisplayOrderReviewData"];
-                    if (routeParameter != null)
-                        bool.TryParse(routeParameter.ToString(), out prepareAndDisplayOrderReviewData);
-
-                    var promoShoppingCartController = EngineContext.Current.Resolve<Qixol.Plugin.Misc.Promo.Controllers.ShoppingCartController>();
-                    filterContext.Result = promoShoppingCartController.PromoOrderSummary(prepareAndDisplayOrderReviewData);
-                }
-
-                if (actionName.Equals("cart", StringComparison.InvariantCultureIgnoreCase))
+                if (actionName.Equals("Cart", StringComparison.InvariantCultureIgnoreCase))
                 {
                     var storeContext = EngineContext.Current.Resolve<IStoreContext>();
                     var promoService = EngineContext.Current.Resolve<IPromoService>();
                     var workContext = EngineContext.Current.Resolve<IWorkContext>();
                     var genericAttributeService = EngineContext.Current.Resolve<IGenericAttributeService>();
 
-                    if ((filterContext.ActionParameters.Count > 0) && (filterContext.ActionParameters["form"] != null))
+                    if (filterContext.ActionParameters != null && filterContext.ActionParameters.Any())
                     {
-                        var form = (FormCollection)filterContext.ActionParameters["form"];
-
-                        if (form.AllKeys.Contains("applydiscountcouponcode"))
+                        if (filterContext.ActionParameters["form"] != null)
                         {
-                            genericAttributeService.SaveAttribute<string>(workContext.CurrentCustomer, SystemCustomerAttributeNames.DiscountCouponCode, form["discountcouponcode"]);
-                        }
+                            var form = (FormCollection) filterContext.ActionParameters["form"];
 
-                        if (form.AllKeys.Contains("removediscountcouponcode"))
-                        {
-                            genericAttributeService.SaveAttribute<string>(workContext.CurrentCustomer, SystemCustomerAttributeNames.DiscountCouponCode, null);
-                        }
+                            if (form.AllKeys.Contains("applydiscountcouponcode"))
+                            {
+                                genericAttributeService.SaveAttribute<string>(workContext.CurrentCustomer, SystemCustomerAttributeNames.DiscountCouponCode, form["discountcouponcode"]);
+                            }
 
-                        if (form.AllKeys.Contains("updatecart"))
-                        {
-                            var cart = workContext.CurrentCustomer.ShoppingCartItems
-                                            .Where(sci => sci.ShoppingCartType == ShoppingCartType.ShoppingCart)
-                                            .LimitPerStore(storeContext.CurrentStore.Id)
-                                            .ToList();
-                            var promoShoppingCartController = EngineContext.Current.Resolve<Qixol.Plugin.Misc.Promo.Controllers.ShoppingCartController>();
-                            promoShoppingCartController.PromoParseAndSaveCheckoutAttributes(cart, form);
-                        }
+                            var removeDiscountKeys = (from k in form.AllKeys where k.StartsWith("removediscount-") select k).ToList();
+                            if (removeDiscountKeys != null && removeDiscountKeys.Any())
+                            {
+                                genericAttributeService.SaveAttribute<string>(workContext.CurrentCustomer, SystemCustomerAttributeNames.DiscountCouponCode, null);
+                            }
 
+                            if (form.AllKeys.Contains("updatecart"))
+                            {
+                                var cart = workContext.CurrentCustomer.ShoppingCartItems
+                                                .Where(sci => sci.ShoppingCartType == ShoppingCartType.ShoppingCart)
+                                                .LimitPerStore(storeContext.CurrentStore.Id)
+                                                .ToList();
+                                var promoShoppingCartController = EngineContext.Current.Resolve<Qixol.Plugin.Misc.Promo.Controllers.ShoppingCartController>();
+                                promoShoppingCartController.PromoParseAndSaveCheckoutAttributes(cart, form);
+                            }
+
+                        }
                     }
-
-                    base.OnActionExecuting(filterContext);
                 }
+                base.OnActionExecuting(filterContext);
             }
         }
+
+        #endregion
     }
 }

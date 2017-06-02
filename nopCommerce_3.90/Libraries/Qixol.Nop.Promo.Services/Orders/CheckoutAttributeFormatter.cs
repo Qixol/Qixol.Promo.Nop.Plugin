@@ -99,7 +99,7 @@ namespace Qixol.Nop.Promo.Services.Orders
                 foreach (var valueStr in valuesStr)
                 {
                     string formattedAttribute = string.Empty;
-                    string formattedPromo = string.Empty;
+                    var formattedPromos = new List<string>();
                     if (!attribute.ShouldHaveValues())
                     {
                         //no values
@@ -189,27 +189,47 @@ namespace Qixol.Nop.Promo.Services.Orders
 
                                 if (checkoutAttributeItem != null)
                                 {
-                                    var appliedPromo = (from ap in checkoutAttributeItem.AppliedPromotions where !ap.BasketLevelPromotion && !ap.DeliveryLevelPromotion select ap).FirstOrDefault();
+                                    var appliedPromos = (from ap in checkoutAttributeItem.AppliedPromotions where !ap.BasketLevelPromotion && !ap.DeliveryLevelPromotion select ap).ToList();
 
-                                    if (appliedPromo != null)
+                                    if (appliedPromos != null && appliedPromos.Any())
                                     {
-                                        var summaryPromo = (from sp in basketResponse.Summary.AppliedPromotions where sp.PromotionId == appliedPromo.PromotionId select sp).FirstOrDefault();
-                                        if (summaryPromo != null)
-                                            formattedPromo += summaryPromo.DisplayDetails();
-
-                                        if (renderPrices)
+                                        appliedPromos.ForEach(appliedPromo =>
                                         {
-                                            formattedPromo += " [-";
-                                            formattedPromo += _priceFormatter.FormatPrice(appliedPromo.DiscountAmount);
-                                            formattedPromo += "]";
-                                        }
+                                            var formattedPromo = new StringBuilder();
+                                            //formattedPromo.Append("<div class=\"truncate-275\" style=\"display: table-cell\">");
+
+                                            if (htmlEncode)
+                                                formattedPromo.Append(HttpUtility.HtmlEncode(appliedPromo.DisplayDetails()));
+                                            else
+                                                formattedPromo.Append(appliedPromo.DisplayDetails());
+
+                                            if (renderPrices)
+                                            {
+                                                //formattedPromo.Append("</div><div style=\"display: table-cell\">");
+                                                if (htmlEncode)
+                                                {
+                                                    formattedPromo.Append(HttpUtility.HtmlEncode(" [-"));
+                                                    formattedPromo.Append(HttpUtility.HtmlEncode(_priceFormatter.FormatPrice(appliedPromo.DiscountAmount)));
+                                                    formattedPromo.Append(HttpUtility.HtmlEncode("]"));
+                                                }
+                                                else
+                                                {
+                                                    formattedPromo.Append(" [-");
+                                                    formattedPromo.Append(_priceFormatter.FormatPrice(appliedPromo.DiscountAmount));
+                                                    formattedPromo.Append("]");
+                                                }
+                                            }
+
+                                            //formattedPromo.Append("</div>");
+
+                                            formattedPromos.Add(formattedPromo.ToString());
+
+                                        });
                                     }
                                 }
                             }
                             
                             //encode (if required)
-                            if (htmlEncode)
-                                formattedPromo = HttpUtility.HtmlEncode(formattedPromo);
 
                             #endregion
 
@@ -220,14 +240,25 @@ namespace Qixol.Nop.Promo.Services.Orders
                     {
                         attributeStrings.Add(formattedAttribute);
                     }
-                    if (!String.IsNullOrEmpty(formattedPromo))
+                    if (formattedPromos.Any())
                     {
-                        attributeStrings.Add(formattedPromo);
+                        formattedPromos.ForEach(formattedPromo =>
+                        {
+                            attributeStrings.Add(formattedPromo);
+                        });
                     }
                 }
             }
 
-            //return string.Format("<span style=\"float: right; text-align: right; white-space: nowrap;\">{0}</span>", string.Join("<br />", attributeStrings.ToArray()));
+
+            var returnString = new StringBuilder();
+            //returnString.Append("<div style=\"display: table\">");
+            //returnString.Append("<div style=\"display: table-row\">");
+            //returnString.Append(string.Join("</div><div style=\"display: table-row\">", attributeStrings.ToArray()));
+            //returnString.Append("</div>");
+
+            //return returnString.ToString();
+
             return string.Join("<br />", attributeStrings.ToArray());
         }
     }

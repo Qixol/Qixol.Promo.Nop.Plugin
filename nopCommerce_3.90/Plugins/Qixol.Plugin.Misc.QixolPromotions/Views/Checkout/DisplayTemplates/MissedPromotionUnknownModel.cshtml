@@ -6,16 +6,11 @@
     Layout = null;
 }
 
-<style>
-    .promo-product-picture {
-        vertical-align: top;
-    }
-</style>
 <tr>
     <td class="promo-product-picture">
         <img alt="@Model.PromotionName" src="@Model.PromotionImageUrl" title="@Model.PromotionName" style="width: 80px;" />
     </td>
-    <td class="product">
+    <td class="product" colspan="2">
         <div class="promotion-item">@Model.PromotionName</div>
         @if (!string.IsNullOrEmpty(Model.SaveFrom))
         {

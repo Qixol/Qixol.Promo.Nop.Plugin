@@ -73,9 +73,9 @@ namespace Qixol.Nop.Promo.Services.Messages
         #region Ctor
 
         public MessageTokenProvider(ILanguageService languageService,
-            ILocalizationService localizationService, 
+            ILocalizationService localizationService,
             IDateTimeHelper dateTimeHelper,
-            IPriceFormatter priceFormatter, 
+            IPriceFormatter priceFormatter,
             ICurrencyService currencyService,
             IWorkContext workContext,
             IDownloadService downloadService,
@@ -145,8 +145,6 @@ namespace Qixol.Nop.Promo.Services.Messages
             string result;
 
             var language = _languageService.GetLanguageById(languageId);
-
-            PromoOrder promoOrder = _promoOrderService.GetPromoOrderByOrderId(order.Id);
 
             var sb = new StringBuilder();
             sb.AppendLine("<table border=\"0\" style=\"width:100%;\">");
@@ -220,17 +218,16 @@ namespace Qixol.Nop.Promo.Services.Messages
                     }
                 }
                 // promo
-                if (promoOrder != null)
+                var lineDiscounts = orderItem.Promotions();
+                if (lineDiscounts.Any())
                 {
-                    List<string> promoNames = promoOrder.GetLineDiscountNames(orderItem, _promoSettings);
-                    if (promoNames != null && promoNames.Count > 0)
+                    lineDiscounts.ToList().ForEach(lineDiscount =>
                     {
-                        promoNames.ForEach(promoName =>
-                            {
-                                sb.AppendLine("<br />");
-                                sb.AppendLine(string.Format("<i>{0}</i>", _localizationService.GetValidatedResource(promoName)));
-                            });
-                    }
+                        sb.AppendLine("<br />");
+                        sb.Append("<i>");
+                        sb.Append(_localizationService.GetValidatedResource(lineDiscount.DisplayDetails()));
+                        sb.AppendLine("</i>");
+                    });
                 }
 
                 sb.AppendLine("</td>");
@@ -252,65 +249,67 @@ namespace Qixol.Nop.Promo.Services.Messages
 
                 sb.AppendLine(string.Format("<td style=\"padding: 0.6em 0.4em;text-align: center;\">{0}</td>", orderItem.Quantity));
 
-                string priceStr; 
-                decimal baseLineTotal = 0;
+                #region line amounts and discounts cell
+
+                sb.Append("<td style=\"padding: 0.6em 0.4em;text-align: right;\">");
+
                 if (order.CustomerTaxDisplayType == TaxDisplayType.IncludingTax)
                 {
                     //including tax
                     var priceInclTaxInCustomerCurrency = _currencyService.ConvertCurrency(orderItem.PriceInclTax, order.CurrencyRate);
-                    priceStr = _priceFormatter.FormatPrice(priceInclTaxInCustomerCurrency, true, order.CustomerCurrencyCode, language, true);
-                    baseLineTotal = orderItem.PriceInclTax;
+                    sb.Append(_priceFormatter.FormatPrice(priceInclTaxInCustomerCurrency, true, order.CustomerCurrencyCode, language, true));
                 }
                 else
                 {
                     //excluding tax
                     var priceExclTaxInCustomerCurrency = _currencyService.ConvertCurrency(orderItem.PriceExclTax, order.CurrencyRate);
-                    priceStr = _priceFormatter.FormatPrice(priceExclTaxInCustomerCurrency, true, order.CustomerCurrencyCode, language, false);
-                    baseLineTotal = orderItem.PriceExclTax;
+                    sb.Append(_priceFormatter.FormatPrice(priceExclTaxInCustomerCurrency, true, order.CustomerCurrencyCode, language, false));
                 }
 
-                if (promoOrder != null)
+                if (lineDiscounts.Any())
                 {
-                    var lineTotalDiscount = promoOrder.GetLineDiscountAmount(orderItem, _promoSettings);
-                    if (lineTotalDiscount != decimal.Zero)
+                    lineDiscounts.ToList().ForEach(lineDiscount =>
                     {
-                        var localLinePromoAmount = _currencyService.ConvertCurrency(lineTotalDiscount, order.CurrencyRate);
-                        priceStr += string.Format("<br /><i>{0}: {1}</i>", _localizationService.GetResource("ShoppingCart.ItemYouSave"), _priceFormatter.FormatPrice(localLinePromoAmount, true, order.CustomerCurrencyCode, language, true));
-                    }
+                        var localLinePromoAmount = _currencyService.ConvertCurrency(lineDiscount.DiscountAmount, order.CurrencyRate);
+                        sb.Append("<br /><i>");
+                        sb.Append(_localizationService.GetResource("ShoppingCart.ItemYouSave"));
+                        sb.Append(": ");
+                        sb.Append(_priceFormatter.FormatPrice(localLinePromoAmount, true, order.CustomerCurrencyCode, language, true));
+                        sb.Append("</i>");
+                    });
                 }
+                sb.Append("</td>");
 
-                sb.AppendLine(string.Format("<td style=\"padding: 0.6em 0.4em;text-align: right;\">{0}</td>", priceStr));
+                #endregion
+
                 sb.AppendLine("</tr>");
             }
 
-            if (promoOrder != null)
+            var issuedCoupons = order.PromoIssuedCoupons();
+            if (issuedCoupons != null && issuedCoupons.Count > 0)
             {
-                var issuedCoupons = (from ic in promoOrder.PromoOrderCoupons where ic.Issued select ic).ToList();
-                if (issuedCoupons != null && issuedCoupons.Count > 0)
+                foreach (var issuedCoupon in issuedCoupons)
                 {
-                    foreach (var issuedCoupon in issuedCoupons)
+                    sb.AppendLine(string.Format("<tr style=\"background-color: {0};text-align: center;\">", _templatesSettings.Color2));
+                    sb.AppendLine("<td style=\"padding: 0.6em 0.4em;text-align: left;\">");
+
+                    sb.AppendLine(_localizationService.GetResource("Plugin.Misc.QixolPromo.Coupon.YouReceived"));
+                    sb.AppendLine("<br />");
+
+                    if (!string.IsNullOrEmpty(issuedCoupon.DisplayText))
                     {
-                        sb.AppendLine(string.Format("<tr style=\"background-color: {0};text-align: center;\">", _templatesSettings.Color2));
-                        sb.AppendLine("<td style=\"padding: 0.6em 0.4em;text-align: left;\">");
-
-                        sb.AppendLine(_localizationService.GetResource("Plugin.Misc.QixolPromo.Coupon.YouReceived"));
+                        sb.AppendLine(string.Concat("<i>", _localizationService.GetValidatedResource(issuedCoupon.DisplayText), "</i>"));
                         sb.AppendLine("<br />");
-
-                        if (!string.IsNullOrEmpty(issuedCoupon.DisplayText))
-                        {
-                            sb.AppendLine(string.Concat("<i>", _localizationService.GetValidatedResource(issuedCoupon.DisplayText), "</i>"));
-                            sb.AppendLine("<br />");
-                        }
-
-                        if (!string.IsNullOrEmpty(issuedCoupon.CouponCode))
-                            sb.AppendLine(string.Concat(_localizationService.GetResource("Plugin.Misc.QixolPromo.Coupon.Code"), ": ", "<b>", issuedCoupon.CouponCode, "</b>"));                            
-
-                        sb.AppendLine("</td>");
-                        sb.AppendLine("<td style=\"padding: 0.6em 0.4em;text-align: right;\"></td>");
-                        sb.AppendLine("<td style=\"padding: 0.6em 0.4em;text-align: right;\"></td>");
-                        sb.AppendLine("<td style=\"padding: 0.6em 0.4em;text-align: right;\"></td>");
-                        sb.AppendLine("</tr>");
                     }
+
+                    if (!string.IsNullOrEmpty(issuedCoupon.CouponCode))
+                        sb.AppendLine(string.Concat(_localizationService.GetResource("Plugin.Misc.QixolPromo.Coupon.Code"), ": ", "<b>", issuedCoupon.CouponCode, "</b>"));
+
+                    sb.AppendLine("</td>");
+                    sb.AppendLine("<td style=\"padding: 0.6em 0.4em;text-align: right;\"></td>");
+                    sb.AppendLine("<td style=\"padding: 0.6em 0.4em;text-align: right;\"></td>");
+                    sb.AppendLine("<td style=\"padding: 0.6em 0.4em;text-align: right;\"></td>");
+                    sb.AppendLine("</tr>");
                 }
             }
 
@@ -434,32 +433,9 @@ namespace Qixol.Nop.Promo.Services.Messages
                     }
                 }
 
-                //discount
-                bool displayDiscount = false;
-                if (order.OrderDiscount > decimal.Zero)
-                {
-                    var orderDiscountInCustomerCurrency = _currencyService.ConvertCurrency(order.OrderDiscount, order.CurrencyRate);
-                    cusDiscount = _priceFormatter.FormatPrice(-orderDiscountInCustomerCurrency, true, order.CustomerCurrencyCode, false, language);
-                    displayDiscount = true;
-                }
-
                 //total
                 var orderTotalInCustomerCurrency = _currencyService.ConvertCurrency(order.OrderTotal, order.CurrencyRate);
                 cusTotal = _priceFormatter.FormatPrice(orderTotalInCustomerCurrency, true, order.CustomerCurrencyCode, false, language);
-
-                string displayShippingDiscount = string.Empty;
-                string displayShippingPromotion = string.Empty;
-                if (promoOrder != null)
-                {
-                    decimal shippingDiscount = promoOrder.GetDeliveryPromoDiscount();
-                    if (shippingDiscount != decimal.Zero)
-                    {
-                        shippingDiscount = _currencyService.ConvertCurrency(shippingDiscount, order.CurrencyRate);
-                        displayShippingDiscount = _priceFormatter.FormatPrice(-shippingDiscount, true, order.CustomerCurrencyCode, false, language);
-                        displayShippingPromotion = _localizationService.GetValidatedResource(promoOrder.GetDeliveryPromoName(_promoSettings));                        
-                    }
-                }
-
 
                 //subtotal
                 sb.AppendLine(string.Format("<tr style=\"text-align:right;\"><td>&nbsp;</td><td colspan=\"2\" style=\"background-color: {0};padding:0.6em 0.4 em;\"><strong>{1}</strong></td> <td style=\"background-color: {0};padding:0.6em 0.4 em;\"><strong>{2}</strong></td></tr>", _templatesSettings.Color3, _localizationService.GetResource("Messages.Order.SubTotal", languageId), cusSubTotal));
@@ -470,18 +446,40 @@ namespace Qixol.Nop.Promo.Services.Messages
                     sb.AppendLine(string.Format("<tr style=\"text-align:right;\"><td>&nbsp;</td><td colspan=\"2\" style=\"background-color: {0};padding:0.6em 0.4 em;\"><strong>{1}</strong></td> <td style=\"background-color: {0};padding:0.6em 0.4 em;\"><strong>{2}</strong></td></tr>", _templatesSettings.Color3, _localizationService.GetResource("Messages.Order.SubTotalDiscount", languageId), cusSubTotalDiscount));
                 }
 
+                #region shipping
 
-                //shipping
                 if (displayShipping)
                 {
-                    sb.AppendLine(string.Format("<tr style=\"text-align:right;\"><td>&nbsp;</td><td colspan=\"2\" style=\"background-color: {0};padding:0.6em 0.4 em;\"><strong>{1}</strong></td> <td style=\"background-color: {0};padding:0.6em 0.4 em;\"><strong>{2}</strong></td></tr>", _templatesSettings.Color3, _localizationService.GetResource("Messages.Order.Shipping", languageId), cusShipTotal));
+                    sb.Append("<tr style=\"text-align:right;\"><td>&nbsp;</td><td colspan=\"2\" style=\"background-color: ");
+                    sb.Append(_templatesSettings.Color3);
+                    sb.Append(";padding:0.6em 0.4 em;\"><strong>");
+                    sb.Append(_localizationService.GetResource("Messages.Order.Shipping", languageId));
+                    sb.Append("</strong></td> <td style=\"background-color: ");
+                    sb.Append(_templatesSettings.Color3);
+                    sb.Append(";padding:0.6em 0.4 em;\"><strong>");
+                    sb.Append(cusShipTotal);
+                    sb.AppendLine("</strong></td></tr>");
+
+                    var shippingDiscounts = order.DeliveryPromotions();
+                    if (shippingDiscounts.Any())
+                    {
+                        shippingDiscounts.ToList().ForEach(sd =>
+                        {
+                            sb.Append("<tr style=\"text-align:right;\"><td>&nbsp;</td><td colspan=\"2\" style=\"background-color: ");
+                            sb.Append(_templatesSettings.Color3);
+                            sb.Append("; padding:0.6em 0.4 em;\"><i>");
+                            sb.Append(_localizationService.GetValidatedResource(sd.DisplayDetails()));
+                            sb.Append("</i></td> <td style=\"background-color: ");
+                            sb.Append(_templatesSettings.Color3);
+                            sb.Append("; padding:0.6em 0.4 em;\"><i>");
+                            var shippingDiscount = _currencyService.ConvertCurrency(sd.DiscountAmount, order.CurrencyRate);
+                            sb.Append(_priceFormatter.FormatPrice(-shippingDiscount, true, order.CustomerCurrencyCode, false, language));
+                            sb.AppendLine("</i></td></tr>");
+                        });
+                    }
                 }
 
-                //shipping discount (PROMO)
-                if (!string.IsNullOrEmpty(displayShippingDiscount))
-                {
-                    sb.AppendLine(string.Format("<tr style=\"text-align:right;\"><td>&nbsp;</td><td colspan=\"2\" style=\"background-color: {0};padding:0.6em 0.4 em;\"><i>{1}</i></td> <td style=\"background-color: {0};padding:0.6em 0.4 em;\"><i>{2}</i></td></tr>", _templatesSettings.Color3, displayShippingPromotion, displayShippingDiscount));
-                }
+                #endregion
 
                 //payment method fee
                 if (displayPaymentMethodFee)
@@ -505,18 +503,27 @@ namespace Qixol.Nop.Promo.Services.Messages
                     }
                 }
 
-                //discount
-                if (displayDiscount)
+                // display discount name (PROMO)
+                var promoDiscounts = order.BasketLevelPromotions();
+                var promoDiscountNames = new List<string>();
+                var promoDiscountAmounts = new List<string>();
+
+                if (promoDiscounts.Any())
                 {
-                    string displayDiscountName = _localizationService.GetResource("Messages.Order.TotalDiscount", languageId);
-                    if (promoOrder != null)
+                    promoDiscounts.ForEach(promoDiscount =>
                     {
-                        // display discount name (PROMO)
-                        string promoDiscountName = promoOrder.GetBasketLevelPromotionName(_promoSettings);
-                        if (!string.IsNullOrEmpty(promoDiscountName))
-                            displayDiscountName = _localizationService.GetValidatedResource(promoDiscountName);
-                    }
-                    sb.AppendLine(string.Format("<tr style=\"text-align:right;\"><td>&nbsp;</td><td colspan=\"2\" style=\"background-color: {0};padding:0.6em 0.4 em;\"><i>{1}</i></td> <td style=\"background-color: {0};padding:0.6em 0.4 em;\"><i>{2}</i></td></tr>", _templatesSettings.Color3, displayDiscountName, cusDiscount));
+                        promoDiscountNames.Add(_localizationService.GetValidatedResource(promoDiscount.DisplayDetails()));
+                        promoDiscountAmounts.Add(_priceFormatter.FormatPrice(-promoDiscount.DiscountAmount, true, order.CustomerCurrencyCode, false, language));
+                    });
+                    sb.Append("<tr style=\"text-align:right;\"><td>&nbsp;</td><td colspan=\"2\" style=\"background-color: ");
+                    sb.Append(_templatesSettings.Color3);
+                    sb.Append(";padding:0.6em 0.4 em;\"><i>");
+                    sb.Append(string.Join("<br />", promoDiscountNames.ToArray()));
+                    sb.Append("</i></td> <td style=\"background-color: ");
+                    sb.Append(_templatesSettings.Color3);
+                    sb.Append(";padding:0.6em 0.4 em;\"><i>");
+                    sb.Append(string.Join("<br />", promoDiscountAmounts.ToArray()));
+                    sb.AppendLine("</i></td></tr>");
                 }
 
                 //gift cards
@@ -618,12 +625,12 @@ namespace Qixol.Nop.Promo.Services.Messages
                 sb.AppendLine("</tr>");
             }
             #endregion
-            
+
             sb.AppendLine("</table>");
             result = sb.ToString();
             return result;
         }
-        
+
         #endregion
     }
 }

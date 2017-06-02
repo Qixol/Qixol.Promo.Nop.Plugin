@@ -33,6 +33,7 @@ using Nop.Services.Media;
 using Qixol.Plugin.Misc.Promo.Models.Checkout;
 using global::Nop.Web.Models.Catalog;
 using Qixol.Plugin.Misc.Promo.Factories;
+using Nop.Web.Factories;
 
 namespace Qixol.Plugin.Misc.Promo.Controllers
 {
@@ -163,6 +164,10 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                 .Where(sci => sci.ShoppingCartType == ShoppingCartType.ShoppingCart)
                 .LimitPerStore(_storeContext.CurrentStore.Id)
                 .ToList();
+
+            if (cart == null)
+                return RedirectToRoute("ShoppingCart");
+
             if (!cart.Any())
                 return RedirectToRoute("ShoppingCart");
 
@@ -173,7 +178,10 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                 return new HttpUnauthorizedResult();
 
             var scPromoWarnings = _promoService.ProcessShoppingCart(true);
-            if (!scPromoWarnings.Any())
+            if (scPromoWarnings == null)
+                return RedirectToRoute("ShoppingCart");
+
+            if (scPromoWarnings.Any())
                 return RedirectToRoute("ShoppingCart");
 
             var model = new PromoOnePageCheckoutModel
@@ -183,7 +191,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                 ShowMissedPromotions = _promoSettings.Enabled && _promoSettings.ShowMissedPromotions
             };
 
-            return View("OnePageCheckout", model);
+            return View(model);
         }
 
         #endregion

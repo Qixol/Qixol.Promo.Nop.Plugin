@@ -90,6 +90,14 @@ namespace Qixol.Plugin.Misc.Promo
                     );
             // do NOT remove and reinsert - loses name
 
+            var accountIssuedCoupons = routes.MapRoute("CustomerIssuedCoupons",
+                    "customer/issuedcoupons",
+                    new { controller = "PromoCoupon", action = "CustomerIssuedCoupons" },
+                    new[] { "Qixol.Plugin.Misc.Promo.Controllers" }
+            );
+            routes.Remove(accountIssuedCoupons);
+            routes.Insert(0, accountIssuedCoupons);
+
             #endregion
         }
 

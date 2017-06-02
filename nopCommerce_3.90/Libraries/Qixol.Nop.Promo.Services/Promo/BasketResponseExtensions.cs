@@ -2,6 +2,8 @@
 using Nop.Core.Domain.Orders;
 using Nop.Core.Infrastructure;
 using Nop.Services.Catalog;
+using Nop.Services.Orders;
+using Qixol.Nop.Promo.Core.Domain;
 using Qixol.Nop.Promo.Core.Domain.AttributeValues;
 using Qixol.Nop.Promo.Core.Domain.Products;
 using Qixol.Nop.Promo.Core.Domain.Promo;
@@ -60,6 +62,29 @@ namespace Qixol.Nop.Promo.Services.Promo
             return checkoutAttributeItem;
         }
 
+        public static IList<BasketResponseItem> CheckoutAttributeItems(this BasketResponse basketResponse)
+        {
+            var checkoutAttributeBasketResponseItems = new List<BasketResponseItem>();
+
+            if (!BasketResponseIsValid(basketResponse))
+                return null;
+
+            ICheckoutAttributeService checkoutAttributeService = EngineContext.Current.Resolve<ICheckoutAttributeService>();
+
+            var checkoutAttributes = checkoutAttributeService.GetAllCheckoutAttributes().ToList();
+
+            checkoutAttributes.ForEach(ca =>
+            {
+                var items = basketResponse.FindBasketResponseItems(ca);
+                if (items != null && items.Any())
+                {
+                    checkoutAttributeBasketResponseItems.AddRange(items);
+                }
+            });
+
+            return checkoutAttributeBasketResponseItems;
+        }
+
         public static decimal SubTotalWithoutDiscount(this BasketResponse basketResponse)
         {
             if (!BasketResponseIsValid(basketResponse))
@@ -67,90 +92,63 @@ namespace Qixol.Nop.Promo.Services.Promo
 
             decimal subTotalWithoutDiscount = decimal.Zero;
             var items = (from i in basketResponse.Items where !i.IsDelivery select i).ToList();
-            foreach (BasketResponseItem item in items)
+            items.ForEach(item =>
             {
                 subTotalWithoutDiscount += item.LineAmount;
-                // Free products flagged at basket level are actually treated as line level promos
-                var lineLevelPromotions = basketResponse.LineLevelPromotions(item.Id);
-                if (lineLevelPromotions != null && lineLevelPromotions.Count > 0)
+
+                var lineLevelPromotions = (from ap in item.AppliedPromotions where !ap.BasketLevelPromotion && !ap.DeliveryLevelPromotion && ap.DiscountAmount > decimal.Zero select ap).ToList();
+                if (lineLevelPromotions.Any())
                 {
-                    foreach (var lineLevelPromotion in lineLevelPromotions)
-                    {
-                        subTotalWithoutDiscount -= lineLevelPromotion.DiscountAmount;
-                    }
+                    subTotalWithoutDiscount -= lineLevelPromotions.Sum(lp => lp.DiscountAmount);
                 }
-            }
+                // Free products flagged at basket level are actually treated as line level promos
+                var basketLevelPromotions = (from ap in item.AppliedPromotions where ap.BasketLevelPromotion && !ap.DeliveryLevelPromotion && ap.DiscountAmount > decimal.Zero select ap).ToList();
+                basketLevelPromotions.ForEach(blp =>
+                {
+                    var ap = (from sap in basketResponse.Summary.AppliedPromotions
+                              where
+                                    sap.PromotionId == blp.PromotionId &&
+                                    sap.InstanceId == blp.InstanceId &&
+                                    sap.PromotionType.Equals(PromotionTypeName.FreeProduct)
+                              select sap).FirstOrDefault();
+                    if (ap != null)
+                    {
+                        subTotalWithoutDiscount -= ap.DiscountAmount;
+                    }
+                });
+            });
 
             return subTotalWithoutDiscount;
         }
 
-        public static bool BasketLevelDiscountIncludesDeliveryAmount(this BasketResponse basketResponse)
+        public static List<BasketResponseSummaryAppliedPromotion> BasketLevelPromotions(this BasketResponse basketResponse)
         {
+            var basketLevelPromotions = new List<BasketResponseSummaryAppliedPromotion>();
+
             if (!BasketResponseIsValid(basketResponse))
-                return false;
+                return basketLevelPromotions;
 
-            var basketLevelPromo = basketResponse.BasketLevelPromotion();
-
-            if (basketLevelPromo == null)
-                return false;
-
-            var deliveryItem = (from i in basketResponse.Items where i.IsDelivery select i).FirstOrDefault();
-
-            if (deliveryItem == null)
-                return true;
-
-            var nonDeliveryPromosAppliedToDelivery = (from p in deliveryItem.AppliedPromotions where !p.DeliveryLevelPromotion select p).ToList();
-
-            if (nonDeliveryPromosAppliedToDelivery == null)
-                return false;
-
-            return true;
-        }
-
-        public static string BasketLevelPromotionName(this BasketResponse basketResponse)
-        {
-            var promo = basketResponse.BasketLevelPromotion();
-            if (promo != null)
-                return promo.DisplayDetails();
-            return string.Empty;
-        }
-
-        public static BasketResponseSummaryAppliedPromotion BasketLevelPromotion(this BasketResponse basketResponse)
-        {
-            if (!BasketResponseIsValid(basketResponse))
-                return null;
-
-            var basketLevelAppliedPromotions = (from p in basketResponse.Summary.AppliedPromotions
-                                                where p.BasketLevelPromotion && !p.DeliveryLevelPromotion &&
-                                                !p.PromotionType.Equals("FREEPRODUCT", StringComparison.InvariantCultureIgnoreCase) &&
-                                                !p.PromotionType.Equals("ISSUECOUPON", StringComparison.InvariantCultureIgnoreCase) &&
-                                                !p.PromotionType.Equals("ISSUEPOINTS", StringComparison.InvariantCultureIgnoreCase)
+            var allBbasketLevelPromotions = (from p in basketResponse.Summary.AppliedPromotions
+                                                where p.BasketLevelPromotion && !p.DeliveryLevelPromotion && p.DiscountAmount > decimal.Zero &&
+                                                !p.PromotionType.Equals(PromotionTypeName.FreeProduct, StringComparison.InvariantCultureIgnoreCase) &&
+                                                !p.PromotionType.Equals(PromotionTypeName.IssueCoupon, StringComparison.InvariantCultureIgnoreCase) &&
+                                                !p.PromotionType.Equals(PromotionTypeName.IssuePoints, StringComparison.InvariantCultureIgnoreCase)
                                                 select p).ToList();
 
-            if (basketLevelAppliedPromotions == null || basketLevelAppliedPromotions.Count == 0)
-                return null;
-
-            // TODO: there should only be 1 basket level promotion - check for this?
-            return basketLevelAppliedPromotions.FirstOrDefault();
-        }
-
-        public static decimal OrderDiscountTotal(this BasketResponse basketResponse)
-        {
-            Decimal orderDiscountTotal = decimal.Zero;
-
-            if (!BasketResponseIsValid(basketResponse))
-                return orderDiscountTotal;
-
-            if (basketResponse.BasketLevelDiscountIncludesDeliveryAmount())
+            allBbasketLevelPromotions.ForEach(a =>
             {
-                var basketLevelPromo = basketResponse.BasketLevelPromotion();
-                if (basketLevelPromo != null)
+                var existingPromo = (from p in basketLevelPromotions where p.PromotionId == a.PromotionId select p).FirstOrDefault();
+                if (existingPromo != null)
                 {
-                    orderDiscountTotal = basketLevelPromo.DiscountAmount;
+                    existingPromo.DiscountAmount += a.DiscountAmount;
                 }
-            }
+                else
+                {
+                    basketLevelPromotions.Add(a);
+                }
+            });
 
-            return orderDiscountTotal;
+            return basketLevelPromotions;
         }
 
         public static int IssuedPoints(this BasketResponse basketResponse)
@@ -159,6 +157,16 @@ namespace Qixol.Nop.Promo.Services.Promo
                 return 0;
 
             return Convert.ToInt32(basketResponse.TotalIssuedPoints);
+        }
+
+        public static IList<BasketResponseCoupon> IssuedCoupons(this BasketResponse basketResponse)
+        {
+            var issuedCoupons = new List<BasketResponseCoupon>();
+
+            if (!basketResponse.IsValid())
+                return issuedCoupons;
+
+            return (from ic in basketResponse.Coupons where ic.Issued select ic).ToList();
         }
 
         #endregion
@@ -173,128 +181,81 @@ namespace Qixol.Nop.Promo.Services.Promo
             var deliveryLinePromo = (from p in basketResponse.Summary.AppliedPromotions where p.DeliveryLevelPromotion select p).FirstOrDefault();
 
             if (deliveryLinePromo != null && deliveryLinePromo.DiscountAmount > 0)
-                    return true;
+                return true;
 
             return false;
         }
 
-        public static string DeliveryPromoName(this BasketResponse basketResponse)
+        //public static string DeliveryPromoName(this BasketResponse basketResponse)
+        //{
+        //    if (!basketResponse.IsValid())
+        //        return string.Empty;
+
+        //    var deliveryPromo = basketResponse.DeliveryPromo();
+        //    if (deliveryPromo != null)
+        //        return deliveryPromo.DisplayDetails();
+
+        //    return string.Empty;
+        //}
+
+        //public static decimal DeliveryPromoDiscount(this BasketResponse basketResponse)
+        //{
+        //    if (!basketResponse.IsValid())
+        //        return decimal.Zero;
+
+        //    var deliveryPromo = basketResponse.DeliveryPromo();
+        //    if (deliveryPromo != null)
+        //        return deliveryPromo.DiscountAmount;
+        //    else
+        //        return decimal.Zero;
+        //}
+
+        public static List<BasketResponseSummaryAppliedPromotion> DeliveryPromos(this BasketResponse basketResponse)
         {
-            if (!basketResponse.IsValid())
-                return string.Empty;
+            var deliveryPromos = new List<BasketResponseSummaryAppliedPromotion>();
 
-            var deliveryPromo = basketResponse.DeliveryPromo();
-            if (deliveryPromo != null)
-                return deliveryPromo.DisplayDetails();
-
-            return string.Empty;
-        }
-
-        public static decimal DeliveryPromoDiscount(this BasketResponse basketResponse)
-        {
-            if (!basketResponse.IsValid())
-                return decimal.Zero;
-
-            var deliveryPromo = basketResponse.DeliveryPromo();
-            if (deliveryPromo != null)
-                return deliveryPromo.DiscountAmount;
-            else
-                return decimal.Zero;
-        }
-
-        public static BasketResponseSummaryAppliedPromotion DeliveryPromo(this BasketResponse basketResponse)
-        {
             if (!BasketResponseIsValid(basketResponse))
-                return null;
-
-            BasketResponseSummaryAppliedPromotion deliveryPromo = null;
+                return deliveryPromos;
 
             if (!basketResponse.HasDeliveryDiscount())
-                return deliveryPromo;
+                return deliveryPromos;
 
-            var deliveryItem = (from i in basketResponse.Items where i.IsDelivery select i).FirstOrDefault();
+            var deliveryItems = (from i in basketResponse.Items where i.IsDelivery select i).ToList();
 
-            if (deliveryItem == null)
-                return null;
+            if (deliveryItems == null)
+                return deliveryPromos;
 
-            var deliveryPromoLine = (from p in deliveryItem.AppliedPromotions where p.BasketLevelPromotion && p.DeliveryLevelPromotion select p).FirstOrDefault();
+            if (!deliveryItems.Any())
+                return deliveryPromos;
 
-            if (deliveryPromoLine == null)
-                return null;
+            deliveryItems.ForEach(deliveryItem =>
+            {
+                var deliveryItemPromotions = (from p in deliveryItem.AppliedPromotions where p.BasketLevelPromotion && p.DeliveryLevelPromotion select p).ToList();
 
-            deliveryPromo = (from p in basketResponse.Summary.AppliedPromotions where p.PromotionId == deliveryPromoLine.PromotionId select p).FirstOrDefault();
+                if (deliveryItemPromotions != null && deliveryItemPromotions.Any())
+                {
+                    deliveryItemPromotions.ForEach(dip =>
+                    {
+                        var existingPromo = (from dp in deliveryPromos where dp.PromotionId == dip.PromotionId select dp).FirstOrDefault();
+                        if (existingPromo != null)
+                        {
+                            existingPromo.DiscountAmount += dip.DiscountAmount;
+                        }
+                        else
+                        {
+                            var deliveryPromo = (from p in basketResponse.Summary.AppliedPromotions where p.PromotionId == dip.PromotionId select p).FirstOrDefault();
+                            deliveryPromos.Add(deliveryPromo);
+                        }
+                    });
+                }
+            });
 
-            return deliveryPromo;
+            return deliveryPromos;
         }
 
         #endregion
 
         #region Line Level methods 
-
-        public static List<BasketResponseAppliedPromotion> LineLevelPromotions(this BasketResponse basketResponse, ShoppingCartItem shoppingCartItem)
-        {
-            if (!BasketResponseIsValid(basketResponse))
-                return null;
-
-            List<BasketResponseItem> items = new List<BasketResponseItem>();
-            IProductMappingService productMappingService = EngineContext.Current.Resolve<IProductMappingService>();
-
-            ProductMappingItem productMappingItem = productMappingService.RetrieveFromShoppingCartItem(shoppingCartItem);
-            if (productMappingItem != null)
-            {
-                items = (from i in basketResponse.Items
-                        where
-                            i.ProductCode.Equals(productMappingItem.EntityId.ToString(), StringComparison.InvariantCultureIgnoreCase) &&
-                            ((productMappingItem.NoVariants ||
-                            (!productMappingItem.NoVariants &&
-                            !string.IsNullOrEmpty(productMappingItem.VariantCode) &&
-                            i.VariantCode.Equals(productMappingItem.VariantCode, StringComparison.InvariantCultureIgnoreCase))))
-                         select i).ToList();
-            }
-
-            if (items.Count == 0)
-                return null;
-
-            List<BasketResponseAppliedPromotion> lineLevelPromos = new List<BasketResponseAppliedPromotion>();
-
-            foreach (var item in items)
-            {
-                IList<BasketResponseAppliedPromotion> itemLineLevelPromos = basketResponse.LineLevelPromotions(item.Id);
-                if (itemLineLevelPromos != null)
-                    lineLevelPromos.AddRange(itemLineLevelPromos);
-            }
-            
-            return lineLevelPromos;
-        }
-
-        public static IList<BasketResponseAppliedPromotion> LineLevelPromotions(this BasketResponse basketResponse, int lineId)
-        {
-            if (!BasketResponseIsValid(basketResponse))
-                return null;
-
-            IList<BasketResponseAppliedPromotion> lineLevelPromotions = new List<BasketResponseAppliedPromotion>();
-
-            var item = (from i in basketResponse.Items where i.Id == lineId select i).FirstOrDefault();
-
-            if (item == null || item.AppliedPromotions == null || item.AppliedPromotions.Count == 0)
-                return null;
-
-            var itemPromos = (from ap in item.AppliedPromotions where (!ap.BasketLevelPromotion && !ap.DeliveryLevelPromotion) select ap).ToList();
-
-            // Always treat free product promotions as line level
-            var freeProductPromos = (from sp in basketResponse.Summary.AppliedPromotions where sp.PromotionType.Equals("FREEPRODUCT", StringComparison.InvariantCultureIgnoreCase) select sp).ToList();
-
-            if (freeProductPromos != null)
-            {
-                freeProductPromos.ForEach(fpp =>
-                    {
-                        var itemFreePromos = (from ip in item.AppliedPromotions where ip.PromotionId == fpp.PromotionId && ip.DiscountAmount > 0 select ip).ToList();
-                        itemPromos.AddRange(itemFreePromos);
-                    });
-            }
-
-            return itemPromos;
-        }
 
         public static List<string> LineDiscountNames(this BasketResponse basketResponse, ShoppingCartItem shoppingCartItem)
         {
@@ -305,74 +266,115 @@ namespace Qixol.Nop.Promo.Services.Promo
 
             List<BasketResponseAppliedPromotion> lineLevelPromotions = basketResponse.LineLevelPromotions(shoppingCartItem);
 
-            if (lineLevelPromotions == null || lineLevelPromotions.Count == 0)
-                return promotionNames;
-            
-            lineLevelPromotions = lineLevelPromotions.Where(lp => lp.DiscountAmount != decimal.Zero || lp.PointsIssued != decimal.Zero)
-                                                                                     .GroupBy(gb => gb.PromotionId)
-                                                                                     .Select(s => s.First())
-                                                                                     .ToList();
-
-            if (lineLevelPromotions == null || lineLevelPromotions.Count == 0)
+            if (!lineLevelPromotions.Any())
                 return promotionNames;
 
-            foreach (BasketResponseAppliedPromotion lineLevelPromo in lineLevelPromotions)
+            lineLevelPromotions.ForEach(lineLevelPromotion =>
             {
-                var appliedPromo = (from p in basketResponse.Summary.AppliedPromotions where p.PromotionId == lineLevelPromo.PromotionId select p).FirstOrDefault();
+                var appliedPromo = (from p in basketResponse.Summary.AppliedPromotions where p.PromotionId == lineLevelPromotion.PromotionId select p).FirstOrDefault();
                 if (appliedPromo != null)
                 {
                     if ((!appliedPromo.BasketLevelPromotion && !appliedPromo.DeliveryLevelPromotion) ||
-                        appliedPromo.PromotionType.Equals("FREEPRODUCT", StringComparison.InvariantCultureIgnoreCase)) // always treat FreeProduct as line level
+                        appliedPromo.PromotionType.Equals(PromotionTypeName.FreeProduct, StringComparison.InvariantCultureIgnoreCase)) // always treat FreeProduct as line level
                     {
                         promotionNames.Add(appliedPromo.DisplayDetails());
                     }
                 }
-            }
+            });
+
 
             return promotionNames;
         }
 
-        public static decimal GetLineDiscountAmount(this BasketResponse basketResponse, ShoppingCartItem shoppingCartItem)
+        public static List<decimal> GetLineDiscountAmounts(this BasketResponse basketResponse, ShoppingCartItem shoppingCartItem)
         {
+            var lineDiscountAmounts = new List<decimal>();
+
             if (!BasketResponseIsValid(basketResponse))
+                return lineDiscountAmounts;
+
+            var linePromotions = basketResponse.LineLevelPromotions(shoppingCartItem);
+
+            linePromotions.Where(p => p.DiscountAmount > decimal.Zero).ToList().ForEach(lp =>
+            {
+                lineDiscountAmounts.Add(lp.DiscountAmount);
+            });
+
+            return lineDiscountAmounts;
+        }
+
+        public static decimal GetLineTotalDiscountAmount(this BasketResponse basketResponse, ShoppingCartItem shoppingCartItem)
+        {
+            if (shoppingCartItem == null)
                 return decimal.Zero;
 
-            decimal totalDiscountsForLines = Decimal.Zero;
+            var lineDiscountAmounts = basketResponse.GetLineDiscountAmounts(shoppingCartItem);
+
+            var lineDiscountAmount = lineDiscountAmounts.Sum();
+
+            return lineDiscountAmount;
+        }
+
+        public static List<BasketResponseAppliedPromotion> LineLevelPromotions(this BasketResponse basketResponse, ShoppingCartItem shoppingCartItem)
+        {
+            var linePromotions = new List<BasketResponseAppliedPromotion>();
+
+            if (shoppingCartItem == null)
+                return null;
+
+            if (!BasketResponseIsValid(basketResponse))
+                return linePromotions;
+
             var responseItems = basketResponse.FindBasketResponseItems(shoppingCartItem);
 
             if (responseItems == null)
-                return decimal.Zero;
+                return linePromotions;
 
-            foreach (var responseItem in responseItems)
+            responseItems.ToList().ForEach(responseItem =>
             {
-                if (responseItem.AppliedPromotions.Count > 0)
+                if (responseItem.AppliedPromotions != null && responseItem.AppliedPromotions.Any())
                 {
-                    foreach (var appliedPromotion in responseItem.AppliedPromotions)
+                    responseItem.AppliedPromotions.Where(ap => ap.DiscountAmount > decimal.Zero).ToList().ForEach(appliedPromotion =>
                     {
-                        if (appliedPromotion.AssociatedLine == responseItem.Id)
+                        if (!appliedPromotion.BasketLevelPromotion && !appliedPromotion.DeliveryLevelPromotion)
                         {
-                            if (!appliedPromotion.BasketLevelPromotion && !appliedPromotion.DeliveryLevelPromotion)
+                            // Find any instance of this promotion in the current list of line promotions
+                            var existingLinePromo = (from ep in linePromotions where ep.PromotionId == appliedPromotion.PromotionId select ep).FirstOrDefault();
+                            if (existingLinePromo != null)
                             {
-                                totalDiscountsForLines += appliedPromotion.DiscountAmount;
+                                existingLinePromo.DiscountAmount += appliedPromotion.DiscountAmount;
                             }
                             else
                             {
-                                // check if we have a free product
-                                var summaryAppliedPromotion = (from sap in basketResponse.Summary.AppliedPromotions where sap.PromotionId == appliedPromotion.PromotionId && sap.InstanceId == appliedPromotion.InstanceId select sap).FirstOrDefault();
-                                if (summaryAppliedPromotion != null)
+                                linePromotions.Add(appliedPromotion);
+                            }
+                        }
+                        else
+                        {
+                            // check if we have a free product
+                            var summaryAppliedPromotion = (from sap in basketResponse.Summary.AppliedPromotions where sap.PromotionId == appliedPromotion.PromotionId && sap.InstanceId == appliedPromotion.InstanceId select sap).FirstOrDefault();
+                            if (summaryAppliedPromotion != null)
+                            {
+                                if (summaryAppliedPromotion.PromotionType.Equals(PromotionTypeName.FreeProduct, StringComparison.InvariantCultureIgnoreCase))
                                 {
-                                    if (summaryAppliedPromotion.PromotionType.Equals("FREEPRODUCT", StringComparison.InvariantCultureIgnoreCase))
+                                    // Find any instance of this promotion in the current list of line promotions
+                                    var existingLinePromo = (from ep in linePromotions where ep.PromotionId == appliedPromotion.PromotionId select ep).FirstOrDefault();
+                                    if (existingLinePromo != null)
                                     {
-                                        totalDiscountsForLines += appliedPromotion.DiscountAmount; // We only want the amount for this line, not for the promotion which could be applied across multiple lines
+                                        existingLinePromo.DiscountAmount += appliedPromotion.DiscountAmount;
+                                    }
+                                    else
+                                    {
+                                        linePromotions.Add(appliedPromotion);
                                     }
                                 }
                             }
                         }
-                    }
+                    });
                 }
-            }
+            });
 
-            return totalDiscountsForLines;
+            return linePromotions;
         }
 
         public static IList<BasketResponseItem> FindBasketResponseItems(this BasketResponse basketResponse, ShoppingCartItem shoppingCartItem)
@@ -392,13 +394,13 @@ namespace Qixol.Nop.Promo.Services.Promo
 
             IList<BasketResponseItem> basketResponseItems =
                 (from bri in basketResponse.Items
-                where bri.ProductCode.Equals(shoppingCartItem.ProductId.ToString(), StringComparison.InvariantCultureIgnoreCase) &&
-                    ((string.IsNullOrEmpty(variantCode) ||
-                    (!string.IsNullOrEmpty(variantCode) &&
-                    bri.VariantCode.Equals(variantCode, StringComparison.InvariantCultureIgnoreCase))) &&
-                    ((!bri.Generated && bri.Id == shoppingCartItem.Id) ||
-                    (bri.Generated && bri.SplitFromLineId == shoppingCartItem.Id)))
-                select bri).ToList();
+                 where bri.ProductCode.Equals(shoppingCartItem.ProductId.ToString(), StringComparison.InvariantCultureIgnoreCase) &&
+                     ((string.IsNullOrEmpty(variantCode) ||
+                     (!string.IsNullOrEmpty(variantCode) &&
+                     bri.VariantCode.Equals(variantCode, StringComparison.InvariantCultureIgnoreCase))) &&
+                     ((!bri.Generated && bri.Id == shoppingCartItem.Id) ||
+                     (bri.Generated && bri.SplitFromLineId == shoppingCartItem.Id)))
+                 select bri).ToList();
 
             // If we don't have any matches, check for free products
             // It's probable that neither the Id nor SplitFromLineId will match so just use product code and variant code
@@ -453,6 +455,30 @@ namespace Qixol.Nop.Promo.Services.Promo
 
             return basketResponseItems;
         }
+
+        public static IList<BasketResponseItem> FindBasketResponseItems(this BasketResponse basketResponse, CheckoutAttribute checkoutAttribute)
+        {
+            var basketResponseItems = new List<BasketResponseItem>();
+
+            if (!BasketResponseIsValid(basketResponse))
+                return basketResponseItems;
+
+            IAttributeValueService attributeValueService = EngineContext.Current.Resolve<IAttributeValueService>();
+
+            var checkoutAttributeValueMappingItem = attributeValueService.Retrieve(checkoutAttribute.Id, EntityAttributeName.CheckoutAttribute);
+
+            if (checkoutAttributeValueMappingItem != null)
+            {
+                var items = (from bri in basketResponse.Items where bri.ProductCode.Equals(checkoutAttributeValueMappingItem.Code, StringComparison.InvariantCultureIgnoreCase) select bri);
+                if (items != null)
+                {
+                    basketResponseItems = items.ToList();
+                }
+            }
+
+            return basketResponseItems;
+        }
+
         #endregion
 
         #region Coupon methods
