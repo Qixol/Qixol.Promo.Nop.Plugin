@@ -330,6 +330,7 @@
     <None Include="Views\Checkout\DisplayTemplates\MissedPromotionsModel.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="Views\Checkout\MissedPromotions.cshtml" />
     <None Include="Views\Checkout\MissedPromotionsSummary.cshtml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

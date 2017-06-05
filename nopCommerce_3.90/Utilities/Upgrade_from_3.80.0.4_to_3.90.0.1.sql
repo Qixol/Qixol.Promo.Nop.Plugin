@@ -19,7 +19,7 @@ if not exists(select * from LocaleStringResource where ResourceName = 'Plugins.M
 	INSERT INTO LocaleStringResource(LanguageId, ResourceName, ResourceValue) values (1, 'Plugins.Misc.QixolPromo.ProductAttributes.Category', 'Category');
 
 -- replacement for removed nopCommerce resource string
-update PromoProductAttributeConfig set NameResource = 'Plugins.Misc.QixolPromo.ProductAttributes.Category' where NameResource = 'Admin.Catalog.Products.Categories.Fields.Category'
+update PromoProductAttributeConfig set [NameResource] = 'Plugins.Misc.QixolPromo.ProductAttributes.Category' where [NameResource] = 'Admin.Catalog.Products.Categories.Fields.Category'
 
 -- resource strings moved from widget to misc plugin
 if not exists(select * from LocaleStringResource where ResourceName = 'Plugins.Widgets.QixolPromo.Coupons.Code')

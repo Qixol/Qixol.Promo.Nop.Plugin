@@ -129,6 +129,15 @@ namespace Qixol.Nop.Promo.Services.Promo
             ShippingOption selectedShippingOption = shippingOptionResponse.ShippingOptions.FirstOrDefault();
             genericAttributeService.SaveAttribute(workContext.CurrentCustomer, SystemCustomerAttributeNames.SelectedShippingOption, selectedShippingOption, storeContext.CurrentStore.Id);
 
+            if (selectedShippingOption == null)
+                selectedShippingOption = new ShippingOption()
+                {
+                    Name = "UNSELECTED",
+                    Rate = 0M,
+                    Description = "no shipping option selected",
+                    ShippingRateComputationMethodSystemName = string.Empty
+                };
+
             return selectedShippingOption;
         }
 
