@@ -22,16 +22,21 @@ if not exists(select * from LocaleStringResource where ResourceName = 'Plugins.M
 update PromoProductAttributeConfig set [NameResource] = 'Plugins.Misc.QixolPromo.ProductAttributes.Category' where [NameResource] = 'Admin.Catalog.Products.Categories.Fields.Category'
 
 -- resource strings moved from widget to misc plugin
-if not exists(select * from LocaleStringResource where ResourceName = 'Plugins.Widgets.QixolPromo.Coupons.Code')
+delete from LocaleStringResource where ResourceName = 'Plugins.Widgets.QixolPromo.Coupons.Code'
+delete from LocaleStringResource where ResourceName = 'Plugins.Widgets.QixolPromo.Coupons.Status'
+delete from LocaleStringResource where ResourceName = 'Plugins.Widgets.QixolPromo.Coupons.ValidTo'
+delete from LocaleStringResource where ResourceName = 'Plugins.Widgets.QixolPromo.Coupons.Description'
+
+if not exists(select * from LocaleStringResource where ResourceName = 'Plugins.Misc.QixolPromo.Coupons.Code')
 	INSERT INTO LocaleStringResource(LanguageId, ResourceName, ResourceValue) values (1, 'Plugin.Misc.QixolPromo.Coupons.Code', 'Code')
 
-if not exists(select * from LocaleStringResource where ResourceName = 'Plugins.Widgets.QixolPromo.Coupons.Status')
+if not exists(select * from LocaleStringResource where ResourceName = 'Plugins.Misc.QixolPromo.Coupons.Status')
 	INSERT INTO LocaleStringResource(LanguageId, ResourceName, ResourceValue) values (1, 'Plugin.Misc.QixolPromo.Coupons.Status', 'Status')
 
-if not exists(select * from LocaleStringResource where ResourceName = 'Plugins.Widgets.QixolPromo.Coupons.ValidTo')
-	INSERT INTO LocaleStringResource(LanguageId, ResourceName, ResourceValue) values (1, 'Plugin.Misc.QixolPromo.Coupons.Valid To', 'Valid To')
+if not exists(select * from LocaleStringResource where ResourceName = 'Plugins.Misc.QixolPromo.Coupons.ValidTo')
+	INSERT INTO LocaleStringResource(LanguageId, ResourceName, ResourceValue) values (1, 'Plugin.Misc.QixolPromo.Coupons.ValidTo', 'Valid To')
 
-if not exists(select * from LocaleStringResource where ResourceName = 'Plugins.Widgets.QixolPromo.Coupons.Description')
+if not exists(select * from LocaleStringResource where ResourceName = 'Plugins.Misc.QixolPromo.Coupons.Description')
 	INSERT INTO LocaleStringResource(LanguageId, ResourceName, ResourceValue) values (1, 'Plugin.Misc.QixolPromo.Coupons.Description', 'Description')
 
 
