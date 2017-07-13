@@ -27,6 +27,8 @@ using Nop.Core.Caching;
 using Qixol.Nop.Promo.Data.Mapping;
 using Qixol.Nop.Promo.Core.Domain.Banner;
 using Qixol.Nop.Promo.Services.Banner;
+using Qixol.Plugin.Widgets.Promo.Factories;
+using Qixol.Plugin.Widgets.Promo.Services;
 
 namespace Qixol.Plugin.Widgets.Promo
 {
@@ -41,6 +43,7 @@ namespace Qixol.Plugin.Widgets.Promo
             builder.RegisterType<ProductPromoMappingService>().As<IProductPromoMappingService>().InstancePerLifetimeScope();
             builder.RegisterType<PromoPictureService>().As<IPromoPictureService>().InstancePerLifetimeScope();
             builder.RegisterType<PromoBannerService>().As<IPromoBannerService>().InstancePerLifetimeScope();
+            builder.RegisterType<ProductPromotionService>().As<IProductPromotionService>().InstancePerLifetimeScope();
 
             builder.RegisterType<EfRepository<ProductMappingItem>>()
                 .As<IRepository<ProductMappingItem>>()
@@ -86,6 +89,13 @@ namespace Qixol.Plugin.Widgets.Promo
                 .As<IRepository<PromoBannerWidgetZone>>()
                 .WithParameter(ResolvedParameter.ForNamed<IDbContext>("nop_object_context_promo"))
                 .InstancePerLifetimeScope();
+
+            builder.RegisterType<DiscountRangeModelFactory>().As<IDiscountRangeModelFactory>().WithParameter(ResolvedParameter.ForNamed<ICacheManager>("nop_cache_static")).InstancePerLifetimeScope();
+            builder.RegisterType<ProductBoxPromoModelFactory>().As<IProductBoxPromoModelFactory>().WithParameter(ResolvedParameter.ForNamed<ICacheManager>("nop_cache_static")).InstancePerLifetimeScope();
+            builder.RegisterType<ProductDetailsPromotionItemModelFactory>().As<IProductDetailsPromotionItemModelFactory>().WithParameter(ResolvedParameter.ForNamed<ICacheManager>("nop_cache_static")).InstancePerLifetimeScope();
+            builder.RegisterType<ProductDetailsPromotionModelFactory>().As<IProductDetailsPromotionModelFactory>().WithParameter(ResolvedParameter.ForNamed<ICacheManager>("nop_cache_static")).InstancePerLifetimeScope();
+            builder.RegisterType<PromoBannerDisplayPictureModelFactory>().As<IPromoBannerDisplayPictureModelFactory>().WithParameter(ResolvedParameter.ForNamed<ICacheManager>("nop_cache_static")).InstancePerLifetimeScope();
+
         }
 
         public int Order

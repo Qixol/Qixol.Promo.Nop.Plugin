@@ -1,5 +1,13 @@
 ﻿@model ProductBoxPromotionModel
 
+
+@{
+    var webHelper = EngineContext.Current.Resolve<IWebHelper>();
+    var themeName = EngineContext.Current.Resolve<IThemeContext>().WorkingThemeName;
+
+    Html.AppendCssFileParts(ResourceLocation.Head, string.Format("~/Plugins/Widgets.QixolPromo/Themes/{0}/Content/css/styles.css", themeName));
+}
+
 <script type="text/javascript">
 
     $(document).ready(function () {
@@ -8,18 +16,6 @@
     });
 
 </script>
-
-<style>
-    
-    .promotion
-    {
-        display: block;
-        margin-bottom: 60px;
-        position: absolute;
-        z-index: 999;
-    }
-
-</style>
 
 <div id="promotionImage" data-productid="@Model.Id" style="visibility: hidden;">
     <span class="promotion"><img alt="@Model.Id" src="@Model.ImageUrl" /></span>

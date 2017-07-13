@@ -1,0 +1,57 @@
+﻿.promotion {
+    display: block;
+    margin-bottom: 60px;
+    position: absolute;
+    z-index: 999;
+}
+
+.promotionImage {
+    display: block;
+    margin-bottom: 60px;
+    position: absolute;
+    z-index: 999;
+}
+
+.promotionDetails {
+    margin-bottom: 10px;
+}
+
+    .promotionDetails table {
+        width: 100%;
+        border: 1px solid #ddd;
+        padding: 10px;
+        color: #444;
+    }
+
+.promotionDetailsTableCell {
+    border: 1px solid #ddd;
+    padding: 10px;
+    color: #444;
+}
+
+.promotionDetailsInfo {
+    font-size: 0.8em;
+}
+
+.promotionDetailsInfoItemTitle {
+    font-style: italic;
+    margin-left: 4px;
+    margin-right: 4px;
+    margin-bottom: 2px;
+}
+
+.promotionDetailsInfoItemTitleHighlight {
+    color: blue;
+}
+
+.promotionDetailsInfoItemYouSave {
+    background-color: #f9f9f9;
+    font-size: 16px;
+    color: #e4434b;
+}
+
+.promotionDetailsInfoItemYouSaveFrom {
+    color: black;
+    font-size: 0.8em;
+    font-style: italic;
+}

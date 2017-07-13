@@ -1,5 +1,17 @@
 ﻿@model ProductDetailsPromotionModel
 
+@using Newtonsoft.Json;
+@using global::Nop.Core;
+@using global::Nop.Core.Infrastructure;
+@using global::Nop.Web.Framework.Themes;
+
+@{
+    var webHelper = EngineContext.Current.Resolve<IWebHelper>();
+    var themeName = EngineContext.Current.Resolve<IThemeContext>().WorkingThemeName;
+
+    Html.AppendCssFileParts(ResourceLocation.Head, string.Format("~/Plugins/Widgets.QixolPromo/Themes/{0}/Content/css/styles.css", themeName));
+}
+
 <script type="text/javascript">
 
     $(document).ready(function () {
@@ -21,58 +33,6 @@
     });
 
 </script>
-
-<style>
-    
-    .promotionImage
-    {
-        display: block;
-        margin-bottom: 60px;
-        position: absolute;
-        z-index: 999;
-    }
-
-    .promotionDetails
-    {
-        margin-bottom: 10px;
-    }
-
-    promotionDetails table {
-        width: 100%;
-        border: 1px solid #ddd; padding: 10px; color: #444;
-    }
-
-    .promotionDetailsTableCell {
-        border: 1px solid #ddd; padding: 10px; color: #444;
-    }
-
-    .promotionDetailsInfo {
-        font-size: 0.8em;
-    }
-
-    .promotionDetailsInfoItemTitle {
-        font-style: italic;
-        margin-left: 4px;
-        margin-right: 4px;
-        margin-bottom: 2px;
-    }
-
-    .promotionDetailsInfoItemTitleHighlight {
-        color: blue;
-    }
-
-    .promotionDetailsInfoItemYouSave {
-        background-color: #f9f9f9;
-        font-size: 16px;
-        color: #e4434b;
-    }
-
-    .promotionDetailsInfoItemYouSaveFrom {
-        color: black;
-        font-size: 0.8em;
-        font-style: italic;
-    }
-</style>
 
 <div id="promotionImage" data-productid="@Model.Id" style="visibility: hidden;">
     <span class="promotionImage"><img alt="@Model.Id" src="@Model.ImageUrl" /></span>
@@ -161,6 +121,27 @@
                                                 <span>@availability.End.ToShortTimeString()</span>
                                             </div>		 
 	                                    }
+                                    </div>
+                                }
+                                @if (promoDetails.DiscountRanges != null && promoDetails.DiscountRanges.Count > 0)
+                                {
+                                    @* the first discount range contains the table titles *@
+                                    <div>
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th>@promoDetails.DiscountRanges.First().Range</th>
+                                                    <th>@promoDetails.DiscountRanges.First().Discount</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @* skip the first discount range which has the titles *@
+                                                @foreach (DiscountRangeModel drModel in promoDetails.DiscountRanges.Skip(1))
+                                                {
+                                                <tr><td>@drModel.Range</td><td>@drModel.Discount</td></tr>
+                                                }
+                                            </tbody>
+                                        </table>
                                     </div>
                                 }
                             </div>

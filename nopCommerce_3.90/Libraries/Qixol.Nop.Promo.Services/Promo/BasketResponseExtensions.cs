@@ -67,7 +67,7 @@ namespace Qixol.Nop.Promo.Services.Promo
             var checkoutAttributeBasketResponseItems = new List<BasketResponseItem>();
 
             if (!BasketResponseIsValid(basketResponse))
-                return null;
+                return checkoutAttributeBasketResponseItems;
 
             ICheckoutAttributeService checkoutAttributeService = EngineContext.Current.Resolve<ICheckoutAttributeService>();
 

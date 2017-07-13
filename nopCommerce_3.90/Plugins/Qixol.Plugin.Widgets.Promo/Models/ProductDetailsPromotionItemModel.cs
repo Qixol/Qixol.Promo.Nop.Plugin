@@ -8,7 +8,14 @@ namespace Qixol.Plugin.Widgets.Promo.Models
 {
     public class ProductDetailsPromotionItemModel
     {
+        #region private variables
+
+        private List<DiscountRangeModel> _discountRanges;
         private List<PromoAvailabilityItemModel> _availability;
+
+        #endregion
+
+        #region properties
 
         public string Title { get; set; }
 
@@ -65,5 +72,13 @@ namespace Qixol.Plugin.Widgets.Promo.Models
             get { return _availability ?? (_availability = new List<PromoAvailabilityItemModel>()); }
             set { _availability = value; }
         }
+
+        public List<DiscountRangeModel> DiscountRanges
+        {
+            get { return _discountRanges ?? (_discountRanges = new List<DiscountRangeModel>()); }
+            set { _discountRanges = value; }
+        }
+
+        #endregion
     }
 }

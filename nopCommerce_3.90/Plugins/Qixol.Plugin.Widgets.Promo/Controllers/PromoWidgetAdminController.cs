@@ -18,6 +18,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Web.Mvc;
 using Nop.Web.Framework.Themes;
+using Qixol.Plugin.Widgets.Promo.Extensions;
+using Qixol.Plugin.Widgets.Promo.Services;
 
 namespace Qixol.Plugin.Widgets.Promo.Controllers
 {
@@ -33,6 +35,8 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
         private readonly ISettingService _settingService;
         private readonly IPromoBannerService _promoBannerService;
         private readonly IThemeContext _themeContext;
+        private readonly IProductPromotionService _productPromotionsService;
+
         #endregion
 
         #region constructor
@@ -44,7 +48,8 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
                             PromoWidgetSettings widgetSettings,
                             ISettingService settingService,
                             IPromoBannerService promoBannerService,
-                            IThemeContext themeContext)
+                            IThemeContext themeContext,
+                            IProductPromotionService productPromotionsService)
         {
             this._localizationService = localizationService;
             this._promoPictureService = promoPictureService;
@@ -53,6 +58,7 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
             this._settingService = settingService;
             this._promoBannerService = promoBannerService;
             this._themeContext = themeContext;
+            this._productPromotionsService = productPromotionsService;
         }
 
         #endregion
@@ -344,7 +350,7 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
                 mi.DefaultForTypeDisplay = displayName;
 
                 if (mi.SystemDefault)
-                    mi.PictureUrl = GetImageUrl(string.Format("promo_{0}", mi.DefaultForTypeName));
+                    mi.PictureUrl = _productPromotionsService.GetImageUrl(string.Format("promo_{0}", mi.DefaultForTypeName), _themeContext.WorkingThemeName);
             });
 
             var gridModel = new DataSourceResult
@@ -415,11 +421,6 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
 
             _promoPictureService.Delete(promoPicture);
             return new NullJsonResult();
-        }
-
-        private string GetImageUrl(string baseImageName)
-        {
-            return string.Format("/Plugins/Widgets.QixolPromo/Themes/{0}/Content/images/{1}.png", _themeContext.WorkingThemeName, baseImageName);
         }
 
         #endregion

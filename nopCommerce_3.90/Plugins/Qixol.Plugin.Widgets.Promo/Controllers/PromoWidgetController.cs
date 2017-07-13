@@ -24,7 +24,6 @@ using Qixol.Nop.Promo.Services.AttributeValues;
 using Nop.Services.Directory;
 using Nop.Services.Media;
 using Qixol.Nop.Promo.Core.Domain;
-using Qixol.Plugin.Widgets.Promo.Extensions.MappingExtensions;
 using Qixol.Nop.Promo.Services.Banner;
 using Qixol.Nop.Promo.Core.Domain.Banner;
 using Qixol.Nop.Promo.Services.Localization;
@@ -32,12 +31,18 @@ using Nop.Services.Localization;
 using Nop.Web.Framework.Themes;
 using Qixol.Plugin.Widgets.Promo.Domain;
 using System.Globalization;
+using Qixol.Plugin.Widgets.Promo.Factories;
+using Qixol.Plugin.Widgets.Promo.Services;
 
 namespace Qixol.Plugin.Widgets.Promo.Controllers
 {
     public partial class PromoWidgetController : Controller
     {
         #region Fields
+
+        private readonly IProductBoxPromoModelFactory _productBoxPromoModelFactory;
+        private readonly IPromoBannerDisplayPictureModelFactory _promoBannerDisplayPictureModelFactory;
+        private readonly IProductDetailsPromotionModelFactory _productDetailsPromotionModelFactory;
 
         private readonly IPromoUtilities _promoUtilities;
         private readonly IPriceFormatter _priceFormatter;
@@ -57,12 +62,17 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
         private readonly IPromoBannerService _promoBannerService;
         private readonly ILocalizationService _localizationService;
         private readonly IThemeContext _themeContext;
+        private readonly IProductPromotionService _productPromotionService;
 
         #endregion
 
         #region constructor
 
         public PromoWidgetController(
+            IProductBoxPromoModelFactory productBoxPromoModelFactory,
+            IPromoBannerDisplayPictureModelFactory promoBannerDisplayPictureModelFactory,
+            IProductDetailsPromotionModelFactory productDetailsPromotionModelFactory,
+
             IPromoUtilities promoUtilities,
             IPriceFormatter priceFormatter,
             IWorkContext workContext,
@@ -80,8 +90,13 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
             PromoWidgetSettings widgetSettings,
             IPromoBannerService promoBannerService,
             ILocalizationService localizationService,
-            IThemeContext themeContext)
+            IThemeContext themeContext,
+            IProductPromotionService productPromotionService)
         {
+            this._productBoxPromoModelFactory = productBoxPromoModelFactory;
+            this._promoBannerDisplayPictureModelFactory = promoBannerDisplayPictureModelFactory;
+            this._productDetailsPromotionModelFactory = productDetailsPromotionModelFactory;
+
             this._promoUtilities = promoUtilities;
             this._priceFormatter = priceFormatter;
             this._workContext = workContext;
@@ -100,49 +115,17 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
             this._promoBannerService = promoBannerService;
             this._localizationService = localizationService;
             this._themeContext = themeContext;
+            this._productPromotionService = productPromotionService;
         }
 
         #endregion
 
-        [ChildActionOnly]
-        public ActionResult PublicInfo(string widgetZone, object additionalData = null)
-        {
-            if (!_promoSettings.Enabled)
-                return new EmptyResult();
+        #region utilities
 
-            switch (widgetZone)
-            {
-                // This one is needed, so that if we are not showing promotion details (which requires the selection of a widget zone), but we are showing 
-                // stickers on the product page, then we just need to setup for one of the zones on the product page so that the stickers are displayed.
-                case "productdetails_add_info":
-                    if ((_widgetSettings.ShowStickersInProductPage && !_widgetSettings.ShowPromoDetailsOnProductPage)
-                        || (string.Compare(_widgetSettings.ProductPagePromoDetailsWidgetZone, widgetZone) == 0))
-                    {
-                        ProductDetailsPromotionModel productDetailsPromoModel = PrepareProductDetailsPromoModel(additionalData);
-                        if (productDetailsPromoModel.HasPromo)
-                            return PartialView("_ProductDetailsPromotion", productDetailsPromoModel);
-                    }
-                    return new EmptyResult();
-
-                case "productbox_addinfo_after":
-                    ProductBoxPromotionModel productBoxPromoModel = PrepareProductBoxPromoModel(additionalData);
-                    if (productBoxPromoModel.HasPromo)
-                        return PartialView("_ProductBoxPromotion", productBoxPromoModel);
-                    else
-                        return new EmptyResult();
-
-                default:
-                    if (string.Compare(_widgetSettings.ProductPagePromoDetailsWidgetZone, widgetZone, true) == 0)
-                        return GetProductPagePromoDetails(additionalData);
-                    else
-                        return GetBannerForWidgetZone(widgetZone, additionalData);
-            }
-        }
-        
-        private ActionResult GetBannerForWidgetZone(string widgetZone, object additionalData)
+        private ActionResult BannerForWidgetZone(string widgetZone, object additionalData)
         {
             var allEnabledWidgetZones = _promoBannerService.RetrieveAllEnabledWidgetZones();
-            if(!allEnabledWidgetZones.Any(wz => string.Compare(wz.WidgetZoneSystemName, widgetZone, true) == 0))
+            if (!allEnabledWidgetZones.Any(wz => string.Compare(wz.WidgetZoneSystemName, widgetZone, true) == 0))
                 return new EmptyResult();
 
             var bannersToDisplay = new List<PromoBannerDisplayModel>();
@@ -153,7 +136,7 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
             IQueryable<ProductPromotionMapping> productPromotionMappings = null;
             List<KeyValuePair<string, string>> basketCriteriaChecks = null;
             List<int> promoIdsValidForProduct = null;
-           
+
             // If we're looking at a product page, then we can further restrict the Pictures to be displayed
             //  by checking whether the promotion is valid for this product.
             if (IsProductWidgetZone(widgetZone))
@@ -170,7 +153,7 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
                     }
                 }
             }
-           
+
             // if we get here - one or more of the banners has the widget zone defined for it.
             var allBanners = _promoBannerService.RetrieveAllBanners();
             allBanners.Where(s => s.Enabled && allEnabledWidgetZones.ToList().Any(wz => wz.PromoBannerId == s.Id && string.Compare(wz.WidgetZoneSystemName, widgetZone, true) == 0))
@@ -201,20 +184,20 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
                                                        if (validatedPromo == null)
                                                        {
                                                            if (basketCriteriaChecks == null)
-                                                               basketCriteriaChecks = GetBasketCriteriaItems();
+                                                               basketCriteriaChecks = _productPromotionService.BasketCriteriaItems();
 
                                                            validatedPromo = ValidatedPromo.Create(promo, productMappings, basketCriteriaChecks, productPromotionMappings);
                                                            validatedPromotions.Add(validatedPromo);
                                                        }
 
                                                        if (validatedPromo.ValidToDisplay)
-                                                           bannerToDisplay.Pictures.Add(GetBannerPictureModel(ps, s.TransitionType));
+                                                           bannerToDisplay.Pictures.Add(_promoBannerDisplayPictureModelFactory.PreparePromoBannerDisplayPictureModel(ps, s.TransitionType));
                                                    }
                                                }
                                                else
                                                {
                                                    // If there isn't a promo reference - we'll have to always display it!
-                                                   bannerToDisplay.Pictures.Add(GetBannerPictureModel(ps, s.TransitionType));
+                                                   bannerToDisplay.Pictures.Add(_promoBannerDisplayPictureModelFactory.PreparePromoBannerDisplayPictureModel(ps, s.TransitionType));
                                                }
                                            });
 
@@ -246,262 +229,52 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
             return widgetZone.ToLower().StartsWith("productdetails_");
         }
 
-        private PromoBannerDisplayPictureModel GetBannerPictureModel(PromoBannerPicture promoBannerPicture, string transitionType)
+        private ActionResult ProductPagePromoDetails(object additionalData = null)
         {
-            var returnItem = new PromoBannerDisplayPictureModel()
-            {
-                Comment = promoBannerPicture.Comment,
-                DisplaySequence = promoBannerPicture.DisplaySequence,
-                PictureId = promoBannerPicture.PictureId,
-                Url = promoBannerPicture.Url,
-                TransitionType = transitionType
-            };
-
-            returnItem.PictureUrl = _pictureService.GetPictureUrl(returnItem.PictureId);
-            return returnItem;
-        }
-
-        private ActionResult GetProductPagePromoDetails(object additionalData = null)
-        {
-            ProductDetailsPromotionModel productDetailsPromoModel = PrepareProductDetailsPromoModel(additionalData);
+            ProductDetailsPromotionModel productDetailsPromoModel = _productDetailsPromotionModelFactory.PrepareProductDetailsPromoModel(additionalData);
             if (productDetailsPromoModel.HasPromo)
                 return PartialView("_ProductDetailsPromotion", productDetailsPromoModel);
             else
                 return new EmptyResult();
         }
 
-        #region utilities
+        #endregion
 
-        private ProductBoxPromotionModel PrepareProductBoxPromoModel(object additionalData)
+        #region methods
+
+        [ChildActionOnly]
+        public ActionResult PublicInfo(string widgetZone, object additionalData = null)
         {
-            ProductBoxPromotionModel model = new ProductBoxPromotionModel();
-            model.HasPromo = false;
-
-            if (_promoSettings.Enabled && _widgetSettings.ShowStickersInCatalogue)
-            {
-                int productId = 0;
-                if (int.TryParse(additionalData.ToString(), out productId))
-                {
-                    var productValidation = ValidateProductForPromos(productId);
-                    if (productValidation.HasPromo)
-                    {
-                        model.Id = productId;
-                        model.HasPromo = true;
-                        model.ImageUrl = GetSingleImageUrl(productValidation.PromosToDisplay, productValidation.BaseImageUrl);
-                    }
-                }
-            }
-
-            return model;
-        }
-
-        private ProductDetailsPromotionModel PrepareProductDetailsPromoModel(object additionalData)
-        {
-            ProductDetailsPromotionModel model = new ProductDetailsPromotionModel();
-            model.HasPromo = false;
-
             if (!_promoSettings.Enabled)
-                return model;
+                return new EmptyResult();
 
-            if (!(_widgetSettings.ShowStickersInProductPage || _widgetSettings.ShowPromoDetailsOnProductPage))
-                return model;
-
-            int productId = 0;
-            if (!int.TryParse(additionalData.ToString(), out productId))
-                return model;
-
-            var productValidation = ValidateProductForPromos(productId);
-            if (!productValidation.HasPromo)
-                return model;
-
-            var product = _productService.GetProductById(productId);
-            if (product != null)
-                model.HasTierPrices = product.HasTierPrices;
-
-            model.Id = productId;
-            model.ShowSticker = _widgetSettings.ShowStickersInProductPage;
-            model.ShowPromotionDetails = _widgetSettings.ShowPromoDetailsOnProductPage;
-            model.HasPromo = true;
-            model.ImageUrl = GetSingleImageUrl(productValidation.PromosToDisplay, productValidation.BaseImageUrl);
-            model.PromotionItems = productValidation.PromosToDisplay.Select(ptd => ptd.ToModel()).ToList();
-            model.PromotionItems.ForEach(pi =>
+            switch (widgetZone)
+            {
+                // This one is needed, so that if we are not showing promotion details (which requires the selection of a widget zone), but we are showing 
+                // stickers on the product page, then we just need to setup for one of the zones on the product page so that the stickers are displayed.
+                case "productdetails_add_info":
+                    if ((_widgetSettings.ShowStickersInProductPage && !_widgetSettings.ShowPromoDetailsOnProductPage)
+                        || (string.Compare(_widgetSettings.ProductPagePromoDetailsWidgetZone, widgetZone) == 0))
                     {
-                        // If the description is a resource key, this will get it, otherwise use the description.
-                        pi.Description = _localizationService.GetValidatedResource(pi.Description);
-
-                        pi.ImageUrl = GetPromoImageUrl(pi.YourReference, pi.PromotionTypeName, pi.ImageName);
-
-                        if (pi.DiscountAmount.HasValue && pi.DiscountAmount.Value > 0)
-                        {
-                            var discountAmountForCurrency = _promoSettings.UseSelectedCurrencyWhenSubmittingBaskets
-                                                                ? pi.DiscountAmount.Value
-                                                                : _currencyService.ConvertFromPrimaryStoreCurrency(pi.DiscountAmount.Value, _workContext.WorkingCurrency);
-                            pi.DiscountAmountAsCurrency = _priceFormatter.FormatPrice(discountAmountForCurrency, true, _workContext.WorkingCurrency, _workContext.WorkingLanguage, false);
-                        }
-
-                        if (pi.MinimumSpend.HasValue && pi.MinimumSpend.Value > 0)
-                        {
-                            var minimumSpendForCurrency = _promoSettings.UseSelectedCurrencyWhenSubmittingBaskets
-                                                                ? pi.MinimumSpend.Value
-                                                                : _currencyService.ConvertFromPrimaryStoreCurrency(pi.MinimumSpend.Value, _workContext.WorkingCurrency);
-                            pi.MinimumSpendAsCurrency = _priceFormatter.FormatPrice(minimumSpendForCurrency, true, _workContext.WorkingCurrency, _workContext.WorkingLanguage, false);
-                        }
-
-                        if (pi.RequiredItemSpend.HasValue && pi.RequiredItemSpend.Value > 0)
-                        {
-                            var rqdItemSpendForCurrency = _promoSettings.UseSelectedCurrencyWhenSubmittingBaskets
-                                                                ? pi.RequiredItemSpend.Value
-                                                                : _currencyService.ConvertFromPrimaryStoreCurrency(pi.RequiredItemSpend.Value, _workContext.WorkingCurrency);
-                            pi.RequiredItemSpendAsCurrency = _priceFormatter.FormatPrice(rqdItemSpendForCurrency, true, _workContext.WorkingCurrency, _workContext.WorkingLanguage, false);
-                        }
-
-                        pi.YouSaveText = "-";
-                        pi.ShowFromText = false;
-                        switch (pi.PromotionTypeName)
-                        {
-                            case Qixol.Nop.Promo.Core.Domain.PromotionTypeName.BuyOneGetOneFree:
-                                pi.YouSaveText = _localizationService.GetResource("Plugins.Misc.QixolPromo.Product.Promos.Item.GetOneFree");     //"Get One Free";
-                                break;
-
-                            case Qixol.Nop.Promo.Core.Domain.PromotionTypeName.BuyOneGetOneReduced:
-                            case Qixol.Nop.Promo.Core.Domain.PromotionTypeName.ProductsReduction:
-                                if (pi.DiscountAmount.HasValue && pi.DiscountAmount.Value > 0)
-                                {
-                                    pi.YouSaveText = pi.DiscountAmountAsCurrency;
-                                    pi.ShowFromText = product.HasTierPrices;
-                                }
-                                else
-                                {
-                                    if (pi.DiscountPercent.HasValue && pi.DiscountPercent.Value > 0)
-                                    {
-                                        pi.YouSaveText = string.Format("{0:#.##}%", pi.DiscountPercent.Value);
-                                    }
-                                }
-                                break;
-                            default:
-                                break;
-                        }
-                    });
-
-            return model;
-        }
-
-        private string GetSingleImageUrl(List<ValidatedPromo> promosToDisplay, string baseUrl)
-        {
-            string returnUrl = baseUrl;
-            if (promosToDisplay.Count == 1)
-            {
-                var promo = promosToDisplay.FirstOrDefault();
-                returnUrl = GetPromoImageUrl(promo.YourReference, promo.PromoType, promo.ImageName);
-            }
-            else
-            {
-                var multiplePromosImage = _promoPictureService.RetrieveForPromo(string.Empty, PromotionTypeName.Multiple_Promos);
-                if (multiplePromosImage != null)
-                    returnUrl = _pictureService.GetPictureUrl(multiplePromosImage.PictureId);
-            }
-            return returnUrl;
-        }
-
-        private string GetPromoImageUrl(string promoReference, string promoType, string promoBaseImageName)
-        {
-            var promoImage = _promoPictureService.RetrieveForPromo(promoReference, promoType);
-            if (promoImage != null)
-                return _pictureService.GetPictureUrl(promoImage.PictureId);
-            else
-                return GetImageUrl(promoBaseImageName);
-        }
-        
-
-        /// <summary>
-        ///  For the product id specified, establish which promos could be triggered by retrieving saved promo details
-        ///   and combining that with the known current basket level criteria (i.e. store, customer group), and for the current UTC time.
-        /// </summary>
-        /// <param name="productId"></param>
-        /// <returns></returns>
-        private ValidatedProductPromoDetails ValidateProductForPromos(int productId)
-        {
-            var returnDetails = new ValidatedProductPromoDetails() { ProductId = productId };
-            var mappings = _productMappingService.RetrieveAllVariantsByProductId(productId, EntityAttributeName.Product, true);
-
-            if (mappings != null && mappings.Count() > 0)
-            {
-                var mappingIds = mappings.Select(m => m.Id).ToList();
-                var productPromoMappings = _productPromoMappingService.RetrieveForProductMappingsList(mappingIds);
-                if (productPromoMappings != null && productPromoMappings.Count() > 0)
-                {
-                    var promoIds = productPromoMappings.GroupBy(gb => gb.PromotionId).Select(s => s.FirstOrDefault().PromotionId).ToList();
-                    if (promoIds != null && promoIds.Count > 0)
-                    {
-                        var basketCriteriaChecks = GetBasketCriteriaItems();
-                        promoIds.ForEach(promoId =>
-                        {
-                            var promo = _promoDetailService.RetrieveByPromoId(promoId);
-                            if (promo != null)
-                            {
-                                // Note have to put this in a variable otherwise it won't add to the list!!
-                                var validatedPromo = ValidatedPromo.Create(promo, mappings, basketCriteriaChecks, productPromoMappings);
-                                returnDetails.PromoDetails.Add(validatedPromo);
-                            }                                
-                        });
+                        ProductDetailsPromotionModel productDetailsPromoModel = _productDetailsPromotionModelFactory.PrepareProductDetailsPromoModel(additionalData);
+                        if (productDetailsPromoModel.HasPromo)
+                            return PartialView("_ProductDetailsPromotion", productDetailsPromoModel);
                     }
-                    returnDetails.BaseImageUrl = GetImageUrl("promo_offers");
-                }
+                    return new EmptyResult();
+
+                case "productbox_addinfo_after":
+                    ProductBoxPromotionModel productBoxPromoModel = _productBoxPromoModelFactory.PrepareProductBoxPromoModel(additionalData);
+                    if (productBoxPromoModel.HasPromo)
+                        return PartialView("_ProductBoxPromotion", productBoxPromoModel);
+                    else
+                        return new EmptyResult();
+
+                default:
+                    if (string.Compare(_widgetSettings.ProductPagePromoDetailsWidgetZone, widgetZone, true) == 0)
+                        return ProductPagePromoDetails(additionalData);
+                    else
+                        return BannerForWidgetZone(widgetZone, additionalData);
             }
-
-            return returnDetails;
-        }
-
-        /// <summary>
-        /// Get the current basket criteria so we can revalidate promos to see if they are now available...
-        /// </summary>
-        /// <returns></returns>
-        private List<KeyValuePair<string, string>> GetBasketCriteriaItems()
-        {
-            var basketCriteriaChecks = new List<KeyValuePair<string, string>>();
-
-            // ** Current Store
-            var allStores = _storeService.GetAllStores();
-            if (allStores.Count > 1)
-            {
-                // If we have a store code, add it as a criteria
-                var storeCode = _attributeValueService.Retrieve(_storeContext.CurrentStore.Id, EntityAttributeName.Store);
-                if (storeCode != null && !string.IsNullOrEmpty(storeCode.Code))
-                    basketCriteriaChecks.Add(new KeyValuePair<string, string>(EntityAttributeName.ToPromoAttributeName(EntityAttributeName.Store), storeCode.Code));
-            }
-
-            // ** Role
-            if (_workContext.CurrentCustomer != null && _workContext.CurrentCustomer.CustomerRoles != null)
-            {
-                // The user can be in multiple roles, so use the Priority assigned to the Integration code to establish
-                // which one to use.
-                //
-                var rolesList = _workContext.CurrentCustomer.CustomerRoles.ToList();
-                var attribsList = _attributeValueService.RetrieveAllForAttribute(EntityAttributeName.CustomerRole).ToList();
-
-                if (attribsList != null && attribsList.Count > 0)
-                {
-                    var selectedRole = (from r in rolesList
-                                        join a in attribsList
-                                            on r.Id equals a.AttributeValueId
-                                        orderby a.Priority == null ? 0 : a.Priority descending
-                                        select a).FirstOrDefault();
-
-                    if (selectedRole != null)
-                        basketCriteriaChecks.Add(new KeyValuePair<string, string>(EntityAttributeName.ToPromoAttributeName(EntityAttributeName.CustomerRole), selectedRole.Code));
-                }
-            }
-
-            // ** Currency
-            if (_workContext.WorkingCurrency != null)
-                basketCriteriaChecks.Add(new KeyValuePair<string, string>(EntityAttributeName.ToPromoAttributeName(EntityAttributeName.Currency), _workContext.WorkingCurrency.CurrencyCode));                
-
-            return basketCriteriaChecks;
-        }
-
-        private string GetImageUrl(string baseImageName)
-        {
-            return string.Format("/Plugins/Widgets.QixolPromo/Themes/{0}/Content/images/{1}.png", _themeContext.WorkingThemeName, baseImageName);
         }
 
         #endregion

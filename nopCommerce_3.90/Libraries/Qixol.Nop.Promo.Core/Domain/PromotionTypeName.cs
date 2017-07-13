@@ -16,6 +16,7 @@ namespace Qixol.Nop.Promo.Core.Domain
         public const string IssueCoupon = "ISSUECOUPON";
         public const string IssuePoints = "ISSUEPOINTS";
         public const string FreeProduct = "FREEPRODUCT";
+        public const string MultiBuy = "MULTIBUY";
 
         public const string Multiple_Promos = "OFFERS";
     }

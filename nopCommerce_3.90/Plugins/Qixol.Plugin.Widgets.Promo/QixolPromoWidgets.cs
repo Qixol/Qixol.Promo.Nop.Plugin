@@ -137,6 +137,11 @@ namespace Qixol.Plugin.Widgets.Promo
             this.InsertStringResource("Plugins.Widgets.QixolPromo.Pictures", "Promotion Stickers");
             this.InsertStringResource("Plugins.Widgets.QixolPromo.Banners", "Banners");
 
+            this.InsertStringResource("Plugins.Widgets.QixolPromo.Promotion.DiscountRange.Quantity", "Quantity");
+            this.InsertStringResource("Plugins.Widgets.QixolPromo.Promotion.DiscountRange.Spend", "Spend");
+            this.InsertStringResource("Plugins.Widgets.QixolPromo.Promotion.DiscountRange.Percentage", "You save");
+            this.InsertStringResource("Plugins.Widgets.QixolPromo.Promotion.DiscountRange.Fixed", "Save from");
+
             this.InsertStringResource("Plugins.Widgets.QixolPromo.PromoPicture.AddButton", "Add sticker");
             this.InsertStringResource("Plugins.Widgets.QixolPromo.PromoPicture.Picture", "Sticker");
             this.InsertStringResource("Plugins.Widgets.QixolPromo.PromoPicture.Picture.Hint", "Choose a picture to upload as a promo sticker");

@@ -1,8 +1,6 @@
 /*
  * update script for Qixol Promo Nop Commerce plugins
  *
- * from version 3.80.0.4 to 3.90.0.1
- *
  */
 
 -- correct spelling of resource key
@@ -17,6 +15,18 @@ if not exists(select * from LocaleStringResource where ResourceName = 'Plugins.M
 
 if not exists(select * from LocaleStringResource where ResourceName = 'Plugins.Misc.QixolPromo.ProductAttributes.Category')
 	INSERT INTO LocaleStringResource(LanguageId, ResourceName, ResourceValue) values (1, 'Plugins.Misc.QixolPromo.ProductAttributes.Category', 'Category');
+
+if not exists(select * from LocaleStringResource where ResourceName = 'Plugins.Widgets.QixolPromo.Promotion.DiscountRange.Quantity')
+	INSERT INTO LocaleStringResource(LanguageId, ResourceName, ResourceValue) values (1, 'Plugins.Widgets.QixolPromo.Promotion.DiscountRange.Quantity', 'Quantity')
+
+if not exists(select * from LocaleStringResource where ResourceName = 'Plugins.Widgets.QixolPromo.Promotion.DiscountRange.Spend')
+	INSERT INTO LocaleStringResource(LanguageId, ResourceName, ResourceValue) values (1, 'Plugins.Widgets.QixolPromo.Promotion.DiscountRange.Spend', 'Spend')
+
+if not exists(select * from LocaleStringResource where ResourceName = 'Plugins.Widgets.QixolPromo.Promotion.DiscountRange.Percentage')
+	INSERT INTO LocaleStringResource(LanguageId, ResourceName, ResourceValue) values (1, 'Plugins.Widgets.QixolPromo.Promotion.DiscountRange.Percentage', 'You save')
+
+if not exists(select * from LocaleStringResource where ResourceName = 'Plugins.Widgets.QixolPromo.Promotion.DiscountRange.Fixed')
+	INSERT INTO LocaleStringResource(LanguageId, ResourceName, ResourceValue) values (1, 'Plugins.Widgets.QixolPromo.Promotion.DiscountRange.Fixed', 'Save from')
 
 -- replacement for removed nopCommerce resource string
 update PromoProductAttributeConfig set [NameResource] = 'Plugins.Misc.QixolPromo.ProductAttributes.Category' where [NameResource] = 'Admin.Catalog.Products.Categories.Fields.Category'
@@ -47,16 +57,18 @@ if exists(select * from sys.tables where [Name] = 'PromoIssuedCoupon')
 
 -- alter PromoOrder table to have customerId and update this from the Order table
 BEGIN TRANSACTION
-SET QUOTED_IDENTIFIER ON
-SET ARITHABORT ON
-SET NUMERIC_ROUNDABORT OFF
-SET CONCAT_NULL_YIELDS_NULL ON
-SET ANSI_NULLS ON
-SET ANSI_PADDING ON
-SET ANSI_WARNINGS ON
+	SET QUOTED_IDENTIFIER ON
+	SET ARITHABORT ON
+	SET NUMERIC_ROUNDABORT OFF
+	SET CONCAT_NULL_YIELDS_NULL ON
+	SET ANSI_NULLS ON
+	SET ANSI_PADDING ON
+	SET ANSI_WARNINGS ON
 COMMIT
-BEGIN TRANSACTION
 GO
+
+BEGIN TRANSACTION
+
 CREATE TABLE dbo.Tmp_PromoOrder
 	(
 	Id int NOT NULL IDENTITY (1, 1),

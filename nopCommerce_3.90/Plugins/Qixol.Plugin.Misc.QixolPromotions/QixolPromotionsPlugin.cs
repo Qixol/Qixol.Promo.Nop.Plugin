@@ -354,7 +354,10 @@ namespace Qixol.Plugin.Misc.Promo
             this.InsertStringResource("Plugins.Misc.QixolPromo.ServiceEndpoint.Custom", "Custom Services");
 
             this.InsertStringResource("Plugins.Misc.QixolPromo.Account.IssuedCoupons", "Issued coupons");
+            this.InsertStringResource("Plugins.Misc.QixolPromo.Coupons.Code", "Code");
+            this.InsertStringResource("Plugins.Misc.QixolPromo.Coupons.Status", "Status");
             this.InsertStringResource("Plugins.Misc.QixolPromo.Coupons.ValidTo.Always", "no expiry date");
+            this.InsertStringResource("Plugins.Misc.QixolPromo.Coupons.Description", "Description");
 
             this.InsertStringResource("Plugins.Misc.QixolPromo.BasketValidation", "Basket Validation");
             this.InsertStringResource("Plugins.Misc.QixolPromo.UseSelectedCurrency", "When submitting baskets use selected currency?");

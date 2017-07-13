@@ -128,8 +128,8 @@
       <HintPath>..\..\packages\Owin.1.0\lib\net40\Owin.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Qixol.Promo.Integration.Lib, Version=2.7.0.6, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Qixol.Promo.Integration.Lib.2.7.0.6\lib\net45\Qixol.Promo.Integration.Lib.dll</HintPath>
+    <Reference Include="Qixol.Promo.Integration.Lib, Version=2.7.0.7, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Qixol.Promo.Integration.Lib.2.7.0.7\lib\net45\Qixol.Promo.Integration.Lib.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Recaptcha, Version=1.0.5.0, Culture=neutral, PublicKeyToken=9afc4d65b28c38c2, processorArchitecture=MSIL">
@@ -251,12 +251,12 @@
     <Compile Include="Promo\BasketResponseAppliedPromotionExtensions.cs" />
     <Compile Include="Promo\BasketResponseSummaryAppliedPromotionExtensions.cs" />
     <Compile Include="Promo\IPromotionDetailService.cs" />
-    <Compile Include="Promo\IPromotionPictureService.cs" />
     <Compile Include="Promo\IPromoService.cs" />
+    <Compile Include="Promo\IPromotionPictureService.cs" />
     <Compile Include="Promo\IPromoUtilities.cs" />
     <Compile Include="Promo\PromotionDetailService.cs" />
-    <Compile Include="Promo\PromotionPictureService.cs" />
     <Compile Include="Promo\PromoService.cs" />
+    <Compile Include="Promo\PromotionPictureService.cs" />
     <Compile Include="Promo\PromoUtilities.cs" />
     <Compile Include="Promo\SettingsExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -281,6 +281,9 @@
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Media\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\..\packages\Microsoft.Bcl.Build.1.0.21\build\Microsoft.Bcl.Build.targets" Condition="Exists('..\..\packages\Microsoft.Bcl.Build.1.0.21\build\Microsoft.Bcl.Build.targets')" />

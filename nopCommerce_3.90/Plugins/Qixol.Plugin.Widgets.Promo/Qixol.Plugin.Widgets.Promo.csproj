@@ -108,8 +108,8 @@
       <HintPath>..\..\packages\Owin.1.0\lib\net40\Owin.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Qixol.Promo.Integration.Lib, Version=2.7.0.6, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Qixol.Promo.Integration.Lib.2.7.0.6\lib\net45\Qixol.Promo.Integration.Lib.dll</HintPath>
+    <Reference Include="Qixol.Promo.Integration.Lib, Version=2.7.0.7, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Qixol.Promo.Integration.Lib.2.7.0.7\lib\net45\Qixol.Promo.Integration.Lib.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -198,7 +198,17 @@
     <Compile Include="Controllers\PromoWidgetController.cs" />
     <Compile Include="DependencyRegistrar.cs" />
     <Compile Include="Domain\NivoTransition.cs" />
-    <Compile Include="Extensions\MappingExtensions\ValidatedPromotionExtensions.cs" />
+    <Compile Include="Extensions\PromoPictureServiceExtensions.cs" />
+    <Compile Include="Factories\DiscountRangeModelFactory.cs" />
+    <Compile Include="Factories\IDiscountRangeModelFactory.cs" />
+    <Compile Include="Factories\IProductBoxPromoModelFactory.cs" />
+    <Compile Include="Factories\IProductDetailsPromotionItemModelFactory.cs" />
+    <Compile Include="Factories\IProductDetailsPromotionModelFactory.cs" />
+    <Compile Include="Factories\IPromoBannerDisplayPictureModelFactory.cs" />
+    <Compile Include="Factories\ProductBoxPromoModelFactory.cs" />
+    <Compile Include="Factories\ProductDetailsPromotionItemModelFactory.cs" />
+    <Compile Include="Factories\ProductDetailsPromotionModelFactory.cs" />
+    <Compile Include="Factories\PromoBannerDisplayPictureModelFactory.cs" />
     <Compile Include="Models\AddPromoBannerModel.cs" />
     <Compile Include="Models\AddPromoBannerPictureModel.cs" />
     <Compile Include="Models\AddPromoBannerWidgetZoneModel.cs" />
@@ -213,11 +223,14 @@
     <Compile Include="Models\PromoBannerWidgetZoneModel.cs" />
     <Compile Include="Models\PromotionAddPictureModel.cs" />
     <Compile Include="Models\PromotionAvailabilityItemModel.cs" />
+    <Compile Include="Models\DiscountRangeModel.cs" />
     <Compile Include="Models\PromotionPictureModel.cs" />
     <Compile Include="Models\WidgetConfigModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="QixolPromoWidgets.cs" />
     <Compile Include="RouteProvider.cs" />
+    <Compile Include="Services\IProductPromotionService.cs" />
+    <Compile Include="Services\ProductPromotionService.cs" />
     <Compile Include="ViewEngines\QixolPromotionsViewEngine.cs" />
     <Compile Include="WidgetZonesHelper.cs" />
   </ItemGroup>
@@ -252,6 +265,9 @@
     <None Include="Scripts\jquery.nivo.slider.js">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <Content Include="Themes\DefaultClean\Content\css\styles.css">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="Themes\DefaultClean\Content\images\promotion.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -274,6 +290,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Themes\DefaultClean\Content\images\promo_issuepoints.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Themes\DefaultClean\Content\images\promo_multibuy.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Themes\DefaultClean\Content\images\promo_offers.png">

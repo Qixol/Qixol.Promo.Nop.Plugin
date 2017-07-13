@@ -1,4 +1,5 @@
 ﻿using Qixol.Nop.Promo.Core.Domain.Products;
+using Qixol.Promo.Integration.Lib.Export;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +10,12 @@ namespace Qixol.Nop.Promo.Core.Domain.Promo
 {
     public class ValidatedPromo
     {
+        #region private variables
+
+        IList<ExportPromotionDetailsDiscountRange> _discountRanges;
+
+        #endregion
+
         #region public properties
 
         /// <summary>
@@ -143,6 +150,18 @@ namespace Qixol.Nop.Promo.Core.Domain.Promo
         /// </summary>
         public int PromotionId { get; set; }
 
+        public IList<ExportPromotionDetailsDiscountRange> DiscountRanges
+        {
+            get
+            {
+                return _discountRanges ?? (_discountRanges = new List<ExportPromotionDetailsDiscountRange>());
+            }
+            set
+            {
+                _discountRanges = value;
+            }
+        }
+
         #endregion
 
         #region ctor
@@ -213,7 +232,7 @@ namespace Qixol.Nop.Promo.Core.Domain.Promo
                 Availability = (integrationPromo.AvailableTimes != null && integrationPromo.AvailableTimes.Count > 0) ?
                                     integrationPromo.AvailableTimes.Select(a => new ValidatedPromoAvailability() { Start = a.StartTime, End = a.EndTime }).ToList()
                                     : null,
-
+                DiscountRanges = integrationPromo.DiscountRanges
             };
 
             if (mappings != null && productPromoMappings != null)

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Qixol.Nop.Promo.Core.Domain.Products
 {
-    public class ValidatedProductPromoDetails
+    public class ProductPromotions
     {
         /// <summary>
         /// The product Id for the product being validated
@@ -52,7 +52,7 @@ namespace Qixol.Nop.Promo.Core.Domain.Products
             }
         }
 
-        public ValidatedProductPromoDetails()
+        public ProductPromotions()
         {
             PromoDetails = new List<ValidatedPromo>();
         }
