@@ -88,7 +88,7 @@ namespace Qixol.Nop.Promo.Services.Orders
             if (!_promoSettings.Enabled)
                 return base.FormatAttributes(attributesXml, customer, separator, htmlEncode, renderPrices, allowHyperlinks);
 
-            BasketResponse basketResponse = _qixolPromoUtilities.GetBasketResponse();
+            BasketResponse basketResponse = _qixolPromoUtilities.GetBasketResponse(customer);
 
             List<string> attributeStrings = new List<string>();
 
@@ -199,9 +199,9 @@ namespace Qixol.Nop.Promo.Services.Orders
                                             //formattedPromo.Append("<div class=\"truncate-275\" style=\"display: table-cell\">");
 
                                             if (htmlEncode)
-                                                formattedPromo.Append(HttpUtility.HtmlEncode(appliedPromo.DisplayDetails()));
+                                                formattedPromo.Append(HttpUtility.HtmlEncode(appliedPromo.DisplayDetails(customer)));
                                             else
-                                                formattedPromo.Append(appliedPromo.DisplayDetails());
+                                                formattedPromo.Append(appliedPromo.DisplayDetails(customer));
 
                                             if (renderPrices)
                                             {

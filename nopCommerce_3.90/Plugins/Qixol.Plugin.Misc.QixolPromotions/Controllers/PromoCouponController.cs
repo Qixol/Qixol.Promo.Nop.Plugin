@@ -77,7 +77,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             if (!_promoSettings.Enabled)
                 return new EmptyResult();
 
-            var basketResponse = _promoUtilities.GetBasketResponse();
+            var basketResponse = _promoUtilities.GetBasketResponse(_workContext.CurrentCustomer);
 
             var issuedCouponsModel = _issuedCouponsModelFactory.PrepareIssuedCouponsModel(basketResponse, shoppingCartModel.ShowSku);
 

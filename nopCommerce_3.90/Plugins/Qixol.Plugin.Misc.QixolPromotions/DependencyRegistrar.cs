@@ -52,7 +52,6 @@ namespace Qixol.Plugin.Misc.Promo
             builder.RegisterType<OrderTotalCalculationService>().As<global::Nop.Services.Orders.IOrderTotalCalculationService>().InstancePerLifetimeScope();
             builder.RegisterType<OrderProcessingService>().As<global::Nop.Services.Orders.IOrderProcessingService>().InstancePerLifetimeScope();
             builder.RegisterType<PriceCalculationService>().As<global::Nop.Services.Catalog.IPriceCalculationService>().InstancePerLifetimeScope();
-            builder.RegisterType<PromosPriceCalculationService>().As<IPromosPriceCalculationService>().InstancePerLifetimeScope();
             builder.RegisterType<DiscountService>().As<global::Nop.Services.Discounts.IDiscountService>().InstancePerLifetimeScope();
             builder.RegisterType<ShoppingCartService>().As<global::Nop.Services.Orders.IShoppingCartService>().InstancePerLifetimeScope();
             builder.RegisterType<TaxService>().As<global::Nop.Services.Tax.ITaxService>().InstancePerLifetimeScope();

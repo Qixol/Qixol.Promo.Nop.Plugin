@@ -205,9 +205,9 @@ namespace Qixol.Plugin.Misc.Promo.Factories
                     ShippingRateComputationMethodSystemName = pp.ProviderSystemName
                 };
 
-                _promoService.ProcessShoppingCart(shippingOption);
+                _promoService.ProcessShoppingCart(_workContext.CurrentCustomer, shippingOption);
 
-                var basketResponse = _promoUtilities.GetBasketResponse();
+                var basketResponse = _promoUtilities.GetBasketResponse(_workContext.CurrentCustomer);
 
                 if (basketResponse != null)
                 {
@@ -272,9 +272,9 @@ namespace Qixol.Plugin.Misc.Promo.Factories
                     ShippingRateComputationMethodSystemName = sm.ShippingRateComputationMethodSystemName
                 };
 
-                _promoService.ProcessShoppingCart(sm.ShippingOption);
+                _promoService.ProcessShoppingCart(_workContext.CurrentCustomer, sm.ShippingOption);
 
-                BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
+                BasketResponse basketResponse = _promoUtilities.GetBasketResponse(_workContext.CurrentCustomer);
 
                 if (basketResponse != null && basketResponse.IsValid())
                 {

@@ -20,16 +20,19 @@ namespace Qixol.Nop.Promo.Services.ProductMapping
         private readonly IProductService _productService;
         private readonly IEventPublisher _eventPublisher;
         private readonly PromoSettings _promoSettings;
+        private readonly IProductAttributeParser _productAttributeParser;
 
         public ProductMappingService(IRepository<ProductMappingItem> repository,
                                      IProductService productService,
                                      IEventPublisher eventPublisher,
-                                     PromoSettings promoSettings)
+                                     PromoSettings promoSettings,
+                                     IProductAttributeParser productAttributeParser)
         {
             this._repository = repository;
             this._productService = productService;
             this._eventPublisher = eventPublisher;
             this._promoSettings = promoSettings;
+            this._productAttributeParser = productAttributeParser;
         }
 
         public ProductMappingItem RetrieveFromAttributesXml(Product product, string attributesXml)
@@ -64,14 +67,11 @@ namespace Qixol.Nop.Promo.Services.ProductMapping
 
             var product = _productService.GetProductById(shoppingCartItem.ProductId);
 
-            if (product.ProductAttributeMappings != null && product.ProductAttributeMappings.Count > 0)
+            var productAttributeValues = _productAttributeParser.ParseProductAttributeValues(shoppingCartItem.AttributesXml);
+            if (productAttributeValues != null && productAttributeValues.ToList().Any())
+            {
                 attributesXml = shoppingCartItem.AttributesXml;
-
-            if (product.ProductAttributeCombinations != null && product.ProductAttributeCombinations.Count > 0)
-                attributesXml = shoppingCartItem.AttributesXml;
-
-            if (product.ProductAttributeMappings != null && product.ProductAttributeMappings.Count > _promoSettings.MaximumAttributesForVariants)
-                attributesXml = string.Empty;
+            }
 
             return this._repository.Table.Where(pm => pm.EntityId == product.Id && pm.EntityName == EntityAttributeName.Product &&
                 (pm.AttributesXml ?? string.Empty).Equals((attributesXml ?? string.Empty), StringComparison.InvariantCultureIgnoreCase)).FirstOrDefault();

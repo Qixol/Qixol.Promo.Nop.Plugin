@@ -26,6 +26,7 @@ using Qixol.Promo.Integration.Lib;
 using Qixol.Promo.Integration.Lib.Import;
 using Qixol.Promo.Integration.Lib.Basket;
 using Qixol.Promo.Integration.Lib.Export;
+using Nop.Services.Customers;
 
 namespace Qixol.Nop.Promo.Services.Promo
 {
@@ -43,6 +44,7 @@ namespace Qixol.Nop.Promo.Services.Promo
         private readonly IStoreContext _storeContext;
         private readonly IShoppingCartService _shoppingCartService;
         private readonly IProductMappingService _productMappingService;
+        private readonly ICustomerService _customerService;
 
         #endregion
 
@@ -58,7 +60,8 @@ namespace Qixol.Nop.Promo.Services.Promo
             IGenericAttributeService genericAttributeService,
             IStoreContext storeContext,
             IShoppingCartService shoppingCartService,
-            IProductMappingService productMappingService)
+            IProductMappingService productMappingService,
+            ICustomerService customerService)
         {
             this._promoSettings = promoSettings;
             this._productService = productService;
@@ -70,6 +73,7 @@ namespace Qixol.Nop.Promo.Services.Promo
             this._storeContext = storeContext;
             this._shoppingCartService = shoppingCartService;
             this._productMappingService = productMappingService;
+            this._customerService = customerService;
         }
 
         #endregion
@@ -167,10 +171,16 @@ namespace Qixol.Nop.Promo.Services.Promo
 
         #endregion
 
-        // TODO: remove this - just use the GetAttribute, but get <BasketResponse> working
-        public BasketResponse GetBasketResponse()
+        #region GetBasketResponse
+
+        public BasketResponse GetBasketResponse(int customerId)
         {
-            Customer customer = _workContext.CurrentCustomer;
+            var customer = _customerService.GetCustomerById(customerId);
+            return GetBasketResponse(customer);
+        }
+
+        public BasketResponse GetBasketResponse(Customer customer)
+        {
             string basketResponseString = customer.GetAttribute<string>(PromoCustomerAttributeNames.PromoBasketResponse, _storeContext.CurrentStore.Id);
 
             BasketResponse basketResponse = null;
@@ -181,6 +191,8 @@ namespace Qixol.Nop.Promo.Services.Promo
 
             return basketResponse;
         }
+
+        #endregion
 
         private string GetCategoryBreadCrumb(Category category, IList<Category> allCategories)
         {

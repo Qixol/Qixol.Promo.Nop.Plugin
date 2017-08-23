@@ -66,9 +66,14 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
             IStateProvinceService _stateProvinceService = EngineContext.Current.Resolve<IStateProvinceService>();
             IPluginFinder _pluginFinder = EngineContext.Current.Resolve<IPluginFinder>();
 
-            Customer customer = _workContext.CurrentCustomer;
+            if (cart == null || !cart.Any())
+                return null;
 
-            var basketResponse = _promoUtilities.GetBasketResponse();
+            var customer = cart.GetCustomer();
+            if (customer == null)
+                return null;
+
+            var basketResponse = _promoUtilities.GetBasketResponse(customer);
 
             // remove the previous response
             _genericAttributeService.SaveAttribute<string>(customer, PromoCustomerAttributeNames.PromoBasketResponse, null, _storeContext.CurrentStore.Id);
@@ -109,7 +114,7 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
                         {
                             int generatedItemQuantity = Decimal.ToInt32(generatedItem.Quantity);
                             int newQuantity = addedItem.Quantity - generatedItemQuantity;
-                            _shoppingCartService.UpdateShoppingCartItem(customer: _workContext.CurrentCustomer,
+                            _shoppingCartService.UpdateShoppingCartItem(customer: customer,
                                 shoppingCartItemId: addedItem.Id,
                                 attributesXml: addedItem.AttributesXml,
                                 customerEnteredPrice: addedItem.CustomerEnteredPrice,
@@ -233,7 +238,7 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
 
             #region checkout attributes
 
-            string checkoutAttributesXml = _workContext.CurrentCustomer.GetAttribute<string>(SystemCustomerAttributeNames.CheckoutAttributes, _genericAttributeService, _storeContext.CurrentStore.Id);
+            string checkoutAttributesXml = customer.GetAttribute<string>(SystemCustomerAttributeNames.CheckoutAttributes, _genericAttributeService, _storeContext.CurrentStore.Id);
             List<CheckoutAttribute> checkoutAttributes = _checkoutAttributeParser.ParseCheckoutAttributes(checkoutAttributesXml).ToList();
 
             int basketItemId = (from i in items orderby i.Id descending select i.Id).FirstOrDefault();
@@ -357,7 +362,7 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
 
             #region basket
 
-            var basketUniqueReference = _workContext.CurrentCustomer.GetAttribute<Guid>(PromoCustomerAttributeNames.PromoBasketUniqueReference, _storeContext.CurrentStore.Id);
+            var basketUniqueReference = customer.GetAttribute<Guid>(PromoCustomerAttributeNames.PromoBasketUniqueReference, _storeContext.CurrentStore.Id);
             if (basketUniqueReference == Guid.Empty)
             {
                 basketUniqueReference = Guid.NewGuid();
@@ -400,7 +405,7 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
 
             #region shipping
 
-            ShippingOption selectedShippingOption = _workContext.CurrentCustomer.GetAttribute<ShippingOption>(SystemCustomerAttributeNames.SelectedShippingOption, _storeContext.CurrentStore.Id);
+            ShippingOption selectedShippingOption = customer.GetAttribute<ShippingOption>(SystemCustomerAttributeNames.SelectedShippingOption, _storeContext.CurrentStore.Id);
             basketRequest = basketRequest.SetShipping(cart, selectedShippingOption);
 
             #endregion
@@ -420,13 +425,19 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
         {
             var linePromotions = new List<BasketResponseAppliedPromotion>();
 
+            if (shoppingCartItem == null || shoppingCartItem.Customer == null)
+                return linePromotions;
+
+            var customer = shoppingCartItem.Customer;
+
             var basketResponseItems = MatchedResponseItems(shoppingCartItem);
 
             if (!basketResponseItems.Any())
                 return linePromotions;
 
+
             var promoUtilities = (IPromoUtilities) EngineContext.Current.Resolve<IPromoUtilities>();
-            var basketResponse = promoUtilities.GetBasketResponse();
+            var basketResponse = promoUtilities.GetBasketResponse(customer);
 
             foreach (var item in basketResponseItems)
             {
@@ -474,8 +485,10 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
 
         public static Decimal LineAmount(this ShoppingCartItem shoppingCartItem)
         {
-            if (shoppingCartItem == null)
+            if (shoppingCartItem == null || shoppingCartItem.Customer == null)
                 return decimal.Zero;
+
+            var customer = shoppingCartItem.Customer;
 
             var basketResponseItems = MatchedResponseItems(shoppingCartItem);
 
@@ -483,7 +496,7 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
                 return decimal.Zero;
 
             var promoUtilities = (IPromoUtilities) EngineContext.Current.Resolve<IPromoUtilities>();
-            var basketResponse = promoUtilities.GetBasketResponse();
+            var basketResponse = promoUtilities.GetBasketResponse(customer);
 
             if (!basketResponse.IsValid())
                 return decimal.Zero;
@@ -516,8 +529,10 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
 
         public static Decimal LineDiscountAmount(this ShoppingCartItem shoppingCartItem)
         {
-            if (shoppingCartItem == null)
+            if (shoppingCartItem == null || shoppingCartItem.Customer == null)
                 return decimal.Zero;
+
+            var customer = shoppingCartItem.Customer;
 
             var basketResponseItems = MatchedResponseItems(shoppingCartItem);
 
@@ -525,7 +540,7 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
                 return decimal.Zero;
 
             var promoUtilities = (IPromoUtilities) EngineContext.Current.Resolve<IPromoUtilities>();
-            var basketResponse = promoUtilities.GetBasketResponse();
+            var basketResponse = promoUtilities.GetBasketResponse(customer);
 
             if (!basketResponse.IsValid())
                 return decimal.Zero;
@@ -567,6 +582,10 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
             if (!shoppingCartItems.Any())
                 return subTotal;
 
+            var customer = shoppingCartItems.GetCustomer();
+            if (customer == null)
+                return subTotal;
+
             // sum line totals
             shoppingCartItems.ToList().ForEach(sci =>
             {
@@ -574,7 +593,7 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
             });
 
             // include any checkout attributes
-            var basketResponse = promoUtilities.GetBasketResponse();
+            var basketResponse = promoUtilities.GetBasketResponse(customer);
             if (basketResponse == null)
                 return subTotal;
 
@@ -614,7 +633,7 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
 
             var promoUtilities = (IPromoUtilities) EngineContext.Current.Resolve<IPromoUtilities>();
             var productMappingService = (IProductMappingService) EngineContext.Current.Resolve<IProductMappingService>();
-            var basketResponse = promoUtilities.GetBasketResponse();
+            var basketResponse = promoUtilities.GetBasketResponse(shoppingCartItem.CustomerId);
 
             if (!basketResponse.IsValid())
                 return basketResponseItems;

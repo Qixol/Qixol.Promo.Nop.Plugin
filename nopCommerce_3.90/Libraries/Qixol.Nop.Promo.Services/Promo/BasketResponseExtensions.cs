@@ -469,7 +469,11 @@ namespace Qixol.Nop.Promo.Services.Promo
 
             if (checkoutAttributeValueMappingItem != null)
             {
-                var items = (from bri in basketResponse.Items where bri.ProductCode.Equals(checkoutAttributeValueMappingItem.Code, StringComparison.InvariantCultureIgnoreCase) select bri);
+                var integrationCode = checkoutAttribute.Name;
+                if (!string.IsNullOrEmpty(checkoutAttributeValueMappingItem.Code))
+                    integrationCode = checkoutAttributeValueMappingItem.Code;
+
+                var items = (from bri in basketResponse.Items where bri.ProductCode.Equals(integrationCode, StringComparison.InvariantCultureIgnoreCase) select bri);
                 if (items != null)
                 {
                     basketResponseItems = items.ToList();

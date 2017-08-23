@@ -32,7 +32,7 @@ namespace Qixol.Nop.Promo.Services.Orders
         {
             _promoService.SendConfirmedBasket(order);
 
-            BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
+            BasketResponse basketResponse = _promoUtilities.GetBasketResponse(order.Customer);
 
             if (basketResponse == null)
             {
@@ -40,10 +40,9 @@ namespace Qixol.Nop.Promo.Services.Orders
             }
             else
             {
-
                 PromoOrder promoOrder = new PromoOrder()
                 {
-                    RequestXml = _workContext.CurrentCustomer.GetAttribute<string>(PromoCustomerAttributeNames.PromoBasketRequest, _genericAttributeService, _storeContext.CurrentStore.Id),
+                    RequestXml = order.Customer.GetAttribute<string>(PromoCustomerAttributeNames.PromoBasketRequest, _genericAttributeService, _storeContext.CurrentStore.Id),
                     ResponseXml = basketResponse.ToXml(),
                     OrderId = order.Id,
                     CustomerId = order.CustomerId,
@@ -139,7 +138,7 @@ namespace Qixol.Nop.Promo.Services.Orders
 
             #region clean up
 
-            Customer customer = _workContext.CurrentCustomer;
+            var customer = order.Customer;
 
             // basket guid
             _genericAttributeService.SaveAttribute<string>(customer, PromoCustomerAttributeNames.PromoBasketUniqueReference, null, _storeContext.CurrentStore.Id);

@@ -141,6 +141,9 @@
                             return false;
                         }
                     });
+
+                    var grid = $("#integration-codes-stores-grid-@Model").data('kendoGrid');
+                    grid.bind('save', integrationCodesGridSave);
                 });
             </script>
         </td>

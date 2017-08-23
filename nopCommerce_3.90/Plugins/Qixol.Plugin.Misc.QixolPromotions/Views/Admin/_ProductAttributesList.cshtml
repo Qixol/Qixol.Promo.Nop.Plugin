@@ -68,6 +68,13 @@
                             }
                         ]
                     });
+
+                    $('#productAttributes-grid input[type="checkbox"]').click(function () {
+                        if (!$('#SynchronizeAllWhenSaving').prop('checked')) {
+                            alert('The synchronization to Qixol Promo will run when this change is saved');
+                            $('#SynchronizeAllWhenSaving').prop('checked', true);
+                        }
+                    });
                 });
 
             </script>

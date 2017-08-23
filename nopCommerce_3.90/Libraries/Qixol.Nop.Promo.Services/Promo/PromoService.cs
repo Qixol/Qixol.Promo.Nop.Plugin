@@ -43,7 +43,6 @@ namespace Qixol.Nop.Promo.Services.Promo
         private readonly IPictureService _pictureService;
         private readonly ICurrencyService _currencyService;
         private readonly ISettingService _settingService;
-        private readonly IWorkContext _workContext;
         private readonly IMeasureService _measureService;
         private readonly MeasureSettings _measureSettings;
         private readonly CurrencySettings _currencySettings;
@@ -75,7 +74,6 @@ namespace Qixol.Nop.Promo.Services.Promo
             IPictureService pictureService,
             ICurrencyService currencyService,
             ISettingService settingService,
-            IWorkContext workContext,
             IMeasureService measureService,
             MeasureSettings measureSettings,
             CurrencySettings currencySettings,
@@ -102,7 +100,6 @@ namespace Qixol.Nop.Promo.Services.Promo
             this._pictureService = pictureService;
             this._currencyService = currencyService;
             this._settingService = settingService;
-            this._workContext = workContext;
             this._measureService = measureService;
             this._measureSettings = measureSettings;
             this._currencySettings = currencySettings;
@@ -142,24 +139,23 @@ namespace Qixol.Nop.Promo.Services.Promo
 
         #region basket promos methods
 
-        public List<string> ProcessShoppingCart()
+        public List<string> ProcessShoppingCart(Customer customer)
         {
-            return ProcessShoppingCart(false, null);
+            return ProcessShoppingCart(customer, false, null);
         }
 
-        public List<string> ProcessShoppingCart(ShippingOption shippingOption = null)
+        public List<string> ProcessShoppingCart(Customer customer, ShippingOption shippingOption = null)
         {
-            return ProcessShoppingCart(false, shippingOption);
+            return ProcessShoppingCart(customer, false, shippingOption);
         }
-        public List<string> ProcessShoppingCart(bool getMissedPromotions = false)
+        public List<string> ProcessShoppingCart(Customer customer, bool getMissedPromotions = false)
         {
-            return ProcessShoppingCart(getMissedPromotions, null);
+            return ProcessShoppingCart(customer, getMissedPromotions, null);
         }
 
-        public List<string> ProcessShoppingCart(bool getMissedPromotions = false, ShippingOption shippingOption = null)
+        public List<string> ProcessShoppingCart(Customer customer, bool getMissedPromotions = false, ShippingOption shippingOption = null)
         {
             var addToCartWarnings = new List<string>();
-            Customer customer = _workContext.CurrentCustomer;
 
             IList<ShoppingCartItem> cart = customer.ShoppingCartItems
                 .Where(sci => sci.ShoppingCartType == ShoppingCartType.ShoppingCart)
@@ -184,14 +180,14 @@ namespace Qixol.Nop.Promo.Services.Promo
                         basketRequest = basketRequest.SetShipping(cart, shippingOption);
                     }
 
-                    BasketResponse basketResponse = SendBasketRequestTopromoService(basketRequest);
+                    BasketResponse basketResponse = SendBasketRequestTopromoService(customer, basketRequest);
                     if ((basketResponse != null) &&
                         (basketResponse.Summary != null) &&
                         (basketResponse.Summary.ProcessingResult))
                     {
                         // get the selectedShippingOption - if it's not null will need to save this after adding products to the cart
-                        ShippingOption selectedShippingOption = _workContext.CurrentCustomer.GetAttribute<ShippingOption>(SystemCustomerAttributeNames.SelectedShippingOption, _storeContext.CurrentStore.Id);
-                        string selectedPaymentOption = _workContext.CurrentCustomer.GetAttribute<string>(SystemCustomerAttributeNames.SelectedPaymentMethod, _storeContext.CurrentStore.Id);
+                        ShippingOption selectedShippingOption = customer.GetAttribute<ShippingOption>(SystemCustomerAttributeNames.SelectedShippingOption, _storeContext.CurrentStore.Id);
+                        string selectedPaymentOption = customer.GetAttribute<string>(SystemCustomerAttributeNames.SelectedPaymentMethod, _storeContext.CurrentStore.Id);
 
                         #region generated basket items
 
@@ -249,14 +245,14 @@ namespace Qixol.Nop.Promo.Services.Promo
 
                                     List<string> itemAddToCartWarnings = new List<string>();
                                     //add to the cart
-                                    itemAddToCartWarnings.AddRange(_shoppingCartService.AddToCart(_workContext.CurrentCustomer,
+                                    itemAddToCartWarnings.AddRange(_shoppingCartService.AddToCart(customer,
                                         product, cartType, _storeContext.CurrentStore.Id,
                                         attributesXml, customerEnteredPriceConverted,
                                         rentalStartDate, rentalEndDate, quantity, true));
 
                                     if (itemAddToCartWarnings.Count > 0)
                                     {
-                                        string cartWarningTemplate = _localizationService.GetResource("Plugin.Misc.QixolPromo.ShoppingCart.AddItemWarning", _workContext.WorkingLanguage.Id);
+                                        string cartWarningTemplate = _localizationService.GetResource("Plugin.Misc.QixolPromo.ShoppingCart.AddItemWarning");
                                         string cartWarningMessage = string.Format(cartWarningTemplate, product.Name);
                                         addToCartWarnings.Add(cartWarningMessage);
                                         _logger.InsertLog(global::Nop.Core.Domain.Logging.LogLevel.Error, cartWarningMessage, string.Join(", ", itemAddToCartWarnings.ToArray()), customer);
@@ -268,16 +264,16 @@ namespace Qixol.Nop.Promo.Services.Promo
                         #endregion
 
                         if (selectedShippingOption != null)
-                            _genericAttributeService.SaveAttribute<ShippingOption>(_workContext.CurrentCustomer, SystemCustomerAttributeNames.SelectedShippingOption, selectedShippingOption, _storeContext.CurrentStore.Id);
+                            _genericAttributeService.SaveAttribute<ShippingOption>(customer, SystemCustomerAttributeNames.SelectedShippingOption, selectedShippingOption, _storeContext.CurrentStore.Id);
 
                         if (!string.IsNullOrEmpty(selectedPaymentOption))
-                            _genericAttributeService.SaveAttribute<string>(_workContext.CurrentCustomer, SystemCustomerAttributeNames.SelectedPaymentMethod, selectedPaymentOption, _storeContext.CurrentStore.Id);
+                            _genericAttributeService.SaveAttribute<string>(customer, SystemCustomerAttributeNames.SelectedPaymentMethod, selectedPaymentOption, _storeContext.CurrentStore.Id);
                     }
                 }
             }
             catch (Exception ex)
             {
-                _logger.Error("ProcessShoppingCart", ex, _workContext.CurrentCustomer);
+                _logger.Error("ProcessShoppingCart", ex, customer);
                 // TODO: show the customer an error message?
                 // addToCartWarnings.Add(ex.Message);
             }
@@ -287,8 +283,7 @@ namespace Qixol.Nop.Promo.Services.Promo
 
         public void SendConfirmedBasket(global::Nop.Core.Domain.Orders.Order placedOrder)
         {
-            var customer = _workContext.CurrentCustomer;
-            BasketRequest basketRequest = BasketRequest.FromXml(customer.GetAttribute<string>(PromoCustomerAttributeNames.PromoBasketRequest, _storeContext.CurrentStore.Id));
+            BasketRequest basketRequest = BasketRequest.FromXml(placedOrder.Customer.GetAttribute<string>(PromoCustomerAttributeNames.PromoBasketRequest, placedOrder.StoreId));
             basketRequest.Confirmed = true;
 
             #region Custom Attributes
@@ -347,13 +342,13 @@ namespace Qixol.Nop.Promo.Services.Promo
 
             #endregion
 
-            BasketResponse basketResponse = SendBasketRequestTopromoService(basketRequest);
+            BasketResponse basketResponse = SendBasketRequestTopromoService(placedOrder.Customer, basketRequest);
 
             if (basketResponse == null)
                 throw new NopException("sending confirmed basket failed");
         }
 
-        private BasketResponse SendBasketRequestTopromoService(BasketRequest basketRequest)
+        private BasketResponse SendBasketRequestTopromoService(Customer customer, BasketRequest basketRequest)
         {
             try
             {
@@ -362,10 +357,10 @@ namespace Qixol.Nop.Promo.Services.Promo
                 if (_promoSettings.LogMessages)
                 {
                     var serializedBasketRequestData = basketRequest.ToXml();
-                    _logger.InsertLog(global::Nop.Core.Domain.Logging.LogLevel.Information, "Qixol Promos basket request", serializedBasketRequestData, _workContext.CurrentCustomer);
+                    _logger.InsertLog(global::Nop.Core.Domain.Logging.LogLevel.Information, "Qixol Promos basket request", serializedBasketRequestData, customer);
                 }
 
-                _genericAttributeService.SaveAttribute<string>(_workContext.CurrentCustomer, PromoCustomerAttributeNames.PromoBasketResponse, null, _storeContext.CurrentStore.Id);
+                _genericAttributeService.SaveAttribute<string>(customer, PromoCustomerAttributeNames.PromoBasketResponse, null, _storeContext.CurrentStore.Id);
 
                 BasketResponse basketResponse = basketServiceManager.SubmitBasket(basketRequest);
 
@@ -383,18 +378,18 @@ namespace Qixol.Nop.Promo.Services.Promo
                 var serializedBasketResponseData = basketResponse.ToXml();
                 if (_promoSettings.LogMessages)
                 {
-                    _logger.InsertLog(global::Nop.Core.Domain.Logging.LogLevel.Information, "Qixol Promos basket response", serializedBasketResponseData, _workContext.CurrentCustomer);
+                    _logger.InsertLog(global::Nop.Core.Domain.Logging.LogLevel.Information, "Qixol Promos basket response", serializedBasketResponseData, customer);
                 }
 
-                _genericAttributeService.SaveAttribute<string>(_workContext.CurrentCustomer, PromoCustomerAttributeNames.PromoBasketResponse, serializedBasketResponseData, _storeContext.CurrentStore.Id);
+                _genericAttributeService.SaveAttribute<string>(customer, PromoCustomerAttributeNames.PromoBasketResponse, serializedBasketResponseData, _storeContext.CurrentStore.Id);
             }
             catch (Exception ex)
             {
-                _logger.Error("Failed in SendBasketRequestToPromoService", ex, _workContext.CurrentCustomer);
-                _logger.InsertLog(global::Nop.Core.Domain.Logging.LogLevel.Information, "SendBasketRequestToPromoService", basketRequest.ToXml(), _workContext.CurrentCustomer);
+                _logger.Error("Failed in SendBasketRequestToPromoService", ex, customer);
+                _logger.InsertLog(global::Nop.Core.Domain.Logging.LogLevel.Information, "SendBasketRequestToPromoService", basketRequest.ToXml(), customer);
             }
 
-            return _promoUtilities.GetBasketResponse();
+            return _promoUtilities.GetBasketResponse(customer);
 
         }
 

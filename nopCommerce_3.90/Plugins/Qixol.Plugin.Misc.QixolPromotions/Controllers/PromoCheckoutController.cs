@@ -269,7 +269,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             if ((_workContext.CurrentCustomer.IsGuest() && !_orderSettings.AnonymousCheckoutAllowed))
                 return new HttpUnauthorizedResult();
 
-            var scWarnings = _promoService.ProcessShoppingCart(true);
+            var scWarnings = _promoService.ProcessShoppingCart(_workContext.CurrentCustomer, true);
             if (scWarnings.Count > 0)
                 return RedirectToRoute("ShoppingCart");
 

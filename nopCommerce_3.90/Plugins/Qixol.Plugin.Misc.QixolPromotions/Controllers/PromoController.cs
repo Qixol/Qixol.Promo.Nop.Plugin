@@ -117,7 +117,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
         {
             PromoWidgetModel model = new PromoWidgetModel();
 
-            var basketResponse = _promoUtilities.GetBasketResponse();
+            var basketResponse = _promoUtilities.GetBasketResponse(_workContext.CurrentCustomer);
 
             if (basketResponse == null)
                 return new EmptyResult();
@@ -143,7 +143,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                         PromotionModel lineItemDiscountModel = new PromotionModel()
                         {
                             PromotionId = p.PromotionId.ToString(),
-                            PromotionName = p.DisplayDetails(),
+                            PromotionName = p.DisplayDetails(_workContext.CurrentCustomer),
                             DiscountAmount = _priceFormatter.FormatPrice(p.DiscountAmount, true, _workContext.WorkingCurrency, _workContext.WorkingLanguage, true)
                         };
                         lineItemModel.LineDiscounts.Add(lineItemDiscountModel);
@@ -190,7 +190,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                 basketLevelDiscountsExcShipping.Add(new PromotionModel()
                 {
                     PromotionId = blp.PromotionId.ToString(),
-                    PromotionName = blp.DisplayText,
+                    PromotionName = blp.DisplayDetails(),
                     DiscountAmount = _priceFormatter.FormatPrice(-1 * blp.DiscountAmount, true, _workContext.WorkingCurrency, _workContext.WorkingLanguage, true)
                 });
             });

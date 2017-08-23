@@ -4,16 +4,17 @@ using Qixol.Nop.Promo.Core.Domain.Promo;
 using Qixol.Promo.Integration.Lib.Basket;
 using System.Linq;
 using System.Web.Mvc;
+using Nop.Core.Domain.Customers;
 
 namespace Qixol.Nop.Promo.Services.Promo
 {
     public static class BasketResponseAppliedPromotionExtensions
     {
 
-        public static string DisplayDetails(this BasketResponseAppliedPromotion appliedPromotion)
+        public static string DisplayDetails(this BasketResponseAppliedPromotion appliedPromotion, Customer customer)
         {
             var promoUtilities = DependencyResolver.Current.GetService<IPromoUtilities>();
-            var basketResponse = promoUtilities.GetBasketResponse();
+            var basketResponse = promoUtilities.GetBasketResponse(customer);
 
             if (!basketResponse.IsValid())
                 return "error promotion summary not found";

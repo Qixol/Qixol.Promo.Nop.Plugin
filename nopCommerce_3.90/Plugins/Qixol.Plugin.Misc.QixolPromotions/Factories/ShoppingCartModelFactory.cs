@@ -56,7 +56,7 @@ namespace Qixol.Plugin.Misc.Promo.Factories
         private readonly PromoSettings _promoSettings;
         private readonly IPromoService _promoService;
         private readonly IPromoUtilities _promoUtilities;
-        private readonly IPromosPriceCalculationService _promosPriceCalculationService;
+        private readonly IPriceCalculationService _priceCalculationService;
 
         #endregion
 
@@ -103,7 +103,7 @@ namespace Qixol.Plugin.Misc.Promo.Factories
             PromoSettings promoSettings,
             IPromoService promoService,
             IPromoUtilities promoUtilities,
-            IPromosPriceCalculationService promosPriceCalculationService)
+            IPriceCalculationService promosPriceCalculationService)
             : base(addressModelFactory,
                 storeContext,
                 workContext,
@@ -158,7 +158,7 @@ namespace Qixol.Plugin.Misc.Promo.Factories
             this._promoSettings = promoSettings;
             this._promoService = promoService;
             this._promoUtilities = promoUtilities;
-            this._promosPriceCalculationService = promosPriceCalculationService;
+            this._priceCalculationService = promosPriceCalculationService;
         }
 
         #endregion
@@ -175,9 +175,9 @@ namespace Qixol.Plugin.Misc.Promo.Factories
                 DiscountAmount = _priceFormatter.FormatShippingPrice(decimal.Zero, true)
             };
 
-            _promoService.ProcessShoppingCart(so);
+            _promoService.ProcessShoppingCart(_workContext.CurrentCustomer, so);
 
-            BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
+            BasketResponse basketResponse = _promoUtilities.GetBasketResponse(_workContext.CurrentCustomer);
 
             if (basketResponse != null && basketResponse.IsValid())
             {
@@ -225,7 +225,7 @@ namespace Qixol.Plugin.Misc.Promo.Factories
 
             if (_promoSettings.Enabled)
             {
-                List<string> cartWarnings = _promoService.ProcessShoppingCart();
+                List<string> cartWarnings = _promoService.ProcessShoppingCart(_workContext.CurrentCustomer);
                 // refresh the cart, in case any changes were made
                 cart = (from cartItem in _workContext.CurrentCustomer.ShoppingCartItems where cartItem.ShoppingCartType.Equals(ShoppingCartType.ShoppingCart) select cartItem).ToList();
                 foreach (string cartWarning in cartWarnings)
@@ -239,7 +239,7 @@ namespace Qixol.Plugin.Misc.Promo.Factories
 
             if (_promoSettings.Enabled)
             {
-                var basketResponse = _promoUtilities.GetBasketResponse();
+                var basketResponse = _promoUtilities.GetBasketResponse(_workContext.CurrentCustomer);
                 if (basketResponse.IsValid())
                 {
                     if (basketResponse.TotalDiscount != decimal.Zero)
@@ -255,7 +255,7 @@ namespace Qixol.Plugin.Misc.Promo.Factories
                                 decimal shoppingCartItemDiscountBase;
                                 decimal taxRate;
                                 int? maximumDiscountQty;
-                                decimal tempSubTotal = _promosPriceCalculationService.GetSubTotal(sci, true, out shoppingCartItemDiscountBase, out scDiscounts, out maximumDiscountQty);
+                                decimal tempSubTotal = _priceCalculationService.GetSubTotal(sci, true, out shoppingCartItemDiscountBase, out scDiscounts, out maximumDiscountQty);
                                 decimal shoppingCartItemSubTotalWithDiscountBase = _taxService.GetProductPrice(sci.Product, tempSubTotal, out taxRate);
                                 decimal shoppingCartItemSubTotalWithDiscount = _currencyService.ConvertFromPrimaryStoreCurrency(shoppingCartItemSubTotalWithDiscountBase, _workContext.WorkingCurrency);
                                 cartItemModel.SubTotal = _priceFormatter.FormatPrice(shoppingCartItemSubTotalWithDiscount);

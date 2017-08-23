@@ -70,7 +70,7 @@ namespace Qixol.Nop.Promo.Services.Tax
             taxRate = decimal.Zero;
             decimal price = cav.PriceAdjustment;
 
-            BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
+            BasketResponse basketResponse = _promoUtilities.GetBasketResponse(customer);
 
             // checkout attribute value promos
             if (includeDiscounts && (basketResponse != null))

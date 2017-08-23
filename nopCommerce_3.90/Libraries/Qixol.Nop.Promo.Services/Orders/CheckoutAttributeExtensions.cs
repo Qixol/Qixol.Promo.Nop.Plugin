@@ -83,13 +83,15 @@ namespace Qixol.Nop.Promo.Services.Orders
             if (checkoutAttribute == null)
                 return null;
 
+            var productCode = checkoutAttribute.Name;
+
             IAttributeValueService attributeValueService = DependencyResolver.Current.GetService<IAttributeValueService>();
 
             Qixol.Nop.Promo.Core.Domain.AttributeValues.AttributeValueMappingItem integrationMappingItem = attributeValueService.Retrieve(checkoutAttribute.Id, EntityAttributeName.CheckoutAttribute);
             if (integrationMappingItem != null && !string.IsNullOrEmpty(integrationMappingItem.Code))
-                return integrationMappingItem.Code;
+                productCode = integrationMappingItem.Code;
 
-            return null;
+            return productCode;
         }
     }
 }

@@ -457,7 +457,7 @@ namespace Qixol.Plugin.Misc.Promo.Factories
             if (cart.Count == 0)
                 return model;
 
-            var basketResponse = _promoUtilities.GetBasketResponse();
+            var basketResponse = _promoUtilities.GetBasketResponse(_workContext.CurrentCustomer);
             if (basketResponse == null || basketResponse.MissedPromotions.Count == 0)
             {
                 return model;

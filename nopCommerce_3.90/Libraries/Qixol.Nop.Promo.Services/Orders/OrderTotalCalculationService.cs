@@ -35,7 +35,7 @@ namespace Qixol.Nop.Promo.Services.Orders
 
         private readonly IWorkContext _workContext;
         private readonly IStoreContext _storeContext;
-        private readonly IPromosPriceCalculationService _promosPriceCalculationService;
+        private readonly IPriceCalculationService _priceCalculationService;
         private readonly ITaxService _taxService;
         private readonly IShippingService _shippingService;
         private readonly IPaymentService _paymentService;
@@ -52,7 +52,6 @@ namespace Qixol.Nop.Promo.Services.Orders
         private readonly IPromoUtilities _promoUtilities;
         private readonly PromoSettings _promoSettings;
         private readonly IPromoService _promoService;
-        private readonly IPriceCalculationService _priceCalculationService;
         private readonly IAttributeValueService _attributeValueService;
         private readonly ITaxServiceExtensions _taxServiceExtensions;
         private readonly ICurrencyService _currencyService;
@@ -63,7 +62,6 @@ namespace Qixol.Nop.Promo.Services.Orders
 
         public OrderTotalCalculationService(IWorkContext workContext,
             IStoreContext storeContext,
-            IPromosPriceCalculationService promosPriceCalculationService,
             IPriceCalculationService priceCalculationService,
             ITaxService taxService,
             IShippingService shippingService,
@@ -103,7 +101,7 @@ namespace Qixol.Nop.Promo.Services.Orders
         {
             this._workContext = workContext;
             this._storeContext = storeContext;
-            this._promosPriceCalculationService = promosPriceCalculationService;
+            this._priceCalculationService = priceCalculationService;
             this._taxService = taxService;
             this._shippingService = shippingService;
             this._paymentService = paymentService;
@@ -120,7 +118,6 @@ namespace Qixol.Nop.Promo.Services.Orders
             this._promoUtilities = promoUtilities;
             this._promoSettings = promoSettings;
             this._promoService = promoService;
-            this._priceCalculationService = priceCalculationService;
             this._attributeValueService = attributeValueService;
             this._taxServiceExtensions = taxServiceExtensions;
             this._currencyService = currencyService;
@@ -143,7 +140,7 @@ namespace Qixol.Nop.Promo.Services.Orders
             if (!_promoSettings.Enabled)
                 return base.GetOrderSubtotalDiscount(customer, orderSubTotal, out appliedDiscounts);
 
-            BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
+            BasketResponse basketResponse = _promoUtilities.GetBasketResponse(customer);
 
             appliedDiscounts = new List<DiscountForCaching>();
             decimal discountAmount = decimal.Zero;
@@ -189,7 +186,7 @@ namespace Qixol.Nop.Promo.Services.Orders
 
             appliedDiscounts = new List<DiscountForCaching>();
 
-            BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
+            BasketResponse basketResponse = _promoUtilities.GetBasketResponse(customer);
             var deliveryPromos = basketResponse.DeliveryPromos();
             var currentAppliedDiscounts = new List<DiscountForCaching>();
             var currentDiscountAmount = decimal.Zero;
@@ -297,7 +294,20 @@ namespace Qixol.Nop.Promo.Services.Orders
                 return;
             }
 
-            BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
+            if (cart == null || !cart.Any())
+            {
+                base.GetShoppingCartSubTotal(cart, includingTax, out discountAmount, out appliedDiscounts, out subTotalWithoutDiscount, out subTotalWithDiscount, out taxRates);
+                return;
+            }
+
+            var customer = cart.GetCustomer();
+            if (customer == null)
+            {
+                base.GetShoppingCartSubTotal(cart, includingTax, out discountAmount, out appliedDiscounts, out subTotalWithoutDiscount, out subTotalWithDiscount, out taxRates);
+                return;
+            }
+
+            BasketResponse basketResponse = _promoUtilities.GetBasketResponse(customer);
 
             if (basketResponse == null)
             {
@@ -311,18 +321,12 @@ namespace Qixol.Nop.Promo.Services.Orders
             subTotalWithDiscount = decimal.Zero;
             taxRates = new SortedDictionary<decimal, decimal>();
 
-            if (!cart.Any())
-                return;
-
-            //get the customer 
-            Customer customer = cart.GetCustomer();
-
             //sub totals
             decimal subTotalExclTaxWithoutDiscount = decimal.Zero;
             decimal subTotalInclTaxWithoutDiscount = decimal.Zero;
             foreach (var shoppingCartItem in cart)
             {
-                decimal sciSubTotal = _promosPriceCalculationService.GetSubTotal(shoppingCartItem, true);
+                decimal sciSubTotal = _priceCalculationService.GetSubTotal(shoppingCartItem, true);
 
                 decimal taxRate;
                 decimal sciExclTax = _taxService.GetProductPrice(shoppingCartItem.Product, sciSubTotal, false, customer, out taxRate);
@@ -558,7 +562,14 @@ namespace Qixol.Nop.Promo.Services.Orders
 
             #region old code
 
-            BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
+            if (cart == null || !cart.Any())
+                return base.GetShoppingCartShippingTotal(cart, includingTax, out taxRate, out appliedDiscounts);
+
+            var customer = cart.GetCustomer();
+            if (customer == null)
+                return base.GetShoppingCartShippingTotal(cart, includingTax, out taxRate, out appliedDiscounts);
+
+            BasketResponse basketResponse = _promoUtilities.GetBasketResponse(customer);
             decimal? shippingTotal = null;
 
             if (basketResponse == null)
@@ -569,7 +580,7 @@ namespace Qixol.Nop.Promo.Services.Orders
             taxRate = Decimal.Zero;
             appliedDiscounts = new List<DiscountForCaching>();
 
-            var shippingOption = _workContext.CurrentCustomer.GetAttribute<ShippingOption>(SystemCustomerAttributeNames.SelectedShippingOption, _storeContext.CurrentStore.Id);
+            var shippingOption = customer.GetAttribute<ShippingOption>(SystemCustomerAttributeNames.SelectedShippingOption, _storeContext.CurrentStore.Id);
 
             if (shippingOption == null)
             {
@@ -602,7 +613,6 @@ namespace Qixol.Nop.Promo.Services.Orders
             #region new code
 
             decimal? shippingTotalTaxed = shippingTotal;
-            Customer customer = cart.GetCustomer();
 
             if (shippingTotal.HasValue)
             {
@@ -632,13 +642,13 @@ namespace Qixol.Nop.Promo.Services.Orders
 
 
 
-        /// <summary>
-        /// Gets tax
-        /// </summary>
-        /// <param name="cart">Shopping cart</param>
-        /// <param name="usePaymentMethodAdditionalFee">A value indicating whether we should use payment method additional fee when calculating tax</param>
-        /// <returns>Tax total</returns>
-        //public override decimal GetTaxTotal(IList<Nop.Core.Domain.Orders.ShoppingCartItem> cart, bool usePaymentMethodAdditionalFee = true)
+        ///// <summary>
+        ///// Gets tax
+        ///// </summary>
+        ///// <param name="cart">Shopping cart</param>
+        ///// <param name="usePaymentMethodAdditionalFee">A value indicating whether we should use payment method additional fee when calculating tax</param>
+        ///// <returns>Tax total</returns>
+        //public override decimal GetTaxTotal(IList<global::Nop.Core.Domain.Orders.ShoppingCartItem> cart, bool usePaymentMethodAdditionalFee = true)
         //{
         //    if (cart == null)
         //        throw new ArgumentNullException("cart");
@@ -647,14 +657,14 @@ namespace Qixol.Nop.Promo.Services.Orders
         //    return GetTaxTotal(cart, out taxRates, usePaymentMethodAdditionalFee);
         //}
 
-        /// <summary>
-        /// Gets tax
-        /// </summary>
-        /// <param name="cart">Shopping cart</param>
-        /// <param name="taxRates">Tax rates</param>
-        /// <param name="usePaymentMethodAdditionalFee">A value indicating whether we should use payment method additional fee when calculating tax</param>
-        /// <returns>Tax total</returns>
-        //public override decimal GetTaxTotal(IList<Nop.Core.Domain.Orders.ShoppingCartItem> cart,
+        ///// <summary>
+        ///// Gets tax
+        ///// </summary>
+        ///// <param name="cart">Shopping cart</param>
+        ///// <param name="taxRates">Tax rates</param>
+        ///// <param name="usePaymentMethodAdditionalFee">A value indicating whether we should use payment method additional fee when calculating tax</param>
+        ///// <returns>Tax total</returns>
+        //public override decimal GetTaxTotal(IList<global::Nop.Core.Domain.Orders.ShoppingCartItem> cart,
         //out SortedDictionary<decimal, decimal> taxRates, bool usePaymentMethodAdditionalFee = true)
         //{
         //    if (cart == null)
@@ -681,7 +691,14 @@ namespace Qixol.Nop.Promo.Services.Orders
             if (!_promoSettings.Enabled)
                 return base.GetShoppingCartTotal(cart, useRewardPonts, usePaymentMethodAdditionalFee);
 
-            BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
+            if (cart == null || !cart.Any())
+                return null;
+
+            var customer = cart.GetCustomer();
+            if (customer == null)
+                return null;
+
+            BasketResponse basketResponse = _promoUtilities.GetBasketResponse(customer);
 
             if (basketResponse == null || basketResponse.Items == null || basketResponse.Summary == null)
                 return base.GetShoppingCartTotal(cart, useRewardPonts, usePaymentMethodAdditionalFee);
@@ -715,7 +732,14 @@ namespace Qixol.Nop.Promo.Services.Orders
             if (!_promoSettings.Enabled)
                 return base.GetShoppingCartTotal(cart, out discountAmount, out appliedDiscounts, out appliedGiftCards, out redeemedRewardPoints, out redeemedRewardPointsAmount, useRewardPonts, usePaymentMethodAdditionalFee);
 
-            BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
+            if (cart == null | !cart.Any())
+                return base.GetShoppingCartTotal(cart, out discountAmount, out appliedDiscounts, out appliedGiftCards, out redeemedRewardPoints, out redeemedRewardPointsAmount, useRewardPonts, usePaymentMethodAdditionalFee);
+
+            var customer = cart.GetCustomer();
+            if (customer == null)
+                return base.GetShoppingCartTotal(cart, out discountAmount, out appliedDiscounts, out appliedGiftCards, out redeemedRewardPoints, out redeemedRewardPointsAmount, useRewardPonts, usePaymentMethodAdditionalFee);
+
+            BasketResponse basketResponse = _promoUtilities.GetBasketResponse(customer);
 
             if (basketResponse == null || basketResponse.Items == null || basketResponse.Summary == null)
             {
@@ -726,8 +750,6 @@ namespace Qixol.Nop.Promo.Services.Orders
             {
                 return base.GetShoppingCartTotal(cart, out discountAmount, out appliedDiscounts, out appliedGiftCards, out redeemedRewardPoints, out redeemedRewardPointsAmount, useRewardPonts, usePaymentMethodAdditionalFee);
             }
-
-            Customer customer = cart.GetCustomer();
 
             discountAmount = decimal.Zero;
             appliedDiscounts = new List<DiscountForCaching>();
@@ -802,7 +824,7 @@ namespace Qixol.Nop.Promo.Services.Orders
 
             #endregion
 
-            var shippingOption = _workContext.CurrentCustomer.GetAttribute<ShippingOption>(SystemCustomerAttributeNames.SelectedShippingOption, _storeContext.CurrentStore.Id);
+            var shippingOption = customer.GetAttribute<ShippingOption>(SystemCustomerAttributeNames.SelectedShippingOption, _storeContext.CurrentStore.Id);
             if (shippingOption == null)
             {
                 // Where there are items in the basket that are not for shipping, ensure we carry on, otherwise placing orders gets stuck.
@@ -837,7 +859,7 @@ namespace Qixol.Nop.Promo.Services.Orders
             if (!_promoSettings.Enabled)
                 return base.CalculateRewardPoints(customer, amount);
 
-            BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
+            BasketResponse basketResponse = _promoUtilities.GetBasketResponse(customer);
             return basketResponse.IssuedPoints();
         }
 

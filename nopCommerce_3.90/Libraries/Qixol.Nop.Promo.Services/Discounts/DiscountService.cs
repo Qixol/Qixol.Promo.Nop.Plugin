@@ -260,7 +260,7 @@ namespace Qixol.Nop.Promo.Services.Discounts
                 Errors = new List<string>()
             };
 
-            BasketResponse basketResponse = _promoUtilities.GetBasketResponse();
+            BasketResponse basketResponse = _promoUtilities.GetBasketResponse(customer);
 
             if (basketResponse == null || basketResponse.Items == null || basketResponse.Summary == null)
                 return discountValidationResult;

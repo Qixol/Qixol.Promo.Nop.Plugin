@@ -132,8 +132,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             CustomerSettings customerSettings,
             PromoSettings promoSettings,
             IPromoService promoService,
-            IPromoUtilities promoUtilities,
-            IPromosPriceCalculationService promosPriceCalculationService)
+            IPromoUtilities promoUtilities)
             : base (shoppingCartModelFactory,
                     productService, storeContext, workContext,
                     shoppingCartService, pictureService, localizationService,
