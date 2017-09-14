@@ -182,10 +182,10 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
 
             #endregion
 
-            #region basket level promotions (excluding shipping)
+            #region basket level promotions (excluding shipping) = order sub total discount
 
             var basketLevelDiscountsExcShipping = new List<PromotionModel>();
-            basketResponse.BasketLevelPromotions().ForEach(blp =>
+            basketResponse.BasketLevelPromotionsExcludingDelivery().ForEach(blp =>
             {
                 basketLevelDiscountsExcShipping.Add(new PromotionModel()
                 {
@@ -218,19 +218,19 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
 
             #endregion
 
-            #region basket level promotions (including shipping)
+            #region basket level promotions (including shipping) = order total discount
 
-            //var basketLevelDiscountsIncShipping = new List<PromotionModel>();
-            //basketResponse.BasketLevelPromotionsIncludingShipping().ForEach(blp =>
-            //{
-            //    basketLevelDiscountsIncShipping.Add(new PromotionModel()
-            //    {
-            //        PromotionId = blp.PromotionId.ToString(),
-            //        PromotionName = blp.DisplayText,
-            //        DiscountAmount = _priceFormatter.FormatPrice(-1 * blp.DiscountAmount, true, _workContext.WorkingCurrency, _workContext.WorkingLanguage, true)
-            //    });
-            //});
-            //model.BasketLevelDiscountsIncShippingModel = basketLevelDiscountsIncShipping;
+            var basketLevelDiscountsIncShipping = new List<PromotionModel>();
+            basketResponse.BasketLevelPromotionsIncludingDelivery().ForEach(blp =>
+            {
+                basketLevelDiscountsIncShipping.Add(new PromotionModel()
+                {
+                    PromotionId = blp.PromotionId.ToString(),
+                    PromotionName = blp.DisplayText,
+                    DiscountAmount = _priceFormatter.FormatPrice(-1 * blp.DiscountAmount, true, _workContext.WorkingCurrency, _workContext.WorkingLanguage, true)
+                });
+            });
+            model.BasketLevelDiscountsIncShippingModel = basketLevelDiscountsIncShipping;
 
             #endregion
 

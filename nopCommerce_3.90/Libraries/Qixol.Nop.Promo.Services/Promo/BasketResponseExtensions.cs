@@ -121,34 +121,74 @@ namespace Qixol.Nop.Promo.Services.Promo
             return subTotalWithoutDiscount;
         }
 
-        public static List<BasketResponseSummaryAppliedPromotion> BasketLevelPromotions(this BasketResponse basketResponse)
+        public static List<BasketResponseSummaryAppliedPromotion> BasketLevelPromotionsIncludingDelivery(this BasketResponse basketResponse)
         {
-            var basketLevelPromotions = new List<BasketResponseSummaryAppliedPromotion>();
+            var basketLevelPromotionsIncludingDelivery = new List<BasketResponseSummaryAppliedPromotion>();
 
             if (!BasketResponseIsValid(basketResponse))
-                return basketLevelPromotions;
+                return basketLevelPromotionsIncludingDelivery;
+
+            var deliveryItems = (from i in basketResponse.Items where i.IsDelivery select i).ToList();
+
+            deliveryItems.ForEach(di =>
+            {
+                var appliedPromotions = di.AppliedPromotions.Where(x => x.BasketLevelPromotion && !x.DeliveryLevelPromotion).ToList();
+                appliedPromotions.ForEach(ap =>
+                {
+                    var summaryAppliedPromotion = (from sap in basketResponse.Summary.AppliedPromotions where sap.PromotionId == ap.PromotionId && sap.InstanceId == ap.InstanceId select sap).FirstOrDefault();
+                    if (summaryAppliedPromotion == null)
+                        throw new ArgumentOutOfRangeException("summary applied promotion not found for line applied promotion");
+
+                    var existingPromo = (from p in basketLevelPromotionsIncludingDelivery where p.PromotionId == ap.PromotionId && p.InstanceId == ap.InstanceId select p).FirstOrDefault();
+                    if (existingPromo != null)
+                    {
+                        existingPromo.DiscountAmount += summaryAppliedPromotion.DiscountAmount;
+                    }
+                    else
+                    {
+                        basketLevelPromotionsIncludingDelivery.Add(summaryAppliedPromotion);
+                    }
+                });
+            });
+
+            return basketLevelPromotionsIncludingDelivery;
+        }
+
+        public static List<BasketResponseSummaryAppliedPromotion> BasketLevelPromotionsExcludingDelivery(this BasketResponse basketResponse)
+        {
+            var basketLevelPromotionsExcludingDelivery = new List<BasketResponseSummaryAppliedPromotion>();
+
+            if (!BasketResponseIsValid(basketResponse))
+                return basketLevelPromotionsExcludingDelivery;
+
+            var basketLevelPromotionsIncludingDelivery = basketResponse.BasketLevelPromotionsIncludingDelivery();
 
             var allBbasketLevelPromotions = (from p in basketResponse.Summary.AppliedPromotions
-                                                where p.BasketLevelPromotion && !p.DeliveryLevelPromotion && p.DiscountAmount > decimal.Zero &&
-                                                !p.PromotionType.Equals(PromotionTypeName.FreeProduct, StringComparison.InvariantCultureIgnoreCase) &&
-                                                !p.PromotionType.Equals(PromotionTypeName.IssueCoupon, StringComparison.InvariantCultureIgnoreCase) &&
-                                                !p.PromotionType.Equals(PromotionTypeName.IssuePoints, StringComparison.InvariantCultureIgnoreCase)
-                                                select p).ToList();
+                                             where p.BasketLevelPromotion && !p.DeliveryLevelPromotion && p.DiscountAmount > decimal.Zero &&
+                                             !p.PromotionType.Equals(PromotionTypeName.FreeProduct, StringComparison.InvariantCultureIgnoreCase) &&
+                                             !p.PromotionType.Equals(PromotionTypeName.IssueCoupon, StringComparison.InvariantCultureIgnoreCase) &&
+                                             !p.PromotionType.Equals(PromotionTypeName.IssuePoints, StringComparison.InvariantCultureIgnoreCase)
+                                             select p).ToList();
 
             allBbasketLevelPromotions.ForEach(a =>
             {
-                var existingPromo = (from p in basketLevelPromotions where p.PromotionId == a.PromotionId select p).FirstOrDefault();
-                if (existingPromo != null)
+                // ignore any basket level promotions that include delivery
+                var basketLevelPromotionIncludingDelivery = (from b in basketLevelPromotionsIncludingDelivery where b.PromotionId == a.PromotionId && b.InstanceId == a.InstanceId select b).FirstOrDefault();
+                if (basketLevelPromotionIncludingDelivery == null)
                 {
-                    existingPromo.DiscountAmount += a.DiscountAmount;
-                }
-                else
-                {
-                    basketLevelPromotions.Add(a);
+                    var existingPromo = (from p in basketLevelPromotionsExcludingDelivery where p.PromotionId == a.PromotionId && p.InstanceId == a.InstanceId select p).FirstOrDefault();
+                    if (existingPromo != null)
+                    {
+                        existingPromo.DiscountAmount += a.DiscountAmount;
+                    }
+                    else
+                    {
+                        basketLevelPromotionsExcludingDelivery.Add(a);
+                    }
                 }
             });
 
-            return basketLevelPromotions;
+            return basketLevelPromotionsExcludingDelivery;
         }
 
         public static int IssuedPoints(this BasketResponse basketResponse)
@@ -185,30 +225,6 @@ namespace Qixol.Nop.Promo.Services.Promo
 
             return false;
         }
-
-        //public static string DeliveryPromoName(this BasketResponse basketResponse)
-        //{
-        //    if (!basketResponse.IsValid())
-        //        return string.Empty;
-
-        //    var deliveryPromo = basketResponse.DeliveryPromo();
-        //    if (deliveryPromo != null)
-        //        return deliveryPromo.DisplayDetails();
-
-        //    return string.Empty;
-        //}
-
-        //public static decimal DeliveryPromoDiscount(this BasketResponse basketResponse)
-        //{
-        //    if (!basketResponse.IsValid())
-        //        return decimal.Zero;
-
-        //    var deliveryPromo = basketResponse.DeliveryPromo();
-        //    if (deliveryPromo != null)
-        //        return deliveryPromo.DiscountAmount;
-        //    else
-        //        return decimal.Zero;
-        //}
 
         public static List<BasketResponseSummaryAppliedPromotion> DeliveryPromos(this BasketResponse basketResponse)
         {

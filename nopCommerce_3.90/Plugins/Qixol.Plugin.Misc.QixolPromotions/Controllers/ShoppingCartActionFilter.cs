@@ -15,6 +15,7 @@ using System.Linq;
 using Nop.Services.Orders;
 using Nop.Core.Domain.Customers;
 using Nop.Services.Common;
+using Nop.Services.Customers;
 using Nop.Services.Payments;
 using Nop.Services.Tax;
 using Nop.Services.Directory;
@@ -25,6 +26,7 @@ using Nop.Core.Domain.Shipping;
 using Qixol.Nop.Promo.Services.Promo;
 using Nop.Core.Domain.Catalog;
 using Nop.Services.Media;
+using Nop.Services.Discounts;
 
 namespace Qixol.Plugin.Misc.Promo.Controllers
 {
@@ -89,6 +91,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                     var promoService = EngineContext.Current.Resolve<IPromoService>();
                     var workContext = EngineContext.Current.Resolve<IWorkContext>();
                     var genericAttributeService = EngineContext.Current.Resolve<IGenericAttributeService>();
+                    var discountService = EngineContext.Current.Resolve<IDiscountService>();
 
                     if (filterContext.ActionParameters != null && filterContext.ActionParameters.Any())
                     {
@@ -98,29 +101,47 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
 
                             if (form.AllKeys.Contains("applydiscountcouponcode"))
                             {
-                                genericAttributeService.SaveAttribute<string>(workContext.CurrentCustomer, SystemCustomerAttributeNames.DiscountCouponCode, form["discountcouponcode"]);
+                                workContext.CurrentCustomer.ApplyDiscountCouponCode(form["discountcouponcode"]);
+                                promoService.ProcessShoppingCart(workContext.CurrentCustomer);
                             }
 
                             var removeDiscountKeys = (from k in form.AllKeys where k.StartsWith("removediscount-") select k).ToList();
                             if (removeDiscountKeys != null && removeDiscountKeys.Any())
                             {
-                                genericAttributeService.SaveAttribute<string>(workContext.CurrentCustomer, SystemCustomerAttributeNames.DiscountCouponCode, null);
+                                removeDiscountKeys.ForEach(rdk =>
+                                {
+                                    var rdkArray = rdk.Split('-');
+                                    if (rdkArray != null && rdkArray.Length == 2)
+                                    {
+                                        int promotionId = 0;
+                                        if (int.TryParse(rdkArray[1], out promotionId))
+                                        {
+                                            var coupon = discountService.GetDiscountById(promotionId);
+                                            if (coupon != null)
+                                            {
+                                                workContext.CurrentCustomer.RemoveDiscountCouponCode(coupon.CouponCode);
+                                            }
+                                        }
+                                    }
+                                });
+                                promoService.ProcessShoppingCart(workContext.CurrentCustomer);
                             }
 
                             if (form.AllKeys.Contains("updatecart"))
                             {
-                                var cart = workContext.CurrentCustomer.ShoppingCartItems
-                                                .Where(sci => sci.ShoppingCartType == ShoppingCartType.ShoppingCart)
-                                                .LimitPerStore(storeContext.CurrentStore.Id)
-                                                .ToList();
+                                // force an update of the cart, then call promo, then allow the nop code to continue (ie call UpdateCart and return the view)
                                 var promoShoppingCartController = EngineContext.Current.Resolve<Qixol.Plugin.Misc.Promo.Controllers.ShoppingCartController>();
-                                promoShoppingCartController.PromoParseAndSaveCheckoutAttributes(cart, form);
+                                promoShoppingCartController.UpdateCart(form);
+                                promoService.ProcessShoppingCart(workContext.CurrentCustomer);
                             }
-
                         }
                     }
+                    else
+                    {
+                        promoService.ProcessShoppingCart(workContext.CurrentCustomer);
+                    }
+                    base.OnActionExecuting(filterContext);
                 }
-                base.OnActionExecuting(filterContext);
             }
         }
 

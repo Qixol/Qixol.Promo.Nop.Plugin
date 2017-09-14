@@ -1,22 +1,8 @@
-﻿using Nop.Core.Domain.Customers;
-using Nop.Core.Domain.Orders;
+﻿using Nop.Core;
 using Nop.Core.Infrastructure;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Qixol.Nop.Promo.Services.Promo;
 using Nop.Services.Customers;
-using Nop.Services.Orders;
-using XcellenceIt.Plugin.Misc.NopRestApi.Service;
 using XcellenceIt.Plugin.Misc.NopRestApi.DataClass;
-using Nop.Core.Domain.Directory;
-using Nop.Core;
-using Nop.Services.Directory;
-using Nop.Core.Domain.Localization;
-using Nop.Services.Localization;
-using Microsoft.Owin.BuilderProperties;
 
 namespace Qixol.Plugin.Misc.RestApi.Service
 {
@@ -62,6 +48,42 @@ namespace Qixol.Plugin.Misc.RestApi.Service
             var estimateShippingResponse = base.EstimateShipping(apiSecretKey, storeId, customerId, currencyId, shippingModel);
 
             return estimateShippingResponse;
+        }
+
+        public new DiscountBoxResponse ApplyDiscount(string apiSecretKey, int storeId, int customerId, string discountCouponCode)
+        {
+            IPromoService promoService = EngineContext.Current.Resolve<IPromoService>();
+            ICustomerService customerService = EngineContext.Current.Resolve<ICustomerService>();
+            IWorkContext workContext = EngineContext.Current.Resolve<IWorkContext>();
+
+            var customer = customerService.GetCustomerById(customerId);
+
+            if (customer != null)
+            {
+                workContext.CurrentCustomer = customer;
+                customer.ApplyDiscountCouponCode(discountCouponCode);
+                promoService.ProcessShoppingCart(customer);
+            }
+
+            return base.ApplyDiscount(apiSecretKey, storeId, customerId, discountCouponCode);
+        }
+
+        public new DiscountBoxResponse RemoveDiscount(string apiSecretKey, int storeId, int customerId, string discountCouponCode)
+        {
+            IPromoService promoService = EngineContext.Current.Resolve<IPromoService>();
+            ICustomerService customerService = EngineContext.Current.Resolve<ICustomerService>();
+            IWorkContext workContext = EngineContext.Current.Resolve<IWorkContext>();
+
+            var customer = customerService.GetCustomerById(customerId);
+
+            if (customer != null)
+            {
+                workContext.CurrentCustomer = customer;
+                customer.RemoveDiscountCouponCode(discountCouponCode);
+                promoService.ProcessShoppingCart(customer);
+            }
+
+            return base.RemoveDiscount(apiSecretKey, storeId, customerId, discountCouponCode);
         }
     }
 }

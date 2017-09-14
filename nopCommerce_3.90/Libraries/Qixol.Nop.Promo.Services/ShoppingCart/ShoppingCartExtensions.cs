@@ -45,7 +45,7 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
 
         #region methods
 
-        public static BasketRequest ToQixolPromosBasketRequest(this IList<ShoppingCartItem> cart)
+        public static BasketRequest ToQixolPromoBasketRequest(this IList<ShoppingCartItem> cart, ShippingOption shippingOption, string[] couponCodes = null)
         {
             IProductService _productService = EngineContext.Current.Resolve<IProductService>();
             IPriceCalculationService _priceCalculationService = EngineContext.Current.Resolve<IPriceCalculationService>();
@@ -181,14 +181,16 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
             #region coupons
 
             IList<BasketRequestCoupon> coupons = new List<BasketRequestCoupon>();
-            string discountcouponcode = customer.GetAttribute<string>(SystemCustomerAttributeNames.DiscountCouponCode);
-            if (!string.IsNullOrEmpty(discountcouponcode))
+            if (couponCodes != null)
             {
-                BasketRequestCoupon coupon = new BasketRequestCoupon()
+                couponCodes.ToList().ForEach(cc =>
                 {
-                    Code = discountcouponcode,
-                };
-                coupons.Add(coupon);
+                    BasketRequestCoupon coupon = new BasketRequestCoupon()
+                    {
+                        Code = cc,
+                    };
+                    coupons.Add(coupon);
+                });
             }
 
             #endregion
@@ -405,7 +407,11 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
 
             #region shipping
 
-            ShippingOption selectedShippingOption = customer.GetAttribute<ShippingOption>(SystemCustomerAttributeNames.SelectedShippingOption, _storeContext.CurrentStore.Id);
+            var selectedShippingOption = shippingOption;
+            if (selectedShippingOption == null)
+            {
+                selectedShippingOption = customer.GetAttribute<ShippingOption>(SystemCustomerAttributeNames.SelectedShippingOption, _storeContext.CurrentStore.Id);
+            }
             basketRequest = basketRequest.SetShipping(cart, selectedShippingOption);
 
             #endregion

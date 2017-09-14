@@ -11,7 +11,7 @@ namespace Qixol.Plugin.Misc.Promo.Models.Shared
         private IList<LineItemModel> _lineDiscountsModel;
         private IList<IssuedCouponModel> _issuedCouponsModel;
         private IList<PromotionModel> _basketLevelDiscountsExcShippingModel;
-        //private IList<PromotionModel> _basketLevelDiscountsIncShippingModel;
+        private IList<PromotionModel> _basketLevelDiscountsIncShippingModel;
 
         #endregion
 
@@ -71,17 +71,17 @@ namespace Qixol.Plugin.Misc.Promo.Models.Shared
 
         public ShippingModel ShippingModel { get; set; }
 
-        //public IList<PromotionModel> BasketLevelDiscountsIncShippingModel
-        //{
-        //    get
-        //    {
-        //        return _basketLevelDiscountsIncShippingModel ?? (_basketLevelDiscountsIncShippingModel = new List<PromotionModel>());
-        //    }
-        //    set
-        //    {
-        //        _basketLevelDiscountsIncShippingModel = value;
-        //    }
-        //}
+        public IList<PromotionModel> BasketLevelDiscountsIncShippingModel
+        {
+            get
+            {
+                return _basketLevelDiscountsIncShippingModel ?? (_basketLevelDiscountsIncShippingModel = new List<PromotionModel>());
+            }
+            set
+            {
+                _basketLevelDiscountsIncShippingModel = value;
+            }
+        }
 
         public string OrderTotal { get; set; }
 

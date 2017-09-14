@@ -30,7 +30,7 @@ namespace Qixol.Nop.Promo.Services.Promo
     {
         #region extension methods
 
-        public static BasketRequest SetShipping(this BasketRequest basketRequest, IList<ShoppingCartItem> cart, ShippingOption shippingOption = null)
+        public static BasketRequest SetShipping(this BasketRequest basketRequest, IList<ShoppingCartItem> cart, ShippingOption shippingOption)
         {
             IGenericAttributeService _genericAttributeService = EngineContext.Current.Resolve<IGenericAttributeService>();
             IShippingService _shippingService = EngineContext.Current.Resolve<IShippingService>();
@@ -50,7 +50,11 @@ namespace Qixol.Nop.Promo.Services.Promo
             if (cart.RequiresShipping())
             {
                 if (shippingOption == null)
-                    shippingOption = GetDefaultShippingOption(_shippingService, _workContext, _storeContext, _countryService, _stateProvinceService, _genericAttributeService);
+                {
+                    shippingOption = _workContext.CurrentCustomer.GetAttribute<ShippingOption>(SystemCustomerAttributeNames.SelectedShippingOption, _storeContext.CurrentStore.Id);
+                    if (shippingOption == null)
+                        shippingOption = GetDefaultShippingOption(_shippingService, _workContext, _storeContext, _countryService, _stateProvinceService, _genericAttributeService);
+                }
 
                 string shippingOptionName = (shippingOption != null ? shippingOption.Name : string.Empty);
 

@@ -148,6 +148,7 @@ namespace Qixol.Nop.Promo.Services.Promo
         {
             return ProcessShoppingCart(customer, false, shippingOption);
         }
+
         public List<string> ProcessShoppingCart(Customer customer, bool getMissedPromotions = false)
         {
             return ProcessShoppingCart(customer, getMissedPromotions, null);
@@ -168,8 +169,8 @@ namespace Qixol.Nop.Promo.Services.Promo
 
             try
             {
-                BasketRequest basketRequest = cart.ToQixolPromosBasketRequest();
-
+                var couponCodes = customer.ParseAppliedDiscountCouponCodes();
+                BasketRequest basketRequest = cart.ToQixolPromoBasketRequest(shippingOption, couponCodes);
 
                 if (basketRequest != null)
                 {
@@ -268,6 +269,32 @@ namespace Qixol.Nop.Promo.Services.Promo
 
                         if (!string.IsNullOrEmpty(selectedPaymentOption))
                             _genericAttributeService.SaveAttribute<string>(customer, SystemCustomerAttributeNames.SelectedPaymentMethod, selectedPaymentOption, _storeContext.CurrentStore.Id);
+
+                        if (couponCodes != null)
+                        {
+                            // clear all current codes
+                            _genericAttributeService.SaveAttribute<string>(customer, SystemCustomerAttributeNames.DiscountCouponCode, null);
+
+                            // add utilized codes or warn where codes have errors
+                            basketResponse.Coupons.Where(c => !c.Issued).ToList().ForEach(c =>
+                            {
+
+                                if (c.Utilized)
+                                {
+                                    customer.ApplyDiscountCouponCode(c.CouponCode);
+                                }
+                                else
+                                {
+                                    addToCartWarnings.Add(_localizationService.GetResource("ShoppingCart.DiscountCouponCode.WrongDiscount"));
+                                }
+                            });
+                        }
+                    }
+                    else
+                    {
+#if DEBUG
+                        addToCartWarnings.Add("Unable to retrieve promotions");
+#endif
                     }
                 }
             }

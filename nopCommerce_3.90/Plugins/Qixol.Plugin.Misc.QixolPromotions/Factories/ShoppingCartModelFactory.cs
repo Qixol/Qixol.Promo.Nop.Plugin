@@ -223,17 +223,6 @@ namespace Qixol.Plugin.Misc.Promo.Factories
             bool prepareAndDisplayOrderReviewData = false)
         {
 
-            if (_promoSettings.Enabled)
-            {
-                List<string> cartWarnings = _promoService.ProcessShoppingCart(_workContext.CurrentCustomer);
-                // refresh the cart, in case any changes were made
-                cart = (from cartItem in _workContext.CurrentCustomer.ShoppingCartItems where cartItem.ShoppingCartType.Equals(ShoppingCartType.ShoppingCart) select cartItem).ToList();
-                foreach (string cartWarning in cartWarnings)
-                {
-                    model.Warnings.Add(cartWarning);
-                }
-            }
-
             // Get the base to do most of the work...
             base.PrepareShoppingCartModel(model, cart, isEditable, validateCheckoutAttributes, prepareEstimateShippingIfEnabled, setEstimateShippingDefaultAddress, prepareAndDisplayOrderReviewData);
 
@@ -271,31 +260,6 @@ namespace Qixol.Plugin.Misc.Promo.Factories
                                     }
                                 }
                             });
-                    }
-
-                    model.DiscountBox.Messages = new List<string>();
-
-                    var discountCoupons = basketResponse.Coupons.Where(c => !c.Issued);
-                    foreach (var coupon in discountCoupons)
-                    {
-                        if (basketResponse.CouponIsValid(coupon.CouponCode))
-                        {
-                            int fakeId = 1;
-                            model.DiscountBox.IsApplied = true;
-                            model.DiscountBox.Messages.Add(_localizationService.GetResource("ShoppingCart.DiscountCouponCode.Applied"));
-                            model.DiscountBox.AppliedDiscountsWithCodes.Add(new ShoppingCartModel.DiscountBoxModel.DiscountInfoModel()
-                            {
-                                CouponCode = coupon.CouponCode,
-                                Id = fakeId
-                            });
-                            fakeId++;
-                        }
-                        else
-                        {
-                            var message = string.Format("{0}: {1}", coupon.CouponCode, _localizationService.GetResource("ShoppingCart.DiscountCouponCode.WrongDiscount"));
-                            model.DiscountBox.IsApplied = false;
-                            model.DiscountBox.Messages.Add(message);
-                        }
                     }
                 }
             }

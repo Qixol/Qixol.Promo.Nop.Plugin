@@ -9,7 +9,7 @@
                 this.SubTotal.init(model.SubTotal);
                 this.BasketDiscountsExcShipping.init(model.BasketLevelDiscountsExcShippingModel);
                 this.ShippingMethods.init(model.ShippingModel);
-                //this.BasketDiscountsIncShipping.init(model.BasketDiscountsIncShippingModel);
+                this.BasketDiscountsIncShipping.init(model.BasketLevelDiscountsIncShippingModel);
                 this.OrderTotal.init(model.OrderTotal);
                 this.IssuedPoints.init(model.IssuedPoints);
                 this.BasketTotalDiscount.init(model.BasketTotalDiscount);
@@ -26,7 +26,7 @@
         this.SubTotal.render();
         this.BasketDiscountsExcShipping.render();
         this.ShippingMethods.render();
-        //this.BasketDiscountsIncShipping.render();
+        this.BasketDiscountsIncShipping.render();
         this.OrderTotal.render();
         this.IssuedPoints.render();
         this.BasketTotalDiscount.render();
@@ -209,7 +209,7 @@
                 for (var i in basketLevelDiscountsIncShipping) {
                     var promotionId = basketLevelDiscountsIncShipping[i].PromotionId;
                     var html = $('script[id="sub-total-template"]').html().replace('#=promotionId#', promotionId);
-                    $('.order-subtotal-discounts-Inc-placeholder').before(html);
+                    $('.order-subtotal-discounts-inc-placeholder').before(html);
                     var discountNameElement = $('.order-subtotal-discount[data-promotion-id="' + promotionId + '"] .sub-total-discount-name');
                     discountNameElement.html(basketLevelDiscountsIncShipping[i].PromotionName);
                     var discountAmountElement = $('.order-subtotal-discount[data-promotion-id="' + promotionId + '"] .sub-total-discount-amount');
