@@ -69,7 +69,6 @@ namespace Qixol.Nop.Promo.Services.Promo
 
                 if (specifiedShippingMethod != null)
                 {
-                    // TODO: why is there a namespace issue here?
                     Qixol.Nop.Promo.Core.Domain.AttributeValues.AttributeValueMappingItem integrationMappingItem = _attributeValueService.Retrieve(specifiedShippingMethod.Id, EntityAttributeName.DeliveryMethod);
                     if (integrationMappingItem != null && !string.IsNullOrEmpty(integrationMappingItem.Code))
                         shippingIntegrationCode = integrationMappingItem.Code;
@@ -105,7 +104,6 @@ namespace Qixol.Nop.Promo.Services.Promo
             IStateProvinceService stateProvinceService,
             IGenericAttributeService genericAttributeService)
         {
-            // TODO: set these values in the config? - like EstimateShipping but default values are provided?
             int countryId = 80; // UK
             int? stateProvinceId = null;
             string zipPostalCode = "SB2 8BW";

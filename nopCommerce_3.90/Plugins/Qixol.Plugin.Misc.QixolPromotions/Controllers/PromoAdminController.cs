@@ -117,6 +117,194 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
 
         #endregion
 
+        #region Utilities
+
+        private string GetDisplayVersion()
+        {
+            var promoPlugin = _pluginFinder.GetPluginDescriptorBySystemName("Misc.QixolPromo");
+            return promoPlugin.Version;
+        }
+
+        private void QueueSyncNowItems(bool isInitialSetup)
+        {
+            int syncCount = 0;
+            if (_promoSettings.SynchronizeProducts)
+            {
+                _exportQueueService.InsertQueueItemForAll(EntityAttributeName.Product);
+                syncCount++;
+            }
+
+            if (_promoSettings.SynchronizeCustomerRoles)
+            {
+                _exportQueueService.InsertQueueItemForAll(EntityAttributeName.CustomerRole);
+                syncCount++;
+            }
+
+            if (_promoSettings.SynchronizeShippingMethods)
+            {
+                _exportQueueService.InsertQueueItemForAll(EntityAttributeName.DeliveryMethod);
+                syncCount++;
+            }
+
+            if (_promoSettings.SynchronizeStores)
+            {
+                _exportQueueService.InsertQueueItemForAll(EntityAttributeName.Store);
+                syncCount++;
+            }
+
+            if (_promoSettings.SynchronizeCurrencies)
+            {
+                if (isInitialSetup)
+                    SynchronizeAllCurrencies();
+
+                _exportQueueService.InsertQueueItemForAll(EntityAttributeName.Currency);
+                syncCount++;
+            }
+
+            if (_promoSettings.SynchronizeCheckoutAttributes)
+            {
+                _exportQueueService.InsertQueueItemForAll(EntityAttributeName.CheckoutAttribute);
+                syncCount++;
+            }
+
+            if (syncCount > 0)
+            {
+                ScheduleTask scheduleTask = _scheduleTaskService.GetTaskByType(PromoTaskNames.DataFeedTask);
+                Task task = new Task(scheduleTask);
+                ExecuteTask(task);
+
+                scheduleTask = _scheduleTaskService.GetTaskByType(PromoTaskNames.PromoSyncTask);
+                task = new Task(scheduleTask);
+                ExecuteTask(task);
+            }
+        }
+
+        private List<IntegrationCodeItemModel> GetIntegrationCodesBaseList(string systemName)
+        {
+            switch (systemName)
+            {
+                case EntityAttributeName.Store:
+                    return _storeService.GetAllStores()
+                                          .Select(s => new IntegrationCodeItemModel()
+                                          {
+                                              EntityId = s.Id,
+                                              EntityName = s.Name,
+                                              EntityAttributeSystemName = EntityAttributeName.Store
+                                          }).ToList();
+
+                case EntityAttributeName.DeliveryMethod:
+                    var shippingMethods = _shippingService.GetAllShippingMethods()
+                                           .Select(s => new IntegrationCodeItemModel()
+                                           {
+                                               EntityId = s.Id,
+                                               EntityName = s.Name,
+                                               EntityAttributeSystemName = EntityAttributeName.DeliveryMethod
+                                           }).ToList();
+                    var pickupPoints = _shippingService.LoadAllPickupPointProviders();
+                    return shippingMethods;
+
+                case EntityAttributeName.CustomerRole:
+                    return _customerService.GetAllCustomerRoles()
+                                           .Select(s => new IntegrationCodeItemModel()
+                                           {
+                                               EntityId = s.Id,
+                                               EntityName = s.Name,
+                                               EntityAttributeSystemName = EntityAttributeName.CustomerRole
+                                           }).ToList();
+
+                case EntityAttributeName.CheckoutAttribute:
+                    return _checkoutAttributeService.GetAllCheckoutAttributes()
+                                           .Select(s => new IntegrationCodeItemModel()
+                                           {
+                                               EntityId = s.Id,
+                                               EntityName = s.Name,
+                                               EntityAttributeSystemName = EntityAttributeName.CheckoutAttribute
+                                           }).ToList();
+
+                default:
+                    break;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// When first synchronizing, sync all currencies that are currenty published.
+        /// </summary>
+        private void SynchronizeAllCurrencies()
+        {
+            var allCurrencies = _currencyService.GetAllCurrencies();
+            allCurrencies.Where(c => c.Published)
+                         .ToList()
+                         .ForEach(currency =>
+                         {
+                             _attributeValueService.Insert(new AttributeValueMappingItem()
+                             {
+                                 AttributeName = EntityAttributeName.Currency,
+                                 AttributeValueId = currency.Id,
+                                 Code = currency.CurrencyCode
+                             });
+                         });
+        }
+
+        private void SetupModelLists(PromoConfigureModel model)
+        {
+            //stores
+            model.AvailableStores.Add(new SelectListItem() { Text = _localizationService.GetResource("Admin.Common.All"), Value = "0" });
+            foreach (var s in _storeService.GetAllStores())
+                model.AvailableStores.Add(new SelectListItem() { Text = s.Name, Value = s.Id.ToString() });
+
+            //currencies
+            foreach (var c in _currencyService.GetAllCurrencies())
+                model.AvailableCurrencies.Add(new SelectListItem() { Text = c.Name, Value = c.Id.ToString() });
+
+            model.ServicesEndpointsList.Add(new SelectListItem() { Text = _localizationService.GetResource("Plugins.Misc.QixolPromo.ServiceEndpoint.Evaluation"), Value = SettingsEndpointAddress.EVALUATION_SERVICES.ToString() });
+            model.ServicesEndpointsList.Add(new SelectListItem() { Text = _localizationService.GetResource("Plugins.Misc.QixolPromo.ServiceEndpoint.Live"), Value = SettingsEndpointAddress.LIVE_SERVICES.ToString() });
+
+#if DEBUG
+            model.ServicesEndpointsList.Add(new SelectListItem() { Text = _localizationService.GetResource("Plugins.Misc.QixolPromo.ServiceEndpoint.Custom"), Value = SettingsEndpointAddress.CUSTOM_SERVICES.ToString() });
+            model.AllowCustomEndpoint = true;
+#endif
+
+            model.ShowPromotionNameOptionsList.Add(new SelectListItem() { Text = _localizationService.GetResource("Plugins.Misc.QixolPromo.ShowPromoDetails.UserText"), Value = PromotionDetailsDisplayOptions.ShowEndUserText.ToString() });
+            model.ShowPromotionNameOptionsList.Add(new SelectListItem() { Text = _localizationService.GetResource("Plugins.Misc.QixolPromo.ShowPromoDetails.PromotionName"), Value = PromotionDetailsDisplayOptions.ShowPromotionName.ToString() });
+            model.ShowPromotionNameOptionsList.Add(new SelectListItem() { Text = _localizationService.GetResource("Plugins.Misc.QixolPromo.ShowPromoDetails.PromotionType"), Value = PromotionDetailsDisplayOptions.ShowPromotionType.ToString() });
+            model.ShowPromotionNameOptionsList.Add(new SelectListItem() { Text = _localizationService.GetResource("Plugins.Misc.QixolPromo.ShowPromoDetails.Empty"), Value = PromotionDetailsDisplayOptions.ShowNoText.ToString() });
+
+            model.ProductConfigItems = _productAttributeConfigService.GetAllProductAttributeConfigItems()
+                                                                     .ToList()
+                                                                     .Select(pac => pac.ToModel())
+                                                                     .ToList();
+
+            if (model.ProductConfigItems != null && model.ProductConfigItems.Count > 0)
+            {
+                model.ProductConfigItems.ForEach(pac =>
+                {
+                    pac.NameText = _localizationService.GetResource(pac.NameResource);
+                });
+
+                model.ProductConfigItems = model.ProductConfigItems.OrderBy(pac => pac.NameText).ToList();
+            }
+
+        }
+
+        private void ExecuteTask(Task task)
+        {
+            try
+            {
+                // set the task to enabled so it will run
+                task.Enabled = true;
+                task.Execute(true, false, true); // do not dispose - otherwise we can get an exception that DbContext is disposed, only run on one instance of a web farm
+                SuccessNotification(string.Format(_localizationService.GetResource("Plugins.Misc.QixolPromo.RunScheduleTask.Done"), task.Name));
+            }
+            catch (Exception e)
+            {
+                ErrorNotification(e);
+            }
+        }
+
+        #endregion
+
         #region Methods
 
         [ChildActionOnly]
@@ -226,7 +414,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
 
             string formKey = "checkbox_product_attribute";
             var checkedProductAttributes = form[formKey] != null ? form[formKey].Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(x => Convert.ToInt32(x)).ToList() : new List<int>();
-            var productAttributes = _productAttributeConfigService.RetrieveAll().ToList();
+            var productAttributes = _productAttributeConfigService.GetAllProductAttributeConfigItems().ToList();
             foreach (var productAttribute in productAttributes)
             {
                 productAttribute.Enabled = checkedProductAttributes.Contains(productAttribute.Id);
@@ -258,139 +446,6 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
 
             //redisplay the form
             return Configure();
-        }
-
-        private void QueueSyncNowItems(bool isInitialSetup)
-        {
-            int syncCount = 0;
-            if (_promoSettings.SynchronizeProducts)
-            {
-                _exportQueueService.InsertQueueItemForAll(EntityAttributeName.Product);
-                syncCount++;
-            }
-
-            if (_promoSettings.SynchronizeCustomerRoles)
-            {
-                _exportQueueService.InsertQueueItemForAll(EntityAttributeName.CustomerRole);
-                syncCount++;
-            }
-
-            if (_promoSettings.SynchronizeShippingMethods)
-            {
-                _exportQueueService.InsertQueueItemForAll(EntityAttributeName.DeliveryMethod);
-                syncCount++;
-            }
-
-            if (_promoSettings.SynchronizeStores)
-            {
-                _exportQueueService.InsertQueueItemForAll(EntityAttributeName.Store);
-                syncCount++;
-            }
-
-            if (_promoSettings.SynchronizeCurrencies)
-            {
-                if (isInitialSetup)
-                    SynchronizeAllCurrencies();
-
-                _exportQueueService.InsertQueueItemForAll(EntityAttributeName.Currency);
-                syncCount++;
-            }
-
-            if (_promoSettings.SynchronizeCheckoutAttributes)
-            {
-                _exportQueueService.InsertQueueItemForAll(EntityAttributeName.CheckoutAttribute);
-                syncCount++;
-            }
-
-            if (syncCount > 0)
-            {
-                ScheduleTask scheduleTask = _scheduleTaskService.GetTaskByType(PromoTaskNames.DataFeedTask);
-                Task task = new Task(scheduleTask);
-                ExecuteTask(task);
-
-                scheduleTask = _scheduleTaskService.GetTaskByType(PromoTaskNames.PromoSyncTask);
-                task = new Task(scheduleTask);
-                ExecuteTask(task);
-            }
-        }
-
-        private List<IntegrationCodeItemModel> GetIntegrationCodesBaseList(string systemName)
-        {
-            switch (systemName)
-            {
-                case EntityAttributeName.Store:
-                    return _storeService.GetAllStores()
-                                          .Select(s => new IntegrationCodeItemModel()
-                                              {
-                                                  EntityId = s.Id,
-                                                  EntityName = s.Name,
-                                                  EntityAttributeSystemName = EntityAttributeName.Store
-                                              }).ToList();
-
-                case EntityAttributeName.DeliveryMethod:
-                    var shippingMethods = _shippingService.GetAllShippingMethods()
-                                           .Select(s => new IntegrationCodeItemModel()
-                                                {
-                                                    EntityId = s.Id,
-                                                    EntityName = s.Name,
-                                                    EntityAttributeSystemName = EntityAttributeName.DeliveryMethod
-                                                }).ToList();
-                    var pickupPoints = _shippingService.LoadAllPickupPointProviders();
-                    return shippingMethods;
-
-                case EntityAttributeName.CustomerRole:
-                    return _customerService.GetAllCustomerRoles()
-                                           .Select(s => new IntegrationCodeItemModel()
-                                           {
-                                               EntityId = s.Id,
-                                               EntityName = s.Name,
-                                               EntityAttributeSystemName = EntityAttributeName.CustomerRole
-                                           }).ToList();
-
-                case EntityAttributeName.CheckoutAttribute:
-                    return _checkoutAttributeService.GetAllCheckoutAttributes()
-                                           .Select(s => new IntegrationCodeItemModel()
-                                           {
-                                               EntityId = s.Id,
-                                               EntityName = s.Name,
-                                               EntityAttributeSystemName = EntityAttributeName.CheckoutAttribute
-                                           }).ToList();
-
-                default:
-                    break;
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// When first synchronizing, sync all currencies that are currenty published.
-        /// </summary>
-        private void SynchronizeAllCurrencies()
-        {
-            var allCurrencies = _currencyService.GetAllCurrencies();
-            allCurrencies.Where(c => c.Published)
-                         .ToList()
-                         .ForEach(currency =>
-                         {
-                             _attributeValueService.Insert(new AttributeValueMappingItem()
-                             {
-                                 AttributeName = EntityAttributeName.Currency,
-                                 AttributeValueId = currency.Id,
-                                 Code = currency.CurrencyCode
-                             });
-                         });
-        }
-
-        private string GetDisplayVersion()
-        {
-            var promoPlugin = _pluginFinder.GetPluginDescriptorBySystemName("Misc.QixolPromo");
-            return promoPlugin.Version;
-
-            /*
-            var thisAssembly = Assembly.GetCallingAssembly();
-            return string.Format("v{0}", thisAssembly.GetName().Version.ToString());
-            */
         }
 
         [HttpPost]
@@ -467,62 +522,6 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             }
 
             return new NullJsonResult();
-        }
-
-        private void SetupModelLists(PromoConfigureModel model)
-        {
-            //stores
-            model.AvailableStores.Add(new SelectListItem() { Text = _localizationService.GetResource("Admin.Common.All"), Value = "0" });
-            foreach (var s in _storeService.GetAllStores())
-                model.AvailableStores.Add(new SelectListItem() { Text = s.Name, Value = s.Id.ToString() });
-
-            //currencies
-            foreach (var c in _currencyService.GetAllCurrencies())
-                model.AvailableCurrencies.Add(new SelectListItem() { Text = c.Name, Value = c.Id.ToString() });
-
-            model.ServicesEndpointsList.Add(new SelectListItem() { Text = _localizationService.GetResource("Plugins.Misc.QixolPromo.ServiceEndpoint.Evaluation"), Value = SettingsEndpointAddress.EVALUATION_SERVICES.ToString() });
-            model.ServicesEndpointsList.Add(new SelectListItem() { Text = _localizationService.GetResource("Plugins.Misc.QixolPromo.ServiceEndpoint.Live"), Value = SettingsEndpointAddress.LIVE_SERVICES.ToString() });
-
-#if DEBUG
-            model.ServicesEndpointsList.Add(new SelectListItem() { Text = _localizationService.GetResource("Plugins.Misc.QixolPromo.ServiceEndpoint.Custom"), Value = SettingsEndpointAddress.CUSTOM_SERVICES.ToString() });
-            model.AllowCustomEndpoint = true;
-#endif
-
-            model.ShowPromotionNameOptionsList.Add(new SelectListItem() { Text = _localizationService.GetResource("Plugins.Misc.QixolPromo.ShowPromoDetails.UserText"), Value = PromotionDetailsDisplayOptions.ShowEndUserText.ToString() });
-            model.ShowPromotionNameOptionsList.Add(new SelectListItem() { Text = _localizationService.GetResource("Plugins.Misc.QixolPromo.ShowPromoDetails.PromotionName"), Value = PromotionDetailsDisplayOptions.ShowPromotionName.ToString() });
-            model.ShowPromotionNameOptionsList.Add(new SelectListItem() { Text = _localizationService.GetResource("Plugins.Misc.QixolPromo.ShowPromoDetails.PromotionType"), Value = PromotionDetailsDisplayOptions.ShowPromotionType.ToString() });
-            model.ShowPromotionNameOptionsList.Add(new SelectListItem() { Text = _localizationService.GetResource("Plugins.Misc.QixolPromo.ShowPromoDetails.Empty"), Value = PromotionDetailsDisplayOptions.ShowNoText.ToString() });
-
-            model.ProductConfigItems = _productAttributeConfigService.RetrieveAll()
-                                                                     .ToList()
-                                                                     .Select(pac => pac.ToModel())
-                                                                     .ToList();
-
-            if (model.ProductConfigItems != null && model.ProductConfigItems.Count > 0)
-            {
-                model.ProductConfigItems.ForEach(pac =>
-                {
-                    pac.NameText = _localizationService.GetResource(pac.NameResource);
-                });
-
-                model.ProductConfigItems = model.ProductConfigItems.OrderBy(pac => pac.NameText).ToList();
-            }
-
-        }
-
-        private void ExecuteTask(Task task)
-        {
-            try
-            {
-                // set the task to enabled so it will run
-                task.Enabled = true;
-                task.Execute(true, false, true); // do not dispose - otherwise we can get an exception that DbContext is disposed, only run on one instance of a web farm
-                SuccessNotification(string.Format(_localizationService.GetResource("Plugins.Misc.QixolPromo.RunScheduleTask.Done"), task.Name));
-            }
-            catch (Exception e)
-            {
-                ErrorNotification(e);
-            }
         }
 
         #endregion

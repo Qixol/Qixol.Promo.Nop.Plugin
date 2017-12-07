@@ -30,9 +30,7 @@ namespace Qixol.Nop.Promo.Services.Orders
 
         private BasketResponse PromoSaveOrderDetails(Order order)
         {
-            _promoService.SendConfirmedBasket(order);
-
-            BasketResponse basketResponse = _promoUtilities.GetBasketResponse(order.Customer);
+            var basketResponse = _promoService.SendConfirmedBasket(order);
 
             if (basketResponse == null)
             {

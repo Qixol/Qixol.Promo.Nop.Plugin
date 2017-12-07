@@ -35,6 +35,7 @@ using global::Nop.Services.Seo;
 using Qixol.Nop.Promo.Services.Orders;
 using Qixol.Plugin.Misc.Promo.Factories;
 using Qixol.Plugin.Misc.Promo.Models.Order;
+using System.Web;
 
 namespace Qixol.Plugin.Misc.Promo.Controllers
 {
@@ -62,6 +63,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
         private readonly IOrderService _orderService;
         private readonly IPromoOrderService _promoOrderService;
         private readonly IProductAttributeFormatter _productAttributeFormatter;
+        private readonly IShoppingCartService _shoppingCartService;
 
         #endregion
 
@@ -86,7 +88,8 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             IPictureService pictureService,
             IProductService productService,
             ILocalizationService localizationService,
-            IProductAttributeFormatter productAttributeFormatter)
+            IProductAttributeFormatter productAttributeFormatter,
+            IShoppingCartService shoppingCartService)
         {
             this._issuedCouponModelFactory = issuedCouponModelFactory;
             this._promoUtilities = promoUtilities;
@@ -107,6 +110,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             this._orderService = orderService;
             this._promoOrderService = promoOrderService;
             this._productAttributeFormatter = productAttributeFormatter;
+            this._shoppingCartService = shoppingCartService;
         }
 
         #endregion
@@ -117,14 +121,16 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
         {
             PromoWidgetModel model = new PromoWidgetModel();
 
-            var basketResponse = _promoUtilities.GetBasketResponse(_workContext.CurrentCustomer);
+            var cartItems = _workContext.CurrentCustomer.ShoppingCartItems.Where(sci => sci.ShoppingCartType == ShoppingCartType.ShoppingCart).ToList();
+            if (!cartItems.Any())
+                return new EmptyResult();
 
-            if (basketResponse == null)
+            var basketResponse = _workContext.CurrentCustomer.GetAttribute<BasketResponse>(PromoCustomerAttributeNames.PromoBasketResponse, _storeContext.CurrentStore.Id);
+            if (basketResponse == null || !basketResponse.IsValid())
                 return new EmptyResult();
 
             #region cart items - line level promotions
 
-            var cartItems = _workContext.CurrentCustomer.ShoppingCartItems.ToList();
             var lineItemsModel = new List<LineItemModel>();
 
             cartItems.ForEach(cartItem =>
@@ -135,7 +141,8 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                     LineItemModel lineItemModel = new LineItemModel();
                     // used for matching to displayed cart
                     lineItemModel.ProductSeName = cartItem.Product.GetSeName();
-                    lineItemModel.AttributeInfo = _productAttributeFormatter.FormatAttributes(cartItem.Product, cartItem.AttributesXml);
+                    // HtmlDecode used so that the attribute info matches the decoded text displayed on the rendered page
+                    lineItemModel.AttributeInfo = HttpUtility.HtmlDecode(_productAttributeFormatter.FormatAttributes(cartItem.Product, cartItem.AttributesXml));
                     lineItemModel.LineAmount = _priceFormatter.FormatPrice(cartItem.LineAmount(), true, _workContext.WorkingCurrency, _workContext.WorkingLanguage, true);
 
                     promotions.ForEach(p =>
@@ -252,6 +259,57 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             #region basket total discount
 
             model.BasketTotalDiscount = _priceFormatter.FormatPrice(basketResponse.TotalDiscount, true, _workContext.WorkingCurrency, _workContext.WorkingLanguage, true);
+
+            #endregion
+
+            #region Failed Free Gifts
+
+            var freeGiftPromotions = basketResponse.Summary.AppliedPromotions.Where(ap => string.Compare(ap.PromotionType, "FREEPRODUCT", StringComparison.InvariantCultureIgnoreCase) == 0).ToList();
+            if (freeGiftPromotions != null && freeGiftPromotions.Any())
+            {
+                var newBasketItems = basketResponse.Items.Where(i => i.Generated);
+                if (newBasketItems.Any())
+                {
+                    newBasketItems.ToList().ForEach(newBasketItem =>
+                    {
+                        int productId = 0;
+                        if (int.TryParse(newBasketItem.ProductCode, out productId))
+                        {
+                            // at this point we're only interesting in checking products that may not have been added
+                            // eg gift cards need extra information from the customer
+                            // so ignore split lines
+                            if (newBasketItem.SplitFromLineId == 0)
+                            {
+                                Product product = _productService.GetProductById(productId);
+
+                                string attributesXml = string.Empty;
+
+                                ProductMappingItem productMappingItem = _productMappingService.RetrieveFromVariantCode(productId, newBasketItem.VariantCode);
+                                if (productMappingItem != null && !productMappingItem.NoVariants)
+                                {
+                                    attributesXml = productMappingItem.AttributesXml;
+                                }
+
+                                // ignore attributesXml initially
+                                var existingCartItem = _shoppingCartService.FindShoppingCartItemInTheCart(cartItems, ShoppingCartType.ShoppingCart, product); //, attributesXml);
+
+                                if (existingCartItem == null)
+                                {
+                                    int quantity = int.Parse(newBasketItem.Quantity.ToString());
+
+                                    var itemWarnings = _shoppingCartService.GetShoppingCartItemWarnings(_workContext.CurrentCustomer, ShoppingCartType.ShoppingCart, product, _storeContext.CurrentStore.Id,
+                                        attributesXml, newBasketItem.LineAmount, quantity: quantity).ToList();
+
+                                    if (itemWarnings != null && itemWarnings.Any())
+                                    {
+                                        model.SeoListForFailedFreeGifts.Add(string.Concat("/", product.GetSeName().ToString()));
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
 
             #endregion
 

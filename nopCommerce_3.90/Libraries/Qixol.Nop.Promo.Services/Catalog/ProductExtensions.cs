@@ -13,27 +13,23 @@ using global::Nop.Core.Domain.Tax;
 using global::Nop.Core.Domain.Vendors;
 using Qixol.Promo.Integration.Lib.Import;
 using Nop.Core.Infrastructure;
+using Qixol.Nop.Promo.Services.ProductAttributeConfig;
+using Nop.Services.Vendors;
+using Nop.Services.Tax;
 
-namespace Qixol.Nop.Promo.Core.Domain.Products
+namespace Qixol.Nop.Promo.Services.Catalog
 {
     public static class ProductExtensions
     {
-        public static ProductImportRequestItem ToQixolPromosImport(this Product sourceProduct, List<ProductAttributeConfigItem> productAttributeConfigItems, List<Vendor> vendors, List<TaxCategory> taxCategories)
+        public static ProductImportRequestItem ToQixolPromosImport(this Product sourceProduct)
         {
-            //IProductService _productService = DependencyResolver.Current.GetService<IProductService>();
-            //IPictureService _pictureService = DependencyResolver.Current.GetService<IPictureService>();
-            //ICategoryService categoryService = DependencyResolver.Current.GetService<ICategoryService>();
             IProductService _productService = EngineContext.Current.Resolve<IProductService>();
             IPictureService _pictureService = EngineContext.Current.Resolve<IPictureService>();
-            ICategoryService categoryService = EngineContext.Current.Resolve<ICategoryService>();
 
             List<Product> insertedProducts = new List<Product>();
 
             ProductImportRequestItem importProduct = new ProductImportRequestItem()
             {
-                // Hotfix - 2016-10-17 - START
-                //Barcode = string.IsNullOrEmpty(sourceProduct.Gtin) ? string.Empty : sourceProduct.Gtin,
-                // Hotfix - 2016-10-17 - END
                 Deleted = sourceProduct.Deleted,
                 Description = sourceProduct.Name,
                 Price = sourceProduct.Price,
@@ -42,35 +38,28 @@ namespace Qixol.Nop.Promo.Core.Domain.Products
 
             if (!sourceProduct.Deleted)
             {
-                var productAttributes = GetAttributesForProduct(sourceProduct, productAttributeConfigItems, vendors, taxCategories, categoryService);
+                var productAttributes = GetAttributesForProduct(sourceProduct);
                 var defaultProductPicture = _pictureService.GetPicturesByProductId(sourceProduct.Id, 1).FirstOrDefault();
                 importProduct.ImageUrl = _pictureService.GetPictureUrl(defaultProductPicture);
                 if (productAttributes != null && productAttributes.Count > 0)
                     importProduct.Attributes.AddRange(productAttributes);
             }
 
-            return importProduct;            
+            return importProduct;
         }
 
-        private static List<ProductImportRequestAttributeItem> GetAttributesForProduct(Product product, List<ProductAttributeConfigItem> productAttributeConfigItems, List<Vendor> vendors, List<TaxCategory> taxCategories, ICategoryService categoryService)
+        private static List<ProductImportRequestAttributeItem> GetAttributesForProduct(Product product)
         {
-            // Hotfix - 2016-10-17 - START
             var gtinAttributeValue = string.IsNullOrEmpty(product.Gtin) ? string.Empty : product.Gtin;
-            // Hotfix - 2016-10-17 - END
+            var categoryService = (ICategoryService)EngineContext.Current.Resolve<ICategoryService>();
+            var productAttributeConfigService = (IProductAttributeConfigService) EngineContext.Current.Resolve<IProductAttributeConfigService>();
 
-            var configItems = productAttributeConfigItems.Where(paci => paci.Enabled).ToList();
+            var configItems = productAttributeConfigService.GetAllProductAttributeConfigItems().Where(paci => paci.Enabled).ToList();
 
-            // Hotfix - 2016-10-17 - START
-            // REMOVED CODE
-            //if (configItems.Count == 0 && string.IsNullOrEmpty(gtinAttributeValue))
-            //    return null;
-            // ADDED CODE
             if (configItems.Count == 0 && string.IsNullOrEmpty(gtinAttributeValue))
                 return null;
-            // Hotfix - 2016-10-17 - END
 
             var returnList = new List<ProductImportRequestAttributeItem>();
-            // Hotfix - 2016-10-17 - START
             if (!string.IsNullOrEmpty(gtinAttributeValue))
             {
                 ProductImportRequestAttributeItem gtinAttributeItem = new ProductImportRequestAttributeItem()
@@ -80,19 +69,25 @@ namespace Qixol.Nop.Promo.Core.Domain.Products
                 };
                 returnList.Add(gtinAttributeItem);
             }
-            // Hotfix - 2016-10-17 - END
+
             configItems.ForEach(ci =>
-                {
-                    var attributeItems = GetValueForConfigItem(ci, product, vendors, taxCategories, categoryService);
-                    if(attributeItems != null && attributeItems.Count > 0)
-                        returnList.AddRange(attributeItems);
-                });
+            {
+                var attributeItems = GetValueForConfigItem(ci, product, categoryService);
+                if (attributeItems != null && attributeItems.Count > 0)
+                    returnList.AddRange(attributeItems);
+            });
 
             return returnList;
         }
 
-        private static List<ProductImportRequestAttributeItem> GetValueForConfigItem(ProductAttributeConfigItem item, Product product, List<Vendor> vendors, List<TaxCategory> taxCategories, ICategoryService categoryService)
+        private static List<ProductImportRequestAttributeItem> GetValueForConfigItem(ProductAttributeConfigItem item, Product product, ICategoryService categoryService)
         {
+            var vendorService = (IVendorService) EngineContext.Current.Resolve<IVendorService>();
+            var taxCategoryService = (ITaxCategoryService) EngineContext.Current.Resolve<ITaxCategoryService>();
+
+            var vendors = vendorService.GetAllVendors();
+            var taxCategories = taxCategoryService.GetAllTaxCategories();
+
             var returnItems = new List<ProductImportRequestAttributeItem>();
             switch (item.SystemName.ToLower())
             {
@@ -168,13 +163,13 @@ namespace Qixol.Nop.Promo.Core.Domain.Products
                 case ProductAttributeConfigSystemNames.PRODUCT_SPECIFICATION_ATTRIBS:
                     product.ProductSpecificationAttributes.ToList()
                                                           .ForEach(pcs =>
+                                                          {
+                                                              returnItems.Add(new ProductImportRequestAttributeItem()
                                                               {
-                                                                  returnItems.Add(new ProductImportRequestAttributeItem()
-                                                                      {
-                                                                          Name = pcs.SpecificationAttributeOption.SpecificationAttribute.Name,
-                                                                          Value = !string.IsNullOrEmpty(pcs.CustomValue) ? pcs.CustomValue : pcs.SpecificationAttributeOption.Name
-                                                                      });                                                                  
+                                                                  Name = pcs.SpecificationAttributeOption.SpecificationAttribute.Name,
+                                                                  Value = !string.IsNullOrEmpty(pcs.CustomValue) ? pcs.CustomValue : pcs.SpecificationAttributeOption.Name
                                                               });
+                                                          });
                     break;
 
                 case ProductAttributeConfigSystemNames.SHIP_SEPARATELY:

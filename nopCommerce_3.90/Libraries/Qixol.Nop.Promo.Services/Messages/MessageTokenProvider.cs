@@ -176,7 +176,6 @@ namespace Qixol.Nop.Promo.Services.Messages
                 //add download link
                 if (_downloadService.IsDownloadAllowed(orderItem))
                 {
-                    //TODO add a method for getting URL (use routing because it handles all SEO friendly URLs)
                     string downloadUrl = string.Format("{0}download/getdownload/{1}", GetStoreUrl(order.StoreId), orderItem.OrderItemGuid);
                     string downloadLink = string.Format("<a class=\"link\" href=\"{0}\">{1}</a>", downloadUrl, _localizationService.GetResource("Messages.Order.Product(s).Download", languageId));
                     sb.AppendLine("<br />");
@@ -185,7 +184,6 @@ namespace Qixol.Nop.Promo.Services.Messages
                 //add download link
                 if (_downloadService.IsLicenseDownloadAllowed(orderItem))
                 {
-                    //TODO add a method for getting URL (use routing because it handles all SEO friendly URLs)
                     string licenseUrl = string.Format("{0}download/getlicense/{1}", GetStoreUrl(order.StoreId), orderItem.OrderItemGuid);
                     string licenseLink = string.Format("<a class=\"link\" href=\"{0}\">{1}</a>", licenseUrl, _localizationService.GetResource("Messages.Order.Product(s).License", languageId));
                     sb.AppendLine("<br />");
@@ -562,9 +560,7 @@ namespace Qixol.Nop.Promo.Services.Messages
         /// <returns>HTML table of products</returns>
         protected override string ProductListToHtmlTable(Shipment shipment, int languageId)
         {
-            // TODO: review since change of PlaceOrder method - should be able to get details more easily and cleanly
-
-            var result = "";
+            var result = string.Empty;
 
             var sb = new StringBuilder();
             sb.AppendLine("<table border=\"0\" style=\"width:100%;\">");

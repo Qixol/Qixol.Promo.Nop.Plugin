@@ -27,16 +27,21 @@ using Qixol.Nop.Promo.Core.Domain.Promo;
 using Qixol.Nop.Promo.Data.Mapping;
 using Qixol.Plugin.Widgets.Promo.Domain;
 using Qixol.Nop.Promo.Services.Banner;
+using Nop.Web.Framework.Menu;
 
 namespace Qixol.Plugin.Widgets.Promo
 {
-    public class PromoWidgets : BasePlugin, IWidgetPlugin
+    public class PromoWidgets : BasePlugin, IWidgetPlugin, IAdminMenuPlugin
     {
         #region Fields
 
         private readonly WidgetSettings _widgetSettings;
         private readonly ISettingService _settingService;
         private readonly IPromoBannerService _promoBannerService;
+        private readonly IPluginFinder _pluginFinder;
+        private readonly PromoSettings _promoSettings;
+        private readonly ILocalizationService _localizationService;
+
         private List<KeyValuePair<string, string>> _stringsList = new List<KeyValuePair<string, string>>();
 
         #endregion
@@ -45,11 +50,17 @@ namespace Qixol.Plugin.Widgets.Promo
 
         public PromoWidgets(WidgetSettings widgetSettings,
                             ISettingService settingService,
-                            IPromoBannerService promoBannerService)
+                            IPromoBannerService promoBannerService,
+                            IPluginFinder pluginFinder,
+                            PromoSettings promoSettings,
+                            ILocalizationService localizationService)
         {
             this._widgetSettings = widgetSettings;
             this._settingService = settingService;
             this._promoBannerService = promoBannerService;
+            this._pluginFinder = pluginFinder;
+            this._promoSettings = promoSettings;
+            this._localizationService = localizationService;
         }
 
         #endregion
@@ -68,7 +79,20 @@ namespace Qixol.Plugin.Widgets.Promo
         /// </summary>
         public override void Install()
         {
-            // settings
+            #region promo plugin checks
+
+            var promoPlugin = _pluginFinder.GetPluginDescriptorBySystemName("Misc.QixolPromo");
+
+            if (promoPlugin == null)
+                throw new NopException("The QixolPromo core plugin was not found.");
+
+            if (!promoPlugin.Installed)
+                throw new NopException("The QixolPromo core plugin is not installed.");
+
+            #endregion
+
+            #region settings
+
             var settings = new PromoWidgetSettings()
             {
                 ShowPromoDetailsOnProductPage = true,
@@ -77,6 +101,8 @@ namespace Qixol.Plugin.Widgets.Promo
                 ProductPagePromoDetailsWidgetZone = "productdetails_add_info"       // Default!
             };
             _settingService.SaveSetting(settings);
+
+            #endregion
 
             // Deal with strings
             SetupStringResources();
@@ -101,6 +127,34 @@ namespace Qixol.Plugin.Widgets.Promo
             _settingService.DeleteSetting<PromoWidgetSettings>();
 
             base.Uninstall();
+        }
+
+        #endregion
+
+        #region Admin area menu entries.
+
+        public void ManageSiteMap(SiteMapNode rootNode)
+        {
+            var promosNode = rootNode.ChildNodes.Where(cn => cn.SystemName == "Promotions").FirstOrDefault();
+            if (promosNode != null)
+            {
+                var menuNode = promosNode.ChildNodes.ToList().FindIndex(cn => cn.SystemName == "QixolPromo.Web");
+                if (menuNode < 0)
+                    menuNode = promosNode.ChildNodes.Count();
+
+                promosNode.ChildNodes.Insert(
+                    menuNode,
+                    new SiteMapNode()
+                    {
+                        Title = _localizationService.GetResource("Plugins.Misc.QixolPromo.PromotionsMenu.Widgets"),
+                        SystemName = "Widgets.QixolPromo",
+                        ControllerName = "Widget",
+                        ActionName = "ConfigureWidget",
+                        IconClass = "fa-dot-circle-o",
+                        RouteValues = new RouteValueDictionary(new { systemName = "Widgets.QixolPromo" }),
+                        Visible = true
+                    });
+            }
         }
 
         #endregion

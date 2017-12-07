@@ -19,7 +19,7 @@ namespace Qixol.Nop.Promo.Core.Domain.Promo
         public int QueueHoldPeriodInSeconds { get; set; }
 
         public string VariantAttributeFormat { get; set; }
-        public string VariantAttributesSeperator { get; set; }
+        public string VariantAttributesSeparator { get; set; }
 
         public string CompanyKey { get; set; }
         public int ServiceEndpointSelection { get; set; }

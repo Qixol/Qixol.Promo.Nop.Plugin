@@ -5,6 +5,8 @@ using Qixol.Promo.Integration.Lib.Basket;
 using System.Linq;
 using System.Web.Mvc;
 using Nop.Core.Domain.Customers;
+using Nop.Services.Common;
+using Nop.Core;
 
 namespace Qixol.Nop.Promo.Services.Promo
 {
@@ -13,10 +15,10 @@ namespace Qixol.Nop.Promo.Services.Promo
 
         public static string DisplayDetails(this BasketResponseAppliedPromotion appliedPromotion, Customer customer)
         {
-            var promoUtilities = DependencyResolver.Current.GetService<IPromoUtilities>();
-            var basketResponse = promoUtilities.GetBasketResponse(customer);
+            var storeContext = DependencyResolver.Current.GetService<IStoreContext>();
+            var basketResponse = customer.GetAttribute<BasketResponse>(PromoCustomerAttributeNames.PromoBasketResponse, storeContext.CurrentStore.Id);
 
-            if (!basketResponse.IsValid())
+            if (basketResponse == null || !basketResponse.IsValid())
                 return "error promotion summary not found";
 
             var summaryAppliedPromotion = (from p in basketResponse.Summary.AppliedPromotions

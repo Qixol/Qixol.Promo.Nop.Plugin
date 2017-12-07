@@ -513,7 +513,7 @@ namespace Qixol.Nop.Promo.Services.Promo
             if (basketCoupon == null)
                 return false;
 
-            if (basketCoupon.Utilized)
+            if (basketCoupon.Utilizations.Any())
                 return true;
 
             return false;
@@ -533,7 +533,7 @@ namespace Qixol.Nop.Promo.Services.Promo
             if (!basketResponse.Summary.ProcessingResult)
                 return false;
 
-            if (basketResponse.Items.Count == 0)
+            if (!basketResponse.Items.Any())
                 return false;
 
             return true;

@@ -10,7 +10,6 @@ namespace Qixol.Plugin.Widgets.Promo.Services
 {
     public interface IProductPromotionService
     {
-        // TODO: BasketCriteriaItems only made public because the banner code needs rewriting
         List<KeyValuePair<string, string>> BasketCriteriaItems();
 
         ProductPromotions PromotionsForProduct(int productId);

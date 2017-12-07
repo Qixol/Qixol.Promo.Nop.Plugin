@@ -214,7 +214,7 @@ namespace Qixol.Plugin.Misc.Promo.Factories
                 {
                     foreach (BasketResponseMissedPromotionCriteriaListItem matchedItem in matchedItems)
                     {
-                        List<ShoppingCartModel.ShoppingCartItemModel> cartItemModels = getMatchedCartItemModels(basketResponse, cart, matchedItem);
+                        List<ShoppingCartModel.ShoppingCartItemModel> cartItemModels = GetMatchedCartItemModels(basketResponse, cart, matchedItem);
                         if (cartItemModels != null)
                         {
                             var promoMatchedCartItemModels = missedPromotionModel.MatchedCartItemModels.ToList();
@@ -232,7 +232,7 @@ namespace Qixol.Plugin.Misc.Promo.Factories
 
                 foreach (var matchedItem in matchedItems)
                 {
-                    List<ShoppingCartModel.ShoppingCartItemModel> cartItemModels = getMatchedCartItemModels(basketResponse, cart, matchedItem);
+                    List<ShoppingCartModel.ShoppingCartItemModel> cartItemModels = GetMatchedCartItemModels(basketResponse, cart, matchedItem);
                     if (cartItemModels != null)
                     {
                         var promoMatchedCartItemModels = missedPromotionModel.MatchedCartItemModels.ToList();
@@ -295,11 +295,24 @@ namespace Qixol.Plugin.Misc.Promo.Factories
                 }
             }
 
+            // slight hack to replace bogof/bogor images with exact variant
+            if (missedPromotionModel.GetType() == typeof(MissedPromotionBogofModel) ||
+                missedPromotionModel.GetType() == typeof(MissedPromotionBogorModel))
+            {
+                var productToAdd = missedPromotionModel.UnmatchedProductOverviewModels.FirstOrDefault();
+                var matchedProduct = missedPromotionModel.MatchedCartItemModels.FirstOrDefault();
+
+                if (productToAdd != null && matchedProduct != null)
+                {
+                    productToAdd.ProductOverviewModel.DefaultPictureModel = matchedProduct.Picture;
+                }
+
+            }
+
             return missedPromotionModel;
         }
 
-        // TODO: handle multiple line matches (does this ever occur...?)
-        private List<ShoppingCartModel.ShoppingCartItemModel> getMatchedCartItemModels(BasketResponse basketResponse, List<ShoppingCartItem> cart, BasketResponseMissedPromotionCriteriaListItem matchedItem)
+        private List<ShoppingCartModel.ShoppingCartItemModel> GetMatchedCartItemModels(BasketResponse basketResponse, List<ShoppingCartItem> cart, BasketResponseMissedPromotionCriteriaListItem matchedItem)
         {
             List<ShoppingCartModel.ShoppingCartItemModel> cartItemModels = new List<ShoppingCartModel.ShoppingCartItemModel>();
             List<ShoppingCartItem> matchedCartItems = getMatchedCartItems(basketResponse, cart, matchedItem);
@@ -325,7 +338,6 @@ namespace Qixol.Plugin.Misc.Promo.Factories
             return cartItemModels;
         }
 
-        // TODO: handle multipe categories with the same name
         private Category GetCategoryFromCategoryName(string attributeValue)
         {
             var categories = _categoryService.GetAllCategories(showHidden: true);
@@ -347,12 +359,6 @@ namespace Qixol.Plugin.Misc.Promo.Factories
         {
             var categories = _categoryService.GetAllCategories(showHidden: true);
             Category matchedCategory = null;
-            // TODO: store this in cache to speed up the process
-            //var categoryBreadcrumbs = new Dictionary<string, Category>();
-            //foreach (var c in categories)
-            //{
-            //    categoryBreadcrumbs.Add(c.GetFormattedBreadCrumb(categories), c);
-            //}
 
             foreach (var category in categories)
             {
@@ -457,15 +463,15 @@ namespace Qixol.Plugin.Misc.Promo.Factories
             if (cart.Count == 0)
                 return model;
 
-            var basketResponse = _promoUtilities.GetBasketResponse(_workContext.CurrentCustomer);
-            if (basketResponse == null || basketResponse.MissedPromotions.Count == 0)
-            {
+            var basketResponse = _workContext.CurrentCustomer.GetAttribute<BasketResponse>(PromoCustomerAttributeNames.PromoBasketResponse, _storeContext.CurrentStore.Id);
+            if (basketResponse == null || !basketResponse.IsValid())
                 return model;
-            }
+
+            if (basketResponse.MissedPromotions == null || !basketResponse.MissedPromotions.Any())
+                return model;
 
             foreach (var missedPromo in basketResponse.MissedPromotions)
             {
-                // TODO: enum for PromotionType (from integration lib...?)
                 switch (missedPromo.PromotionType)
                 {
                     case MissedPromotionsModel.PromotionTypeSystemName.BuyOneGetOneFree:

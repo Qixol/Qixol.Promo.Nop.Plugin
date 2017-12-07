@@ -134,7 +134,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                 if (actionName.Equals("OpcSaveShippingMethod", StringComparison.InvariantCultureIgnoreCase)
                     || (actionName.Equals("ShippingMethod", StringComparison.InvariantCultureIgnoreCase) && nextstep))
                 {
-                    promoService.ProcessShoppingCart(customer, customer.GetAttribute<ShippingOption>(SystemCustomerAttributeNames.SelectedShippingOption, storeContext.CurrentStore.Id));
+                    promoService.ProcessShoppingCart(customer, storeContext.CurrentStore.Id, customer.GetAttribute<ShippingOption>(SystemCustomerAttributeNames.SelectedShippingOption, storeContext.CurrentStore.Id));
                 }
 
                 base.OnActionExecuted(filterContext);

@@ -15,6 +15,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Utilities", "Utilities", "{E59862EA-4BCE-48F0-97EE-B5A859EFFB02}"
 	ProjectSection(SolutionItems) = preProject
 		Utilities\Upgrade.sql = Utilities\Upgrade.sql
+		Utilities\Upgrade_3.80_to_3.90.sql = Utilities\Upgrade_3.80_to_3.90.sql
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Qixol.Nop.Promo.Core", "Libraries\Qixol.Nop.Promo.Core\Qixol.Nop.Promo.Core.csproj", "{913636AF-4223-4AF2-B425-255340AB51F5}"
@@ -27,7 +28,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Qixol.Plugin.Misc.Promo", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Qixol.Plugin.Widgets.Promo", "Plugins\Qixol.Plugin.Widgets.Promo\Qixol.Plugin.Widgets.Promo.csproj", "{E47BA7CD-20D4-453F-BA8A-02DBE095DB70}"
 EndProject
-Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "Website", "Website\", "{AF5EB52F-EBF6-49E5-9A01-36D480790D51}"
+Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "Website", "Website", "{AF5EB52F-EBF6-49E5-9A01-36D480790D51}"
 	ProjectSection(WebsiteProperties) = preProject
 		TargetFrameworkMoniker = ".NETFramework,Version%3Dv4.5.1"
 		Debug.AspNetCompiler.VirtualPath = "/localhost_50455"

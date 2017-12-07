@@ -1,8 +1,9 @@
 ﻿@model string
 @{
-    
+
     string entityNameTitle = string.Empty;
     string hidePriority = "true";
+
     switch (Model)
     {
         case Qixol.Nop.Promo.Core.Domain.AttributeValues.EntityAttributeName.Store:
@@ -17,11 +18,11 @@
             break;
         case Qixol.Nop.Promo.Core.Domain.AttributeValues.EntityAttributeName.CheckoutAttribute:
             entityNameTitle = T("admin.catalog.attributes.checkoutattributes.fields.name").ToString();
-            break;           
+            break;
         default:
             break;
     }
-    
+
 }
 
 <table class="adminContent" style="margin-top: 10px;">
@@ -40,7 +41,7 @@
                         title: "@T("Plugins.Misc.QixolPromo.Shared.IntegrationCode")"
                     }, {
                         field: "Priority",
-                        title: "@T("Plugins.Misc.QixolPromo.Shared.Priority")",
+                        headerTemplate: "@T("Plugins.Misc.QixolPromo.Shared.Priority")<div class=\"ico-help\" title=\"@T("Plugins.Misc.QixolPromo.IntegrationCodes.CustomerRoles.Priority.Help")\" style=\"display: inline; color: #3c8dbc; padding-left: 7px; \"><i class=\"fa fa-question-circle\"></i></div>",
                         hidden: @hidePriority,
                         format: "{0:0}"
                     }, {

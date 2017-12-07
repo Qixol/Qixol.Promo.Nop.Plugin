@@ -20,6 +20,7 @@ using System.Web;
 using Qixol.Nop.Promo.Core.Domain.Promo;
 using Qixol.Nop.Promo.Core.Domain.AttributeValues;
 using Qixol.Nop.Promo.Services.AttributeValues;
+using Nop.Services.Common;
 
 namespace Qixol.Nop.Promo.Services.Orders
 {
@@ -37,6 +38,7 @@ namespace Qixol.Nop.Promo.Services.Orders
         private readonly PromoSettings _promoSettings;
         private readonly IPromoUtilities _qixolPromoUtilities;
         private readonly IAttributeValueService _attributeValueService;
+        private readonly IStoreContext _storeContext;
 
         public CheckoutAttributeFormatter(IWorkContext workContext,
             ICheckoutAttributeService checkoutAttributeService,
@@ -48,7 +50,8 @@ namespace Qixol.Nop.Promo.Services.Orders
             IWebHelper webHelper,
             PromoSettings promoSettings,
             IPromoUtilities qixolPromoUtilities,
-            IAttributeValueService attributeValueService)
+            IAttributeValueService attributeValueService,
+            IStoreContext storeContext)
             : base(workContext, checkoutAttributeService, checkoutAttributeParser,
                     currencyService, taxService, priceFormatter,
                     downloadService, webHelper)
@@ -65,6 +68,7 @@ namespace Qixol.Nop.Promo.Services.Orders
             this._promoSettings = promoSettings;
             this._qixolPromoUtilities = qixolPromoUtilities;
             this._attributeValueService = attributeValueService;
+            this._storeContext = storeContext;
         }
 
         /// <summary>
@@ -88,7 +92,9 @@ namespace Qixol.Nop.Promo.Services.Orders
             if (!_promoSettings.Enabled)
                 return base.FormatAttributes(attributesXml, customer, separator, htmlEncode, renderPrices, allowHyperlinks);
 
-            BasketResponse basketResponse = _qixolPromoUtilities.GetBasketResponse(customer);
+            BasketResponse basketResponse = customer.GetAttribute<BasketResponse>(PromoCustomerAttributeNames.PromoBasketResponse, _storeContext.CurrentStore.Id);
+            if (basketResponse == null || !basketResponse.IsValid())
+                return string.Empty;
 
             List<string> attributeStrings = new List<string>();
 
@@ -121,7 +127,6 @@ namespace Qixol.Nop.Promo.Services.Orders
                             var download = _downloadService.GetDownloadByGuid(downloadGuid);
                             if (download != null)
                             {
-                                //TODO add a method for getting URL (use routing because it handles all SEO friendly URLs)
                                 string attributeText = "";
                                 var fileName = string.Format("{0}{1}",
                                     download.Filename ?? download.DownloadGuid.ToString(),

@@ -15,6 +15,9 @@ namespace Qixol.Nop.Promo.Core.Domain.AttributeValues
         public const string CheckoutAttribute = "CheckoutAttribute";
         public const string Currency = "Currency";
 
+        public const string Channel = "Channel";
+        public const string StoreGroup = "StoreGroup";
+
         /// <summary>
         /// Convert the attribute name to the promo system name.
         /// </summary>
@@ -32,6 +35,10 @@ namespace Qixol.Nop.Promo.Core.Domain.AttributeValues
                     return "store";
                 case EntityAttributeName.Currency:
                     return "currencycode";
+                case EntityAttributeName.Channel:
+                    return "channel";
+                case EntityAttributeName.StoreGroup:
+                    return "storegroup";
                 default:
                     return "";
             }

@@ -149,51 +149,6 @@ namespace Qixol.Nop.Promo.Services.Promo
 
         #endregion
 
-        #region Hierarchy Import methods
-
-        public HierarchyValuesImportResponse ImportHierarchyTopromoService(HierarchyValuesImportRequest hierarchyImport)
-        {
-            _logger.Information("ImportHierarchyTopromoService called");
-
-            HierarchyValuesImportResponse importResult = null;
-            try
-            {
-                var importService = _promoSettings.GetImportService();
-                importResult = importService.ImportHierarchyValues(hierarchyImport);
-            }
-            catch (Exception ex)
-            {
-                _logger.Error("Qixol Promos hierarchy update", ex);
-            }
-
-            return importResult;            
-        }
-
-        #endregion
-
-        #region GetBasketResponse
-
-        public BasketResponse GetBasketResponse(int customerId)
-        {
-            var customer = _customerService.GetCustomerById(customerId);
-            return GetBasketResponse(customer);
-        }
-
-        public BasketResponse GetBasketResponse(Customer customer)
-        {
-            string basketResponseString = customer.GetAttribute<string>(PromoCustomerAttributeNames.PromoBasketResponse, _storeContext.CurrentStore.Id);
-
-            BasketResponse basketResponse = null;
-            if (!string.IsNullOrEmpty(basketResponseString))
-            {
-                basketResponse = BasketResponse.FromXml(basketResponseString);
-            }
-
-            return basketResponse;
-        }
-
-        #endregion
-
         private string GetCategoryBreadCrumb(Category category, IList<Category> allCategories)
         {
             if (category == null)

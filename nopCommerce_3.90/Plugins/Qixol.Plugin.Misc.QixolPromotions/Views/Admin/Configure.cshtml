@@ -133,8 +133,8 @@
                     </div>
                     <div class="col-md-9">
                         <input type="submit" name="save" class="btn bg-blue" value="@T("Admin.Common.Save")" />
-                        <a class="btn bg-green" href="http://admin.qixolpromo.com" target="_blank">
-                            <img src="http://admin.qixolpromo.com/Content/imgs/qixol_fav.png" />
+                        <a class="btn bg-green" href="https://admin.qixolpromo.com" target="_blank">
+                            <img src="https://admin.qixolpromo.com/Content/imgs/qixol_fav.png" />
                             @T("Plugins.Misc.QixolPromo.GoToPromo")
                         </a>
                     </div>
@@ -169,7 +169,7 @@
                         @Html.ValidationMessageFor(model => model.CompanyKey)
                         <div id="CompanyKeyHelperArea">
                             @T("Plugins.Misc.QixolPromo.CompanyKey.Helper1")<br />
-                            @T("Plugins.Misc.QixolPromo.CompanyKey.Helper2")<a href="http://admin.qixolpromo.com/account/register?companyType=2" target="_blank">@T("Plugins.Misc.QixolPromo.CompanyKey.RegisterLink")</a><br />
+                            @T("Plugins.Misc.QixolPromo.CompanyKey.Helper2")<a href="https://admin.qixolpromo.com/account/register?companyType=3" target="_blank">@T("Plugins.Misc.QixolPromo.CompanyKey.RegisterLink")</a><br />
                             @T("Plugins.Misc.QixolPromo.CompanyKey.Helper3")
                         </div>
                     </div>
@@ -276,10 +276,6 @@
                     <div class="col-md-9">
                         @Html.NopEditorFor(model => model.StoreGroup)
                         @Html.ValidationMessageFor(model => model.StoreGroup)
-                        <div>
-                            @T("Plugins.Misc.QixolPromo.Channel.Helper1")<br />
-                            @T("Plugins.Misc.QixolPromo.Channel.Helper2")
-                        </div>
                     </div>
                 </div>
                 <div class="form-group">

@@ -65,8 +65,29 @@ namespace Qixol.Plugin.Misc.RestApi
         /// </summary>
         public override void Install()
         {
-            // confirm that Promo is installed & Enabled
-            // confirm that Xcellent plugin is installed and Enabled
+            #region promo plugin checks
+
+            var promoPlugin = _pluginFinder.GetPluginDescriptorBySystemName("Misc.QixolPromo");
+
+            if (promoPlugin == null)
+                throw new NopException("The QixolPromo core plugin was not found.");
+
+            if (!promoPlugin.Installed)
+                throw new NopException("The QixolPromo core plugin is not installed.");
+
+            #endregion
+
+            #region Xcellence It plugin checks
+
+            var xcellenceItPlugin = _pluginFinder.GetPluginDescriptorBySystemName("XcellenceIt.Plugin.Misc.NopRestApi");
+
+            if (xcellenceItPlugin == null)
+                throw new NopException("The nopAccelerate REST Web Services API Plugin could not be found.");
+
+            if (!xcellenceItPlugin.Installed)
+                throw new NopException("The nopAccelerate REST Web Services API Plugin is not installed.");
+
+            #endregion
 
             base.Install();
         }

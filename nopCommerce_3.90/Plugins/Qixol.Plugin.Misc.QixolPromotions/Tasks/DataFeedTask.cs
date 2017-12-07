@@ -1,6 +1,4 @@
 ﻿using Nop.Core.Domain.Catalog;
-using Nop.Core.Domain.Tax;
-using Nop.Core.Domain.Vendors;
 using Nop.Core.Plugins;
 using Nop.Services.Catalog;
 using Nop.Services.Customers;
@@ -9,14 +7,12 @@ using Nop.Services.Orders;
 using Nop.Services.Shipping;
 using Nop.Services.Stores;
 using Nop.Services.Tasks;
-using Nop.Services.Tax;
-using Nop.Services.Vendors;
 using Qixol.Nop.Promo.Core.Domain.AttributeValues;
 using Qixol.Nop.Promo.Core.Domain.ExportQueue;
-using Qixol.Nop.Promo.Core.Domain.ProductAttributeConfig;
 using Qixol.Nop.Promo.Core.Domain.Products;
 using Qixol.Nop.Promo.Core.Domain.Promo;
 using Qixol.Nop.Promo.Services.AttributeValues;
+using Qixol.Nop.Promo.Services.Catalog;
 using Qixol.Nop.Promo.Services.ExportQueue;
 using Qixol.Nop.Promo.Services.Orders;
 using Qixol.Nop.Promo.Services.ProductAttributeConfig;
@@ -46,8 +42,7 @@ namespace Qixol.Plugin.Misc.Promo.Tasks
         private readonly IProductMappingService _productMappingService;
         private readonly IProductService _productService;
         private readonly IProductAttributeParser _productAttributeParser;
-        private readonly IVendorService _vendorService;
-        private readonly ITaxCategoryService _taxCategoryService;
+        private readonly IProductAttributeService _productAttributeService;
         private readonly ICheckoutAttributeService _checkoutAttributeService;
         private readonly ICurrencyService _currencyService;
 
@@ -69,8 +64,7 @@ namespace Qixol.Plugin.Misc.Promo.Tasks
             IProductMappingService productMappingService,
             IProductService productService,
             IProductAttributeParser productAttributeParser,
-            IVendorService vendorService,
-            ITaxCategoryService taxCategoryService,
+            IProductAttributeService productAttributeService,
             ICheckoutAttributeService checkoutAttributeService,
             ICurrencyService currencyService)
         {
@@ -87,8 +81,7 @@ namespace Qixol.Plugin.Misc.Promo.Tasks
             this._productMappingService = productMappingService;
             this._productService = productService;
             this._productAttributeParser = productAttributeParser;
-            this._vendorService = vendorService;
-            this._taxCategoryService = taxCategoryService;
+            this._productAttributeService = productAttributeService;
             this._checkoutAttributeService = checkoutAttributeService;
             this._currencyService = currencyService;
         }
@@ -110,9 +103,6 @@ namespace Qixol.Plugin.Misc.Promo.Tasks
                 return;
 
             var entriesProcessedThisRun = new List<int>();
-            List<ProductAttributeConfigItem> productAttributeConfigItems = null;
-            List<Vendor> vendors = null;
-            List<TaxCategory> taxCategories = null;
 
             bool continueLoop = false;
             do
@@ -126,11 +116,11 @@ namespace Qixol.Plugin.Misc.Promo.Tasks
                 var pendingQueueItems = _exportQueueService.RetrievePending();
                 if (pendingQueueItems != null && pendingQueueItems.Count() > 0)
                 {
-                    
+
                     var allItemsToProcess = pendingQueueItems.Where(qi => (DateTime.Compare(fiveMinsAgo, qi.CreatedOnUtc) >= 0
                                                                              || (qi.Action == ExportQueueAction.Delete || qi.Action == ExportQueueAction.All))
                                                                             && !entriesProcessedThisRun.Contains(qi.Id))
-                                                              .OrderBy(ob => ob.CreatedOnUtc);                                                            
+                                                              .OrderBy(ob => ob.CreatedOnUtc);
 
                     if (allItemsToProcess != null && allItemsToProcess.Count() > 0)
                     {
@@ -156,9 +146,23 @@ namespace Qixol.Plugin.Misc.Promo.Tasks
 
                         switch (groupedItemsToProcess.First().EntityName)
                         {
+                            case EntityAttributeName.Store:
+                                var storeAttribImportResult = ProcessBasketLevelStoreAttributes(groupedItemsToProcess);
+                                if (storeAttribImportResult != null && storeAttribImportResult.Summary != null)
+                                {
+                                    importResult = storeAttribImportResult.Summary.ProcessedSuccessfully;
+                                    importRef = storeAttribImportResult.Reference;
+                                    if (!importResult)
+                                        importMessages = storeAttribImportResult.GetResponseMessages<AttributeValuesImportResponseItem>();
+                                }
+                                else
+                                {
+                                    noResponse = true;
+                                }
+                                break;
+
                             case EntityAttributeName.CustomerRole:
                             case EntityAttributeName.DeliveryMethod:
-                            case EntityAttributeName.Store:
                             case EntityAttributeName.Currency:
                                 var attribImportResult = ProcessBasketAttributeItems(groupedItemsToProcess);
                                 if (attribImportResult != null && attribImportResult.Summary != null)
@@ -175,16 +179,7 @@ namespace Qixol.Plugin.Misc.Promo.Tasks
                                 break;
 
                             case EntityAttributeName.Product:
-                                if (productAttributeConfigItems == null)
-                                    productAttributeConfigItems = _productAttributeConfigService.RetrieveAll().ToList();
-
-                                if (vendors == null)
-                                    vendors = _vendorService.GetAllVendors().ToList();
-
-                                if (taxCategories == null)
-                                    taxCategories = _taxCategoryService.GetAllTaxCategories().ToList();
-
-                                var productImportResult = ProcessProducts(groupedItemsToProcess, productAttributeConfigItems, vendors, taxCategories);
+                                var productImportResult = ProcessProducts(groupedItemsToProcess);
                                 if (productImportResult != null && productImportResult.Summary != null)
                                 {
                                     importResult = productImportResult.Summary.ProcessedSuccessfully;
@@ -283,20 +278,6 @@ namespace Qixol.Plugin.Misc.Promo.Tasks
         }
 
         /// <summary>
-        /// Build the bare-bones of a hierarchy request (for stores).
-        /// </summary>
-        /// <param name="item"></param>
-        /// <returns></returns>
-        private HierarchyValuesImportRequest BuildBaseHierarchyImport(ExportQueueItem item)
-        {
-            return new HierarchyValuesImportRequest()
-            {
-                CompanyKey = _promoSettings.CompanyKey,
-                HierarchyToken = "store"            // TO BE REVIEWED.
-            };
-        }
-
-        /// <summary>
         /// Add an item to the import.
         /// </summary>
         /// <param name="import"></param>
@@ -306,43 +287,6 @@ namespace Qixol.Plugin.Misc.Promo.Tasks
         private void AddImportItem(AttributeValuesImportRequest import, string itemName, string itemDisplayName, bool isDeleted = false)
         {
             import.Items.Add(new AttributeValuesImportRequestItem() { Value = itemName, DisplayName = itemDisplayName, Deleted = isDeleted });
-        }
-
-        /// <summary>
-        /// Add an item to the store hierarchy.
-        /// </summary>
-        /// <param name="import"></param>
-        /// <param name="itemName"></param>
-        /// <param name="itemDisplayName"></param>
-        /// <param name="isDeleted"></param>
-        private void AddHierarchyImportItem(HierarchyValuesImportRequest import, string itemName, string itemDisplayName, bool isDeleted = false)
-        {
-            HierarchyValuesImportRequestItem channelItem = null;
-            HierarchyValuesImportRequestItem storeGroupItem = null;
-
-            if (import.Items != null && import.Items.Count > 0)
-            {
-                channelItem = import.Items.Where(i => i.AttributeToken == "channel").FirstOrDefault();
-                if (channelItem != null)
-                {
-                    storeGroupItem = channelItem.ChildItems.Where(c => c.AttributeToken == "storegroup").FirstOrDefault();
-                }
-            }
-
-            if (channelItem == null)
-            {
-                channelItem = new HierarchyValuesImportRequestItem() { AttributeToken = "channel", Value = _promoSettings.Channel };
-                import.Items.Add(channelItem);
-            }
-            if (storeGroupItem == null)
-            {
-                storeGroupItem = new HierarchyValuesImportRequestItem() { AttributeToken = "storegroup", Value = _promoSettings.StoreGroup };
-                channelItem.ChildItems.Add(storeGroupItem);
-            }
-
-            // Finally, add the store to the store group.
-            storeGroupItem.ChildItems.Add(new HierarchyValuesImportRequestItem() { AttributeToken = "store", Value = itemName, DisplayName = itemDisplayName, Deleted = isDeleted });
-
         }
 
         /// <summary>
@@ -408,6 +352,126 @@ namespace Qixol.Plugin.Misc.Promo.Tasks
 
         #endregion
 
+        #region Store and related Basket level Attributes Handling 
+
+        private AttributeValuesImportResponse ProcessBasketLevelChannelAttribute()
+        {
+            var attributeValuesImportRequestItems = new List<AttributeValuesImportRequestItem>();
+            attributeValuesImportRequestItems.Add(new AttributeValuesImportRequestItem()
+            {
+                DisplayName = _promoSettings.Channel,
+                Value = _promoSettings.Channel,
+                Deleted = false
+            });
+
+            var attributeValuesImportRequest = new AttributeValuesImportRequest()
+            {
+                CompanyKey = _promoSettings.CompanyKey,
+                AttributeToken = EntityAttributeName.ToPromoAttributeName(EntityAttributeName.Channel),
+                Items = attributeValuesImportRequestItems
+            };
+            return _qixolPromoUtilities.ImportAttributesToPromoService(attributeValuesImportRequest);
+        }
+
+        private AttributeValuesImportResponse ProcessBasketLevelStoreGroupAttribute()
+        {
+            var attributeValuesImportRequestItems = new List<AttributeValuesImportRequestItem>();
+            attributeValuesImportRequestItems.Add(new AttributeValuesImportRequestItem()
+            {
+                DisplayName = _promoSettings.StoreGroup,
+                Value = _promoSettings.StoreGroup,
+                Deleted = false
+            });
+
+            var attributeValuesImportRequest = new AttributeValuesImportRequest()
+            {
+                CompanyKey = _promoSettings.CompanyKey,
+                AttributeToken = EntityAttributeName.ToPromoAttributeName(EntityAttributeName.StoreGroup),
+                Items = attributeValuesImportRequestItems
+            };
+            return _qixolPromoUtilities.ImportAttributesToPromoService(attributeValuesImportRequest);
+        }
+
+        private ImportResponse<AttributeValuesImportResponseItem> ProcessBasketLevelStoreAttributeValues()
+        {
+            // now send the integration codes which can be queued either way
+            var allStoreAttributes = _attributeValueService.RetrieveAllForAttribute(EntityAttributeName.Store).ToList();
+            var allNopAttributeStoreValues = RetrieveAttributes(EntityAttributeName.Store);
+
+            var storeAttributeValuesToPushToPromo = (from nopItem in allNopAttributeStoreValues
+                                                     join attrib in allStoreAttributes
+                                                     on nopItem.Id equals attrib.AttributeValueId
+                                                     where !string.IsNullOrEmpty(attrib.Code)
+                                                     select new InternalAttributeToProcess() { Code = attrib.Code, DisplayName = nopItem.Name, AttributeId = attrib.Id, MappingItem = attrib }).ToList();
+
+
+            if (storeAttributeValuesToPushToPromo != null && storeAttributeValuesToPushToPromo.Any())
+            {
+                var attributeValuesImportRequest = new AttributeValuesImportRequest()
+                {
+                    CompanyKey = _promoSettings.CompanyKey,
+                    AttributeToken = EntityAttributeName.ToPromoAttributeName(EntityAttributeName.Store)
+                };
+                var attributeIdsToFlagAsUpdated = new List<int>();
+
+                storeAttributeValuesToPushToPromo.ToList().ForEach(sav =>
+                {
+                    if (sav.MappingItem != null
+                        && !string.IsNullOrEmpty(sav.MappingItem.SynchronizedCode)
+                        && string.Compare(sav.MappingItem.Code, sav.MappingItem.SynchronizedCode, true) != 0)
+                    {
+                        AddImportItem(attributeValuesImportRequest, sav.MappingItem.SynchronizedCode, string.Empty, true);
+                    }
+
+                    AddImportItem(attributeValuesImportRequest, sav.Code, sav.DisplayName, sav.IsDelete);
+
+                    attributeIdsToFlagAsUpdated.Add(sav.AttributeId);
+                });
+
+                var result = _qixolPromoUtilities.ImportAttributesToPromoService(attributeValuesImportRequest);
+
+                if (result != null && result.Summary != null && result.Summary.ProcessedSuccessfully)
+                    FlagAttributeAsSynchonized(attributeIdsToFlagAsUpdated);
+
+                return result;
+            }
+
+            return null;
+        }
+
+        private ImportResponse<AttributeValuesImportResponseItem> ProcessBasketLevelStoreAttributes(List<ExportQueueItem> exportItems)
+        {
+            var result = new AttributeValuesImportResponse();
+
+            if (exportItems == null || !exportItems.Any(ei => string.Compare(ei.EntityName, EntityAttributeName.Store, StringComparison.InvariantCultureIgnoreCase) == 0))
+            {
+                result.Summary = new ImportResponseSummary() { ProcessedSuccessfully = true };
+                return result;
+            }
+
+            var storeExportItems = exportItems.Where(ei => string.Compare(ei.EntityName, EntityAttributeName.Store, StringComparison.InvariantCultureIgnoreCase) == 0).ToList();
+
+            // Only transfer the Channel and StoreGroup if the action is All because
+            // these can only be saved via the config which can only action a queue all
+            if (storeExportItems.Any(sei => sei.Action == ExportQueueAction.All))
+            {
+                // slight cheat
+                // return immediately if we fail at any stage
+                // if we're successful at each send, only return the last result
+                result = ProcessBasketLevelChannelAttribute();
+                if (result == null || result.Summary == null || !result.Summary.ProcessedSuccessfully)
+                    return result;
+
+                result = ProcessBasketLevelStoreGroupAttribute();
+                if (result == null || result.Summary == null || !result.Summary.ProcessedSuccessfully)
+                    return result;
+            }
+
+            return ProcessBasketLevelStoreAttributeValues();
+        }
+
+        #endregion
+
         #region Basket Attributes Handling 
 
         /// <summary>
@@ -421,10 +485,8 @@ namespace Qixol.Plugin.Misc.Promo.Tasks
 
             var attribsToUpdate = new List<int>();
             var attribValuesImportRequest = BuildBaseBasketAttributeImport(exportItems.First());
-            var hierarchyImportRequest = BuildBaseHierarchyImport(exportItems.First());
             var allNopAttributeValues = RetrieveAttributes(exportItems.First().EntityName);
             var allAttributes = _attributeValueService.RetrieveAllForAttribute(exportItems.First().EntityName).ToList();
-            bool useHierarchyImport = exportItems.First().EntityName == EntityAttributeName.Store;
 
             for (int i = 0; i < 2; i++)
             {
@@ -435,43 +497,43 @@ namespace Qixol.Plugin.Misc.Promo.Tasks
                     // Deal with updating items individually.                    
                     exportItems.Where(ei => ei.Action != ExportQueueAction.All)
                                .ToList()
-                               .ForEach(ei => 
-                                {
-                                    var attrib = allAttributes.Where(atrb => atrb.Id == ei.EntityKey).FirstOrDefault();
-                                    InternalAttributeItem nopItem = null;
-                                    if(attrib != null)
-                                        nopItem = allNopAttributeValues.Where(nopAttrib => nopAttrib.Id == attrib.AttributeValueId).FirstOrDefault();
+                               .ForEach(ei =>
+                               {
+                                   var attrib = allAttributes.Where(atrb => atrb.Id == ei.EntityKey).FirstOrDefault();
+                                   InternalAttributeItem nopItem = null;
+                                   if (attrib != null)
+                                       nopItem = allNopAttributeValues.Where(nopAttrib => nopAttrib.Id == attrib.AttributeValueId).FirstOrDefault();
 
-                                    bool importItem = true;
-                                    if (attrib != null && string.IsNullOrEmpty(attrib.Code))
-                                    {
-                                        if (!string.IsNullOrEmpty(attrib.SynchronizedCode))
-                                        {
-                                            itemsToImport.Add(new InternalAttributeToProcess()
-                                            {
-                                                Code = attrib.SynchronizedCode,
-                                                AttributeId = attrib.Id,
-                                                MappingItem = attrib,
-                                                IsDelete = true
-                                            });
-                                        }
+                                   bool importItem = true;
+                                   if (attrib != null && string.IsNullOrEmpty(attrib.Code))
+                                   {
+                                       if (!string.IsNullOrEmpty(attrib.SynchronizedCode))
+                                       {
+                                           itemsToImport.Add(new InternalAttributeToProcess()
+                                           {
+                                               Code = attrib.SynchronizedCode,
+                                               AttributeId = attrib.Id,
+                                               MappingItem = attrib,
+                                               IsDelete = true
+                                           });
+                                       }
 
-                                        importItem = false;
-                                    }
+                                       importItem = false;
+                                   }
 
-                                    if (importItem)
-                                    {
-                                        itemsToImport.Add(
-                                            new InternalAttributeToProcess()
-                                            {
-                                                DisplayName = nopItem != null ? nopItem.Name : string.Empty,
-                                                IsDelete = (ei.Action == ExportQueueAction.Delete),
-                                                Code = attrib != null ? attrib.Code : ei.EntityCode,
-                                                AttributeId = attrib != null ? attrib.Id : 0,
-                                                MappingItem = attrib
-                                            });
-                                    }
-                                });
+                                   if (importItem)
+                                   {
+                                       itemsToImport.Add(
+                                           new InternalAttributeToProcess()
+                                           {
+                                               DisplayName = nopItem != null ? nopItem.Name : string.Empty,
+                                               IsDelete = (ei.Action == ExportQueueAction.Delete),
+                                               Code = attrib != null ? attrib.Code : ei.EntityCode,
+                                               AttributeId = attrib != null ? attrib.Id : 0,
+                                               MappingItem = attrib
+                                           });
+                                   }
+                               });
                 }
                 else
                 {
@@ -509,37 +571,27 @@ namespace Qixol.Plugin.Misc.Promo.Tasks
                         if (iti.MappingItem != null
                             && !string.IsNullOrEmpty(iti.MappingItem.SynchronizedCode)
                             && string.Compare(iti.MappingItem.Code, iti.MappingItem.SynchronizedCode, true) != 0)
-                        {                            
+                        {
                             // The code has changed - so add an import item to delete the old one.
-                            if (!useHierarchyImport)
-                                AddImportItem(attribValuesImportRequest, iti.MappingItem.SynchronizedCode, string.Empty, true);
-                            else
-                                AddHierarchyImportItem(hierarchyImportRequest, iti.MappingItem.SynchronizedCode, string.Empty, true);
+                            AddImportItem(attribValuesImportRequest, iti.MappingItem.SynchronizedCode, string.Empty, true);
                         }
 
-                        if (!useHierarchyImport)
-                            AddImportItem(attribValuesImportRequest, iti.Code, iti.DisplayName, iti.IsDelete);
-                        else
-                            AddHierarchyImportItem(hierarchyImportRequest, iti.Code, iti.DisplayName, iti.IsDelete);
+                        AddImportItem(attribValuesImportRequest, iti.Code, iti.DisplayName, iti.IsDelete);
 
                         attribsToUpdate.Add(iti.AttributeId);
                     });
                 }
             }
 
-            if ((!useHierarchyImport && (attribValuesImportRequest.Items == null || attribValuesImportRequest.Items.Count == 0))
-                || (useHierarchyImport && (hierarchyImportRequest.Items == null || hierarchyImportRequest.Items.Count == 0)))
+            if (attribValuesImportRequest.Items == null || attribValuesImportRequest.Items.Count == 0)
             {
                 result = new AttributeValuesImportResponse();
                 result.Summary = new ImportResponseSummary() { ProcessedSuccessfully = true };
             }
             else
             {
-                if (!useHierarchyImport)
-                    result = _qixolPromoUtilities.ImportAttributesToPromoService(attribValuesImportRequest);
-                else
-                    result = _qixolPromoUtilities.ImportHierarchyTopromoService(hierarchyImportRequest);                    
-                  
+                result = _qixolPromoUtilities.ImportAttributesToPromoService(attribValuesImportRequest);
+
                 if (result != null && result.Summary != null && result.Summary.ProcessedSuccessfully)
                     FlagAttributeAsSynchonized(attribsToUpdate);
             }
@@ -600,7 +652,7 @@ namespace Qixol.Plugin.Misc.Promo.Tasks
                         else
                         {
                             importDetails = GetCheckoutAttributeProduct(p.Key);
-                            if(importDetails != null)
+                            if (importDetails != null)
                                 attribsToUpdate.Add(p.Key);
                         }
 
@@ -666,7 +718,7 @@ namespace Qixol.Plugin.Misc.Promo.Tasks
                         //result.Summary.Messages.Add(new ImportResponseMessage() { Code = br.Reference, Message = br.GetMessages() });
                     });
 
-                    if(result.Summary.ProcessedSuccessfully)
+                    if (result.Summary.ProcessedSuccessfully)
                         FlagAttributeAsSynchonized(attribsToUpdate);
                 }
             }
@@ -731,19 +783,19 @@ namespace Qixol.Plugin.Misc.Promo.Tasks
             var returnVariantDetails = new List<InternalProductVariantItem>();
             var currentProductConfig = _productMappingService.RetrieveAllVariantsByProductId(checkoutAttrib.Id, EntityAttributeName.CheckoutAttribute, false).ToList();
 
-            if (!string.IsNullOrEmpty(mappingItem.SynchronizedCode) 
-                    && string.Compare(mappingItem.Code, mappingItem.SynchronizedCode, true) != 0 
+            if (!string.IsNullOrEmpty(mappingItem.SynchronizedCode)
+                    && string.Compare(mappingItem.Code, mappingItem.SynchronizedCode, true) != 0
                     && currentProductConfig != null
                     && currentProductConfig.Count > 0)
             {
                 // We have previously synchronized a code, and we have a new code to sync, so we need to remove the old ones first...
                 returnItems.AddRange(
                     currentProductConfig.Select(p => new ProductImportRequestItem()
-                                                          {
-                                                               ProductCode = mappingItem.SynchronizedCode,
-                                                               VariantCode = p.VariantCode,
-                                                               Deleted = true
-                                                          }).ToList());
+                    {
+                        ProductCode = mappingItem.SynchronizedCode,
+                        VariantCode = p.VariantCode,
+                        Deleted = true
+                    }).ToList());
             }
 
             if (!string.IsNullOrEmpty(mappingItem.Code))
@@ -848,146 +900,142 @@ namespace Qixol.Plugin.Misc.Promo.Tasks
 
         #region Product Handling
 
-        private ProductImportResponse ProcessProducts(List<ExportQueueItem> productsToProcess, List<ProductAttributeConfigItem> productAttributeConfigItems, List<Vendor> vendors, List<TaxCategory> taxCategories)
+        private ProductImportResponse ProcessProducts(List<ExportQueueItem> productQueueItemsToProcess)
         {
-            ProductImportResponse result = null;           
-            List<int> productIdsToProcess = new List<int>();
+            ProductImportResponse productImportResponse = null;
+            var productIdsToProcess = new List<int>();
 
-            // Build a list of the product Ids to process
-            for (int i = 0; i < 2; i++)
+            #region get queue details
+
+            // Get queue entry for "all" products if present
+            // then get individual product queue entries
+            if (productQueueItemsToProcess.Any(pqi => pqi.Action == ExportQueueAction.All))
             {
-                if (i == 0)
-                {
-                    productIdsToProcess.AddRange(
-                        productsToProcess.Where(p => p.Action != ExportQueueAction.All)
-                                         .Select(p => p.EntityKey)
-                                         .ToList());
-                }
-                else
-                {
-                    // In theory, if we have an 'All' action, the only other items in the queue should be deletes.
-                    if (productsToProcess != null && productsToProcess.Any(ei => ei.Action == ExportQueueAction.All))
-                    {
-                        var allProducts = _productService.SearchProducts(productType: ProductType.SimpleProduct, storeId: _promoSettings.StoreId);
-                        productIdsToProcess.AddRange(
-                                allProducts.Select(p => p.Id)
-                                           .ToList());
-                    }
-                }
+                var allProducts = _productService.SearchProducts(productType: ProductType.SimpleProduct, storeId: _promoSettings.StoreId);
+                productIdsToProcess.AddRange(allProducts.Select(p => p.Id).ToList());
             }
 
-            if (productIdsToProcess.Count > 0)
+            if (!productIdsToProcess.Any())
             {
-                int batch = 0;
-                var batchProductIds = productIdsToProcess.Skip(batch).Take(_promoSettings.BatchSize);
-                List<ProductImportResponse> allBatchResults = new List<ProductImportResponse>();
-                bool commsError = false;
+                productIdsToProcess.AddRange(productQueueItemsToProcess.Select(p => p.EntityKey).ToList());
+            }
 
-                while (batchProductIds.Count() > 0)
+            #endregion
+
+            if (!productIdsToProcess.Any())
+            {
+                productImportResponse.Summary = new ImportResponseSummary() { ProcessedSuccessfully = true };
+                return productImportResponse;
+            }
+
+            #region send products in batches
+
+            int batch = 0;
+            var batchProductIdsToProcess = productIdsToProcess.Skip(batch).Take(_promoSettings.BatchSize);
+            var allBatchResults = new List<ProductImportResponse>();
+            bool commsError = false;
+
+            while (batchProductIdsToProcess.Any())
+            {
+                var importRequest = BuildBaseProductImport();
+                var productsToAdd = new List<ProductImportRequestItem>();
+                var productMappings = new List<InternalProductVariantItem>();
+
+                // For all product Ids, get the import details.           
+                batchProductIdsToProcess.ToList().ForEach(productId =>
                 {
-                    var importRequest = BuildBaseProductImport();
-                    var productsToAdd = new List<ProductImportRequestItem>();
-                    var productMappings = new List<InternalProductVariantItem>();
-
-                    // For all product Ids, get the import details.           
-                    batchProductIds.ToList().ForEach(p =>
+                    var importDetails = GetImportProduct(productId);
+                    if (importDetails != null)
                     {
-                        var importDetails = GetImportProduct(p, productAttributeConfigItems, vendors, taxCategories);
-                        if (importDetails != null)
+                        productsToAdd.AddRange(importDetails.ImportProducts);
+                        productMappings.AddRange(importDetails.VariantItems);
+                    }
+                });
+
+                importRequest.Products.AddRange(productsToAdd);
+
+                // Send to Promo
+                var batchResult = _qixolPromoUtilities.ImportProductsToPromoService(importRequest);
+
+                if (batchResult != null)
+                    allBatchResults.Add(batchResult);
+
+                if (batchResult != null && batchResult.Summary != null && batchResult.Summary.ProcessedSuccessfully)
+                {
+                    // Now update the variant mappings...
+                    productMappings.ForEach(variantMapping =>
+                    {
+                        if (variantMapping.Delete)
                         {
-                            productsToAdd.AddRange(importDetails.ImportProducts);
-                            productMappings.AddRange(importDetails.VariantItems);
+                            if (variantMapping.ExistingItem != null)
+                                _productMappingService.Delete(variantMapping.ExistingItem);
+                        }
+                        else
+                        {
+                            _productMappingService.Insert(new ProductMappingItem()
+                            {
+                                AttributesXml = variantMapping.AttributesXml,
+                                EntityName = EntityAttributeName.Product,
+                                EntityId = variantMapping.ProductId,
+                                VariantCode = variantMapping.VariantCode,
+                                NoVariants = variantMapping.NoVariants
+                            });
                         }
                     });
 
-                    importRequest.Products.AddRange(productsToAdd);
-
-                    // Send to Promo
-                    var batchResult = _qixolPromoUtilities.ImportProductsToPromoService(importRequest);
-
-                    if(batchResult != null)
-                        allBatchResults.Add(batchResult);
-
-                    if (batchResult != null && batchResult.Summary != null && batchResult.Summary.ProcessedSuccessfully)
-                    {
-                        // Now update the variant mappings...
-                        productMappings.ForEach(v =>
-                        {
-                            if (v.Delete)
-                            {
-                                if (v.ExistingItem != null)
-                                    _productMappingService.Delete(v.ExistingItem);
-                            }
-                            else
-                            {
-                                _productMappingService.Insert(new ProductMappingItem()
-                                {
-                                    AttributesXml = v.AttributesXml,
-                                    EntityName = EntityAttributeName.Product,
-                                    EntityId = v.ProductId,
-                                    VariantCode = v.VariantCode,
-                                    NoVariants = v.NoVariants
-                                });
-                            }
-                        });
-
-                        batch += _promoSettings.BatchSize;
-                        batchProductIds = productIdsToProcess.Skip(batch).Take(_promoSettings.BatchSize);
-                    }
-                    else
-                    {
-                        // This should not happen!!
-                        commsError = true;
-                        break;
-                    }
+                    batch += _promoSettings.BatchSize;
+                    batchProductIdsToProcess = productIdsToProcess.Skip(batch).Take(_promoSettings.BatchSize);
                 }
-
-                if (!commsError)
+                else
                 {
-                    result = new ProductImportResponse();
-                    result.Summary = new ImportResponseSummary() { ProcessedSuccessfully = allBatchResults.Where(br => br.Summary != null && !br.Summary.ProcessedSuccessfully).Count() == 0 };
-                    result.Summary.Messages = new List<ImportResponseMessage>();
+                    // This should not happen!!
+                    commsError = true;
+                    break;
+                }
+            }
 
-                    allBatchResults.ForEach(br =>
-                    {
+            if (!commsError)
+            {
+                productImportResponse = new ProductImportResponse();
+                productImportResponse.Summary = new ImportResponseSummary() { ProcessedSuccessfully = allBatchResults.Where(br => br.Summary != null && !br.Summary.ProcessedSuccessfully).Count() == 0 };
+                productImportResponse.Summary.Messages = new List<ImportResponseMessage>();
+
+                allBatchResults.ForEach(br =>
+                {
                         //result.Summary.Messages.Add(new ImportResponseMessage() { Code = br.Reference, Message = br.GetMessages() });
                     });
-                }
-            }
-            else
-            {
-                result = new ProductImportResponse();
-                result.Summary = new ImportResponseSummary() { ProcessedSuccessfully = true };
             }
 
-            return result;    
+            #endregion
+
+            return productImportResponse;
         }
 
-        private InternalProductImportDetails GetImportProduct(int productId, List<ProductAttributeConfigItem> productAttributeConfigItems, List<Vendor> vendors, List<TaxCategory> taxCategories)
+        private InternalProductImportDetails GetImportProduct(int productId)
         {
             var productDetails = _productService.GetProductById(productId);
             if (productDetails.ProductType == ProductType.GroupedProduct)
                 return null;
-            
+
             var returnItems = new List<ProductImportRequestItem>();
             var returnVariantDetails = new List<InternalProductVariantItem>();
             var currentProductConfig = _productMappingService.RetrieveAllVariantsByProductId(productId, EntityAttributeName.Product, false).ToList();
 
             // Get the base product details to be imported.
-            var baseImportProduct = productDetails.ToQixolPromosImport(productAttributeConfigItems, vendors, taxCategories);
+            var baseImportProduct = productDetails.ToQixolPromosImport();
 
             if (productDetails.ParentGroupedProductId > 0)
             {
                 // This item is a grouped item, so we will need to combine some details from the Group Parent item.
                 var groupParentProduct = _productService.GetProductById(productDetails.ParentGroupedProductId);
-                var groupedImportProduct = groupParentProduct.ToQixolPromosImport(productAttributeConfigItems, vendors, taxCategories);
+                var groupedImportProduct = groupParentProduct.ToQixolPromosImport();
                 if (groupedImportProduct.Attributes != null && groupedImportProduct.Attributes.Count > 0)
-                {                    
+                {
                     baseImportProduct.Attributes.AddRange(
                                 groupedImportProduct.Attributes
-                                                    .Where(ga => 
+                                                    .Where(ga =>
                                                             !baseImportProduct.Attributes
-                                                                              .Any(ba => string.Compare(ga.Name, ba.Name, true) == 0 
+                                                                              .Any(ba => string.Compare(ga.Name, ba.Name, true) == 0
                                                                                             && string.Compare(ga.Value, ba.Value, true) == 0))
                                                     .ToList());
 
@@ -998,10 +1046,10 @@ namespace Qixol.Plugin.Misc.Promo.Tasks
             if (productDetails.ProductAttributeMappings != null)
                 attributeMappingsWithValues = productDetails.ProductAttributeMappings.Where(pam => pam.ProductAttributeValues != null && pam.ProductAttributeValues.Count > 0).Count();
 
-            if (attributeMappingsWithValues == 0
-                || ((_promoSettings.MaximumAttributesForVariants > 0)
-                    && (attributeMappingsWithValues > _promoSettings.MaximumAttributesForVariants)
-                    && (productDetails.ProductAttributeCombinations == null || productDetails.ProductAttributeCombinations.Count == 0)))
+            if (attributeMappingsWithValues == 0 ||
+                    ((_promoSettings.MaximumAttributesForVariants > 0) &&
+                    (attributeMappingsWithValues > _promoSettings.MaximumAttributesForVariants) &&
+                    (productDetails.ProductAttributeCombinations == null || productDetails.ProductAttributeCombinations.Count == 0)))
             {
                 // This product does not have any variants.
                 if (currentProductConfig != null && currentProductConfig.Count > 0 && currentProductConfig.Any(cpc => cpc.NoVariants == false))
@@ -1012,21 +1060,21 @@ namespace Qixol.Plugin.Misc.Promo.Tasks
                                         .ForEach(cpc =>
                         {
                             returnItems.Add(new ProductImportRequestItem()
-                                {
+                            {
 
-                                    ProductCode = productDetails.Id.ToString(),
-                                    VariantCode = cpc.VariantCode,
-                                    Deleted= true                                    
-                                });
+                                ProductCode = productDetails.Id.ToString(),
+                                VariantCode = cpc.VariantCode,
+                                Deleted = true
+                            });
 
                             returnVariantDetails.Add(new InternalProductVariantItem()
-                                {
-                                    ProductId = cpc.EntityId,
-                                    AttributesXml = cpc.AttributesXml,
-                                    VariantCode = cpc.VariantCode,
-                                    Delete = true,
-                                    ExistingItem = cpc
-                                });
+                            {
+                                ProductId = cpc.EntityId,
+                                AttributesXml = cpc.AttributesXml,
+                                VariantCode = cpc.VariantCode,
+                                Delete = true,
+                                ExistingItem = cpc
+                            });
                         });
                 }
 
@@ -1037,20 +1085,20 @@ namespace Qixol.Plugin.Misc.Promo.Tasks
                 {
                     if (existingConfigItem != null)
                         returnVariantDetails.Add(new InternalProductVariantItem()
-                            {
-                                ProductId = existingConfigItem.EntityId,
-                                ExistingItem = existingConfigItem,
-                                Delete = true
-                            });
+                        {
+                            ProductId = existingConfigItem.EntityId,
+                            ExistingItem = existingConfigItem,
+                            Delete = true
+                        });
                 }
                 else
                 {
                     if (existingConfigItem == null)
                         returnVariantDetails.Add(new InternalProductVariantItem()
-                            {
-                                ProductId = productDetails.Id,
-                                NoVariants = true
-                            });
+                        {
+                            ProductId = productDetails.Id,
+                            NoVariants = true
+                        });
                 }
             }
             else
@@ -1059,14 +1107,13 @@ namespace Qixol.Plugin.Misc.Promo.Tasks
                 var allCombinations = new List<InternalProductVariantItem>();
                 if (productDetails.ProductAttributeCombinations == null || productDetails.ProductAttributeCombinations.Count == 0)
                 {
-                    // the product has no defined attribute combinations, which means we need to generate a list of the possible combinations that we can use...
                     var generatedCombinations = _productAttributeParser.GenerateAllCombinations(productDetails);
                     allCombinations = generatedCombinations.Select(gc => new InternalProductVariantItem()
-                        {
-                            ProductId = productDetails.Id,
-                            AttributesXml = gc,
-                            Generated = true
-                        }).ToList();
+                    {
+                        ProductId = productDetails.Id,
+                        AttributesXml = gc,
+                        Generated = true
+                    }).ToList();
                 }
                 else
                 {
@@ -1089,27 +1136,27 @@ namespace Qixol.Plugin.Misc.Promo.Tasks
                         {
                             // This combination used to exist, but no longer does!  so create a delete for this particular variant.
                             returnItems.Add(new ProductImportRequestItem()
-                                {
-                                    ProductCode = productDetails.Id.ToString(),
-                                    VariantCode = cpc.VariantCode,                                  
-                                    Deleted = true
-                                });
+                            {
+                                ProductCode = productDetails.Id.ToString(),
+                                VariantCode = cpc.VariantCode,
+                                Deleted = true
+                            });
 
                             // Add an entry indicating we need to delete this item.
                             returnVariantDetails.Add(new InternalProductVariantItem()
-                                                            {
-                                                                AttributesXml = cpc.AttributesXml,
-                                                                VariantCode = cpc.VariantCode,
-                                                                ProductId = cpc.EntityId,
-                                                                Delete = true,
-                                                                ExistingItem = cpc
-                                                            });
+                            {
+                                AttributesXml = cpc.AttributesXml,
+                                VariantCode = cpc.VariantCode,
+                                ProductId = cpc.EntityId,
+                                Delete = true,
+                                ExistingItem = cpc
+                            });
                         }
                     });
 
                 // Now look for which variants to send...
                 allCombinations.ForEach(c =>
-                    {                       
+                    {
                         var existingItemCheck = currentProductConfig.Where(cpc => cpc.EntityId == c.ProductId && string.Compare(cpc.AttributesXml, c.AttributesXml, true) == 0).FirstOrDefault();
                         var productAttribValues = _productAttributeParser.ParseProductAttributeValues(c.AttributesXml);
 
@@ -1125,10 +1172,10 @@ namespace Qixol.Plugin.Misc.Promo.Tasks
 
                                                        variantCode = string.Concat(variantCode,
                                                                                    string.Format(_promoSettings.VariantAttributeFormat, attributeName, attributeValue),
-                                                                                   _promoSettings.VariantAttributesSeperator);
+                                                                                   _promoSettings.VariantAttributesSeparator);
                                                    });
-                            if (variantCode.EndsWith(_promoSettings.VariantAttributesSeperator))
-                                variantCode = variantCode.Substring(0, variantCode.Length - _promoSettings.VariantAttributesSeperator.Length);
+                            if (variantCode.EndsWith(_promoSettings.VariantAttributesSeparator))
+                                variantCode = variantCode.Substring(0, variantCode.Length - _promoSettings.VariantAttributesSeparator.Length);
 
                             c.VariantCode = variantCode;
 

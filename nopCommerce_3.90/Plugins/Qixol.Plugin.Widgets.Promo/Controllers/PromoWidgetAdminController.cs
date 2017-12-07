@@ -196,7 +196,7 @@ namespace Qixol.Plugin.Widgets.Promo.Controllers
                         NivoTransition.Type nivoTransition = NivoTransition.FindByTransitionType(i.TransitionType);
                         if (nivoTransition == null)
                         {
-                            i.TransitionTypeName = "UNKNOWN"; // TODO: resource string / throw exception...? - should never happen
+                            i.TransitionTypeName = "UNKNOWN";
                         }
                         else
                         {

@@ -53,7 +53,6 @@ namespace Qixol.Nop.Promo.Services.Promo
         private readonly IStoreService _storeService;
         private readonly IShippingService _shippingService;
         private readonly IGenericAttributeService _genericAttributeService;
-        private readonly IStoreContext _storeContext;
         private readonly IProductMappingService _productMappingService;
         private readonly IPromoUtilities _promoUtilities;
         private readonly PromoSettings _promoSettings;
@@ -86,7 +85,6 @@ namespace Qixol.Nop.Promo.Services.Promo
             PromoSettings promoSettings,
             IShippingService shippingService,
             IGenericAttributeService genericAttributeService,
-            IStoreContext storeContext,
             IProductMappingService productMappingService,
             IShoppingCartService shoppingCartService,
             IAttributeValueService attributeValueService,
@@ -111,7 +109,6 @@ namespace Qixol.Nop.Promo.Services.Promo
             this._storeService = storeService;
             this._shippingService = shippingService;
             this._genericAttributeService = genericAttributeService;
-            this._storeContext = storeContext;
             this._productMappingService = productMappingService;
             this._shoppingCartService = shoppingCartService;
             this._attributeValueService = attributeValueService;
@@ -133,182 +130,193 @@ namespace Qixol.Nop.Promo.Services.Promo
             return currency;
         }
 
+        private void ProcessGeneratedBasketLines(List<BasketResponseItem> generatedLines, IList<ShoppingCartItem> cart, Customer customer, int storeId)
+        {
+            ProcessSplitLines(generatedLines.Where(i => i.Generated && !i.IsDelivery && i.SplitFromLineId > 0).ToList(), cart, customer, storeId);
+            ProcessAddedItems(generatedLines.Where(i => i.Generated && !i.IsDelivery && i.SplitFromLineId == 0).ToList(), cart, customer, storeId);
+        }
+
+        private void ProcessSplitLines(List<BasketResponseItem> splitBasketLines, IList<ShoppingCartItem> cart, Customer customer, int storeId)
+        {
+            if (splitBasketLines == null || !splitBasketLines.Any())
+                return;
+
+            splitBasketLines.ForEach(splitBasketLine =>
+            {
+                ShoppingCartItem sci = (from c in cart where c.Id == splitBasketLine.SplitFromLineId select c).FirstOrDefault();
+                if (sci == null)
+                    throw new NullReferenceException(string.Format("SplitFromLineId {0} does not exist in the cart", splitBasketLine.SplitFromLineId));
+            });
+        }
+
+        private void ProcessAddedItems(List<BasketResponseItem> addedBasketLines, IList<ShoppingCartItem> cart, Customer customer, int storeId)
+        {
+            if (addedBasketLines == null || !addedBasketLines.Any())
+                return;
+
+            addedBasketLines.ForEach(addedBasketLine =>
+             {
+                 int productId = 0;
+                 if (!int.TryParse(addedBasketLine.ProductCode, out productId))
+                 {
+                     // Do we have a checkout attribute?
+                     var checkoutAttributes = _attributeValueService.RetrieveAllForAttribute(EntityAttributeName.CheckoutAttribute);
+                     var checkoutAttribute = (from ca in checkoutAttributes where ca.Code.Equals((addedBasketLine.ProductCode ?? string.Empty), StringComparison.InvariantCultureIgnoreCase) select ca).FirstOrDefault();
+                     if (checkoutAttribute == null)
+                         throw new KeyNotFoundException(string.Format("No mapping item for product code {0}", addedBasketLine.ProductCode));
+                     // is the checkout attribute already "in" the cart
+                     // if it's a single select (not checkbox?) then how do we "remove" the current one and replace it?
+                     // what about when the price adjustment value has been changed by the promo engine...?
+                 }
+                 else
+                 {
+                     Product product = _productService.GetProductById(productId);
+
+                     string attributesXml = string.Empty;
+
+                     ProductMappingItem productMappingItem = _productMappingService.RetrieveFromVariantCode(productId, addedBasketLine.VariantCode);
+                     if (productMappingItem != null && !productMappingItem.NoVariants)
+                     {
+                         attributesXml = productMappingItem.AttributesXml;
+                     }
+
+                     // Add the new item - any additional items were deleted before sending the basket to the promo engine
+
+                     var cartType = ShoppingCartType.ShoppingCart;
+
+                     decimal customerEnteredPriceConverted = decimal.Zero;
+                     DateTime? rentalStartDate = null;
+                     DateTime? rentalEndDate = null;
+
+                     int quantity = int.Parse(addedBasketLine.Quantity.ToString());
+
+                     var existingCartItem = _shoppingCartService.FindShoppingCartItemInTheCart(cart, ShoppingCartType.ShoppingCart, product, attributesXml);
+                     if (existingCartItem != null)
+                     {
+                         _shoppingCartService.UpdateShoppingCartItem(customer, existingCartItem.Id, attributesXml, existingCartItem.CustomerEnteredPrice, existingCartItem.RentalStartDateUtc, existingCartItem.RentalEndDateUtc, existingCartItem.Quantity + quantity, false);
+                     }
+                     else
+                     {
+                         List<string> itemAddToCartWarnings = new List<string>();
+                         //add to the cart
+                         itemAddToCartWarnings.AddRange(_shoppingCartService.AddToCart(customer,
+                          product, cartType, storeId,
+                          attributesXml, customerEnteredPriceConverted,
+                          rentalStartDate, rentalEndDate, quantity, true));
+
+                         if (itemAddToCartWarnings.Count > 0)
+                         {
+                             string cartWarningTemplate = _localizationService.GetResource("Plugin.Misc.QixolPromo.ShoppingCart.AddItemWarning");
+                             string cartWarningMessage = string.Format(cartWarningTemplate, product.Name);
+                             //addToCartWarnings.Add(cartWarningMessage);
+                             _logger.InsertLog(global::Nop.Core.Domain.Logging.LogLevel.Error, cartWarningMessage, string.Join(", ", itemAddToCartWarnings.ToArray()), customer);
+                         }
+                     }
+                 }
+             });
+        }
+
         #endregion
 
         #region Methods
 
         #region basket promos methods
 
-        public List<string> ProcessShoppingCart(Customer customer)
+        public BasketResponse ProcessShoppingCart(Customer customer, int storeId)
         {
-            return ProcessShoppingCart(customer, false, null);
+            return ProcessShoppingCart(customer, storeId, false, null);
         }
 
-        public List<string> ProcessShoppingCart(Customer customer, ShippingOption shippingOption = null)
+        public BasketResponse ProcessShoppingCart(Customer customer, int storeId, ShippingOption shippingOption)
         {
-            return ProcessShoppingCart(customer, false, shippingOption);
+            return ProcessShoppingCart(customer, storeId, false, shippingOption);
         }
 
-        public List<string> ProcessShoppingCart(Customer customer, bool getMissedPromotions = false)
+        public BasketResponse ProcessShoppingCart(Customer customer, int storeId, bool getMissedPromotions)
         {
-            return ProcessShoppingCart(customer, getMissedPromotions, null);
+            return ProcessShoppingCart(customer, storeId, getMissedPromotions, null);
         }
 
-        public List<string> ProcessShoppingCart(Customer customer, bool getMissedPromotions = false, ShippingOption shippingOption = null)
+        public BasketResponse ProcessShoppingCart(Customer customer, int storeId, bool getMissedPromotions, ShippingOption shippingOption)
         {
-            var addToCartWarnings = new List<string>();
-
             IList<ShoppingCartItem> cart = customer.ShoppingCartItems
                 .Where(sci => sci.ShoppingCartType == ShoppingCartType.ShoppingCart)
-                .LimitPerStore(_storeContext.CurrentStore.Id)
+                .LimitPerStore(storeId)
                 .ToList();
 
             // If there are no items in the cart, do not process
-            if (cart.Count < 1)
-                return addToCartWarnings;
+            if (!cart.Any())
+                return null;
 
             try
             {
                 var couponCodes = customer.ParseAppliedDiscountCouponCodes();
                 BasketRequest basketRequest = cart.ToQixolPromoBasketRequest(shippingOption, couponCodes);
 
-                if (basketRequest != null)
+                if (basketRequest == null)
+                    return null;
+
+                basketRequest.GetMissedPromotions = getMissedPromotions;
+
+                if (shippingOption != null)
                 {
-                    basketRequest.GetMissedPromotions = getMissedPromotions;
+                    basketRequest = basketRequest.SetShipping(cart, shippingOption);
+                }
 
-                    if (shippingOption != null)
+                BasketResponse basketResponse = SendBasketRequestTopromoService(customer, storeId, basketRequest);
+                if (basketResponse != null && basketResponse.IsValid())
+                {
+                    // get the selectedShippingOption - if it's not null will need to save this after adding products to the cart
+                    ShippingOption selectedShippingOption = customer.GetAttribute<ShippingOption>(SystemCustomerAttributeNames.SelectedShippingOption, storeId);
+                    string selectedPaymentOption = customer.GetAttribute<string>(SystemCustomerAttributeNames.SelectedPaymentMethod, storeId);
+
+                    ProcessGeneratedBasketLines(basketResponse.Items.Where(i => i.Generated && !i.IsDelivery).ToList(), cart, customer, storeId);
+
+                    if (selectedShippingOption != null)
+                        _genericAttributeService.SaveAttribute<ShippingOption>(customer, SystemCustomerAttributeNames.SelectedShippingOption, selectedShippingOption, storeId);
+
+                    if (!string.IsNullOrEmpty(selectedPaymentOption))
+                        _genericAttributeService.SaveAttribute<string>(customer, SystemCustomerAttributeNames.SelectedPaymentMethod, selectedPaymentOption, storeId);
+
+                    if (couponCodes != null)
                     {
-                        basketRequest = basketRequest.SetShipping(cart, shippingOption);
-                    }
+                        // clear all current codes
+                        _genericAttributeService.SaveAttribute<string>(customer, SystemCustomerAttributeNames.DiscountCouponCode, null);
 
-                    BasketResponse basketResponse = SendBasketRequestTopromoService(customer, basketRequest);
-                    if ((basketResponse != null) &&
-                        (basketResponse.Summary != null) &&
-                        (basketResponse.Summary.ProcessingResult))
-                    {
-                        // get the selectedShippingOption - if it's not null will need to save this after adding products to the cart
-                        ShippingOption selectedShippingOption = customer.GetAttribute<ShippingOption>(SystemCustomerAttributeNames.SelectedShippingOption, _storeContext.CurrentStore.Id);
-                        string selectedPaymentOption = customer.GetAttribute<string>(SystemCustomerAttributeNames.SelectedPaymentMethod, _storeContext.CurrentStore.Id);
-
-                        #region generated basket items
-
-                        IList<BasketResponseItem> newBasketItems = (from i in basketResponse.Items where i.Generated && !i.IsDelivery select i).ToList();
-
-                        foreach (BasketResponseItem newBasketItem in newBasketItems)
+                        // add utilized codes or warn where codes have errors
+                        basketResponse.Coupons.Where(c => !c.Issued).ToList().ForEach(c =>
                         {
-                            int productId = 0;
-                            if (!int.TryParse(newBasketItem.ProductCode, out productId))
+
+                            if (c.Utilizations.Any())
                             {
-                                // Do we have a checkout attribute?
-                                var checkoutAttributes = _attributeValueService.RetrieveAllForAttribute(EntityAttributeName.CheckoutAttribute);
-                                var checkoutAttribute = (from ca in checkoutAttributes where ca.Code.Equals((newBasketItem.ProductCode ?? string.Empty), StringComparison.InvariantCultureIgnoreCase) select ca).FirstOrDefault();
-                                if (checkoutAttribute == null)
-                                    throw new KeyNotFoundException(string.Format("No mapping item for product code {0}", newBasketItem.ProductCode));
-
-                                // is the checkout attribute already "in" the cart
-                                // if it's a single select (not checkbox?) then how do we "remove" the current one and replace it?
-                                // what about when the price adjustment value has been changed by the promo engine...?
-                                // 
+                                customer.ApplyDiscountCouponCode(c.CouponCode);
                             }
-
                             else
                             {
-                                if (newBasketItem.SplitFromLineId != 0)
-                                {
-                                    // The item has not been added - we need to roll it back into the original line with the discount - happens in GetSubTotal in the PriceCalculationService
-                                    ShoppingCartItem sci = (from c in cart where c.Id == newBasketItem.SplitFromLineId select c).FirstOrDefault();
-                                    if (sci == null)
-                                        throw new NullReferenceException(string.Format("SplitFromLineId {0} does not exist in the cart", newBasketItem.SplitFromLineId));
-                                }
-                                else
-                                {
-                                    Product product = _productService.GetProductById(productId);
-
-                                    string attributesXml = string.Empty;
-
-                                    ProductMappingItem productMappingItem = _productMappingService.RetrieveFromVariantCode(productId, newBasketItem.VariantCode);
-                                    if (productMappingItem != null && !productMappingItem.NoVariants)
-                                    {
-                                        attributesXml = productMappingItem.AttributesXml;
-                                    }
-
-                                    // Add the new item - any additional items were deleted before sending the basket to the promo engine
-
-                                    var cartType = ShoppingCartType.ShoppingCart;
-
-                                    // TODO: Customer entered price...?
-                                    decimal customerEnteredPriceConverted = decimal.Zero;
-                                    // TODO: rental start/end dates
-                                    DateTime? rentalStartDate = null;
-                                    DateTime? rentalEndDate = null;
-
-                                    int quantity = int.Parse(newBasketItem.Quantity.ToString());
-
-                                    List<string> itemAddToCartWarnings = new List<string>();
-                                    //add to the cart
-                                    itemAddToCartWarnings.AddRange(_shoppingCartService.AddToCart(customer,
-                                        product, cartType, _storeContext.CurrentStore.Id,
-                                        attributesXml, customerEnteredPriceConverted,
-                                        rentalStartDate, rentalEndDate, quantity, true));
-
-                                    if (itemAddToCartWarnings.Count > 0)
-                                    {
-                                        string cartWarningTemplate = _localizationService.GetResource("Plugin.Misc.QixolPromo.ShoppingCart.AddItemWarning");
-                                        string cartWarningMessage = string.Format(cartWarningTemplate, product.Name);
-                                        addToCartWarnings.Add(cartWarningMessage);
-                                        _logger.InsertLog(global::Nop.Core.Domain.Logging.LogLevel.Error, cartWarningMessage, string.Join(", ", itemAddToCartWarnings.ToArray()), customer);
-                                    }
-                                }
+                                //addToCartWarnings.Add(_localizationService.GetResource("ShoppingCart.DiscountCouponCode.WrongDiscount"));
                             }
-                        }
-
-                        #endregion
-
-                        if (selectedShippingOption != null)
-                            _genericAttributeService.SaveAttribute<ShippingOption>(customer, SystemCustomerAttributeNames.SelectedShippingOption, selectedShippingOption, _storeContext.CurrentStore.Id);
-
-                        if (!string.IsNullOrEmpty(selectedPaymentOption))
-                            _genericAttributeService.SaveAttribute<string>(customer, SystemCustomerAttributeNames.SelectedPaymentMethod, selectedPaymentOption, _storeContext.CurrentStore.Id);
-
-                        if (couponCodes != null)
-                        {
-                            // clear all current codes
-                            _genericAttributeService.SaveAttribute<string>(customer, SystemCustomerAttributeNames.DiscountCouponCode, null);
-
-                            // add utilized codes or warn where codes have errors
-                            basketResponse.Coupons.Where(c => !c.Issued).ToList().ForEach(c =>
-                            {
-
-                                if (c.Utilized)
-                                {
-                                    customer.ApplyDiscountCouponCode(c.CouponCode);
-                                }
-                                else
-                                {
-                                    addToCartWarnings.Add(_localizationService.GetResource("ShoppingCart.DiscountCouponCode.WrongDiscount"));
-                                }
-                            });
-                        }
-                    }
-                    else
-                    {
-#if DEBUG
-                        addToCartWarnings.Add("Unable to retrieve promotions");
-#endif
+                        });
                     }
                 }
+                else
+                {
+                    // remove any coupon codes from the customer as this causes an exception in the base code when no basket response exists
+                    couponCodes.ToList().ForEach(cc =>
+                    {
+                        customer.RemoveDiscountCouponCode(cc);
+                    });
+                }
+                return basketResponse;
             }
             catch (Exception ex)
             {
                 _logger.Error("ProcessShoppingCart", ex, customer);
-                // TODO: show the customer an error message?
-                // addToCartWarnings.Add(ex.Message);
             }
 
-            return addToCartWarnings;
+            return null;
         }
 
-        public void SendConfirmedBasket(global::Nop.Core.Domain.Orders.Order placedOrder)
+        public BasketResponse SendConfirmedBasket(global::Nop.Core.Domain.Orders.Order placedOrder)
         {
             BasketRequest basketRequest = BasketRequest.FromXml(placedOrder.Customer.GetAttribute<string>(PromoCustomerAttributeNames.PromoBasketRequest, placedOrder.StoreId));
             basketRequest.Confirmed = true;
@@ -369,13 +377,10 @@ namespace Qixol.Nop.Promo.Services.Promo
 
             #endregion
 
-            BasketResponse basketResponse = SendBasketRequestTopromoService(placedOrder.Customer, basketRequest);
-
-            if (basketResponse == null)
-                throw new NopException("sending confirmed basket failed");
+            return SendBasketRequestTopromoService(placedOrder.Customer, placedOrder.StoreId, basketRequest);
         }
 
-        private BasketResponse SendBasketRequestTopromoService(Customer customer, BasketRequest basketRequest)
+        private BasketResponse SendBasketRequestTopromoService(Customer customer, int storeId, BasketRequest basketRequest)
         {
             try
             {
@@ -387,7 +392,7 @@ namespace Qixol.Nop.Promo.Services.Promo
                     _logger.InsertLog(global::Nop.Core.Domain.Logging.LogLevel.Information, "Qixol Promos basket request", serializedBasketRequestData, customer);
                 }
 
-                _genericAttributeService.SaveAttribute<string>(customer, PromoCustomerAttributeNames.PromoBasketResponse, null, _storeContext.CurrentStore.Id);
+                _genericAttributeService.SaveAttribute<string>(customer, PromoCustomerAttributeNames.PromoBasketResponse, null, storeId);
 
                 BasketResponse basketResponse = basketServiceManager.SubmitBasket(basketRequest);
 
@@ -402,13 +407,15 @@ namespace Qixol.Nop.Promo.Services.Promo
                         ConvertResponseFromCurrency(basketResponse, basketRequest.CurrencyCode);
                 }
 
-                var serializedBasketResponseData = basketResponse.ToXml();
                 if (_promoSettings.LogMessages)
                 {
+                    var serializedBasketResponseData = basketResponse.ToXml();
                     _logger.InsertLog(global::Nop.Core.Domain.Logging.LogLevel.Information, "Qixol Promos basket response", serializedBasketResponseData, customer);
                 }
 
-                _genericAttributeService.SaveAttribute<string>(customer, PromoCustomerAttributeNames.PromoBasketResponse, serializedBasketResponseData, _storeContext.CurrentStore.Id);
+                _genericAttributeService.SaveAttribute<BasketResponse>(customer, PromoCustomerAttributeNames.PromoBasketResponse, basketResponse, storeId);
+
+                return basketResponse;
             }
             catch (Exception ex)
             {
@@ -416,8 +423,7 @@ namespace Qixol.Nop.Promo.Services.Promo
                 _logger.InsertLog(global::Nop.Core.Domain.Logging.LogLevel.Information, "SendBasketRequestToPromoService", basketRequest.ToXml(), customer);
             }
 
-            return _promoUtilities.GetBasketResponse(customer);
-
+            return null;
         }
 
         private void ConvertResponseFromCurrency(BasketResponse response, string requestCurrencyCode)

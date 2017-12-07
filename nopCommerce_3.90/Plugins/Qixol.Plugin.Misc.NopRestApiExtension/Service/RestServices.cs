@@ -6,7 +6,7 @@ using XcellenceIt.Plugin.Misc.NopRestApi.DataClass;
 
 namespace Qixol.Plugin.Misc.RestApi.Service
 {
-    public class RestServices : XcellenceIt.Plugin.Misc.NopRestApi.Service.RestServices, XcellenceIt.Plugin.Misc.NopRestApi.Service.IRestServices
+    public partial class RestServices : XcellenceIt.Plugin.Misc.NopRestApi.Service.RestServices, XcellenceIt.Plugin.Misc.NopRestApi.Service.IRestServices
     {
         public new ShoppingCartModelResponse Cart(string apiSecretKey, int storeId, int currencyId, int customerId, int languageId)
         {
@@ -16,13 +16,11 @@ namespace Qixol.Plugin.Misc.RestApi.Service
 
             var customer = customerService.GetCustomerById(customerId);
 
-            // TODO: we really should have the guest customer by this point
-            // If we create the guest they'll get an empty cart anyway
             if (customer == null)
                 customer = customerService.InsertGuestCustomer();
 
             if (customer != null)
-                promoService.ProcessShoppingCart(customer);
+                promoService.ProcessShoppingCart(customer, storeId);
 
             return base.Cart(apiSecretKey, storeId, currencyId, customerId, languageId);
         }
@@ -38,7 +36,7 @@ namespace Qixol.Plugin.Misc.RestApi.Service
 
             var customer = customerService.GetCustomerById(customerId);
             if (customer != null)
-                promoService.ProcessShoppingCart(customer);
+                promoService.ProcessShoppingCart(customer, storeId);
 
             return checkoutPaymentMethodResponse;
         }
@@ -62,7 +60,7 @@ namespace Qixol.Plugin.Misc.RestApi.Service
             {
                 workContext.CurrentCustomer = customer;
                 customer.ApplyDiscountCouponCode(discountCouponCode);
-                promoService.ProcessShoppingCart(customer);
+                promoService.ProcessShoppingCart(customer, storeId);
             }
 
             return base.ApplyDiscount(apiSecretKey, storeId, customerId, discountCouponCode);
@@ -80,7 +78,7 @@ namespace Qixol.Plugin.Misc.RestApi.Service
             {
                 workContext.CurrentCustomer = customer;
                 customer.RemoveDiscountCouponCode(discountCouponCode);
-                promoService.ProcessShoppingCart(customer);
+                promoService.ProcessShoppingCart(customer, storeId);
             }
 
             return base.RemoveDiscount(apiSecretKey, storeId, customerId, discountCouponCode);

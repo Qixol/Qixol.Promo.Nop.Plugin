@@ -13,6 +13,7 @@
                 this.OrderTotal.init(model.OrderTotal);
                 this.IssuedPoints.init(model.IssuedPoints);
                 this.BasketTotalDiscount.init(model.BasketTotalDiscount);
+                this.SeoListForFailedFreeGifts.init(model.SeoListForFailedFreeGifts);
             }
         }
         catch (e) {
@@ -30,6 +31,7 @@
         this.OrderTotal.render();
         this.IssuedPoints.render();
         this.BasketTotalDiscount.render();
+        this.SeoListForFailedFreeGifts.render();
     },
 
     LinePromotions: {
@@ -46,17 +48,19 @@
                     var linePromotions = this.data;
                     for (var i in linePromotions) {
                         var cartItemCell = null;
-                        if (linePromotions[i].AttributeInfo.length) {
-                            var attributeInfoList = linePromotions[i].AttributeInfo.split(/<br[^>]*>/g);
-                            var containsSelector = 'div.attributes:contains("';
-                            containsSelector += attributeInfoList.join('"):contains("');
-                            containsSelector += '")';
+                        var cartItemCellList = $('.cart tbody tr td.product a.product-name[href="/' + linePromotions[i].ProductSeName + '"]').closest('td');
+                        if (cartItemCellList != null) {
+                            if (cartItemCellList.length === 1) {
+                                cartItemCell = cartItemCellList;
+                            } else {
+                                var attributeInfoList = linePromotions[i].AttributeInfo.split(/<br[^>]*>/g);
+                                var containsSelector = 'div.attributes:contains("';
+                                containsSelector += attributeInfoList.join('"):contains("');
+                                containsSelector += '")';
 
-                            cartItemCell = $('.cart tbody tr td.product ' + containsSelector).closest('td');
-                        } else {
-                            cartItemCell = $('.cart tbody tr td.product a.product-name[href="/' + linePromotions[i].ProductSeName + '"]').closest('td');
-                        }
-                        if (cartItemCell != null) {
+                                cartItemCell = cartItemCellList.children(containsSelector).closest('td');
+                            }
+
                             cartItemRow = cartItemCell.closest("tr");
                             $(cartItemRow).children('td.subtotal').children('.product-subtotal').html(linePromotions[i].LineAmount);
                             $(cartItemRow).children('td.subtotal').children('.discount').html('');
@@ -203,9 +207,9 @@
 
         render: function () {
             if (this.data) {
-                $('.order-subtotal-discount').html('');
+                $('.order-subtotal-discount:not([data-promotion-id])').html('');
                 var basketLevelDiscountsIncShipping = this.data;
-                $('.tax-value').before('<tr class="order-subtotal-discounts-inc-placeholder"></tr>'); // TODO: tax-value not shown => before order-total
+                $('.tax-value').before('<tr class="order-subtotal-discounts-inc-placeholder"></tr>');
                 for (var i in basketLevelDiscountsIncShipping) {
                     var promotionId = basketLevelDiscountsIncShipping[i].PromotionId;
                     var html = $('script[id="sub-total-template"]').html().replace('#=promotionId#', promotionId);
@@ -275,6 +279,26 @@
                 var basketTotalDiscount = this.data;
                 var basketTotalDiscountHtml = $('script[id="basket-total-discount"]').html().replace('#=BasketTotalDiscount#', basketTotalDiscount);
                 $('.order-total').after(basketTotalDiscountHtml);
+            }
+        }
+    },
+
+    SeoListForFailedFreeGifts: {
+
+        data: null,
+
+        init: function (data) {
+            this.data = data;
+        },
+
+        render: function () {
+            if (this.data && this.data.length) {
+                alert('a free gift was added to your cart which needs some additional information from you.');
+                if (this.data.length === 1) {
+                    window.location = this.data;
+                } else {
+                    window.location = this.data[0];
+                }
             }
         }
     }

@@ -17,12 +17,6 @@ namespace Qixol.Nop.Promo.Services.Promo
 
         ProductImportResponse ImportProductsToPromoService(ProductImportRequest qixolPromosImport);
 
-        HierarchyValuesImportResponse ImportHierarchyTopromoService(HierarchyValuesImportRequest hierarchyImport);
-
-        BasketResponse GetBasketResponse(int customerId);
-
-        BasketResponse GetBasketResponse(Customer customer);
-
         PromotionDetailsByProductResponse ExportPromotionsForProducts(PromotionDetailsByProductRequest request);
 
         PromotionDetailsResponse ExportPromotionsForBasketAndDelivery(PromotionDetailsRequest request);

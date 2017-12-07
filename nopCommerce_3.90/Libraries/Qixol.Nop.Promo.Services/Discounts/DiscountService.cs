@@ -18,6 +18,7 @@ using global::Nop.Services.Orders;
 using Qixol.Nop.Promo.Core.Domain.Promo;
 using Qixol.Promo.Integration.Lib.Basket;
 using Qixol.Nop.Promo.Services.Promo;
+using Nop.Services.Common;
 
 namespace Qixol.Nop.Promo.Services.Discounts
 {
@@ -85,7 +86,7 @@ namespace Qixol.Nop.Promo.Services.Discounts
             IWorkContext workContext,
             IPromoUtilities promoUtilities,
             PromoSettings promoSettings
-            ) : 
+            ) :
                 base(
                     cacheManager,
                     discountRepository,
@@ -107,6 +108,7 @@ namespace Qixol.Nop.Promo.Services.Discounts
 
             this._promoUtilities = promoUtilities;
             this._promoSettings = promoSettings;
+            this._storeContext = storeContext;
         }
 
         #endregion
@@ -115,7 +117,7 @@ namespace Qixol.Nop.Promo.Services.Discounts
         #endregion
 
         #region Utilities
-        
+
         private Discount MapCouponPromotionToDiscount(BasketResponseCoupon coupon)
         {
             if (coupon == null)
@@ -160,7 +162,7 @@ namespace Qixol.Nop.Promo.Services.Discounts
         {
             if (!_promoSettings.Enabled)
                 base.DeleteDiscount(discount);
-            
+
             throw new NotSupportedException("DeleteDiscount");
         }
 
@@ -171,12 +173,22 @@ namespace Qixol.Nop.Promo.Services.Discounts
         /// <returns>Discount</returns>
         public override Discount GetDiscountById(int discountId)
         {
-            // TODO: CHECK work context is correctly set before calling this - customer may be null
-            var basketResponse = _promoUtilities.GetBasketResponse(_workContext.CurrentCustomer);
+            if (!_promoSettings.Enabled)
+                return base.GetDiscountById(discountId);
+
+            if (_workContext == null || _workContext.CurrentCustomer == null)
+                return null;
+
+            if (_storeContext == null || _storeContext.CurrentStore == null)
+                return null;
+
+            var basketResponse = _workContext.CurrentCustomer.GetAttribute<BasketResponse>(PromoCustomerAttributeNames.PromoBasketResponse, _storeContext.CurrentStore.Id);
+            if (basketResponse == null || !basketResponse.IsValid())
+                return null;
 
             Discount discount = null;
 
-            var coupons = basketResponse.Coupons.Where(c => !c.Issued && c.Utilized).ToList();
+            var coupons = basketResponse.Coupons.Where(c => !c.Issued && c.Utilizations.Any()).ToList();
             if (coupons != null && coupons.Any())
             {
                 coupons.ForEach(c =>
@@ -196,9 +208,10 @@ namespace Qixol.Nop.Promo.Services.Discounts
         public override IList<Discount> GetAllDiscounts(DiscountType? discountType = null,
             string couponCode = "", string discountName = "", bool showHidden = false)
         {
-            var discounts = new List<Discount>();
+            if (!_promoSettings.Enabled)
+                return base.GetAllDiscounts(discountType, couponCode, discountName, showHidden);
 
-            return discounts;
+            return new List<Discount>();
         }
 
 
@@ -208,10 +221,10 @@ namespace Qixol.Nop.Promo.Services.Discounts
         /// <param name="discount">Discount</param>
         public override void InsertDiscount(Discount discount)
         {
-            if (_promoSettings.Enabled)
-                throw new NotSupportedException("InsertDiscount");
+            if (!_promoSettings.Enabled)
+                base.InsertDiscount(discount);
 
-            base.InsertDiscount(discount);
+            throw new NotSupportedException("InsertDiscount");
         }
 
         /// <summary>
@@ -221,9 +234,9 @@ namespace Qixol.Nop.Promo.Services.Discounts
         public override void UpdateDiscount(Discount discount)
         {
             if (!_promoSettings.Enabled)
-                throw new NotSupportedException("UpdateDiscount");
+                base.UpdateDiscount(discount);
 
-            base.UpdateDiscount(discount);
+            throw new NotSupportedException("UpdateDiscount");
         }
 
         #endregion
@@ -244,17 +257,29 @@ namespace Qixol.Nop.Promo.Services.Discounts
             if (!_promoSettings.Enabled)
                 return base.GetAllDiscountsForCaching(discountType, couponCode, discountName, showHidden);
 
-            var discountsForCaching = new List<DiscountForCaching>();
-            var basketResponse = _promoUtilities.GetBasketResponse(_workContext.CurrentCustomer);
+            if (string.IsNullOrWhiteSpace(couponCode))
+                return new List<DiscountForCaching>();
 
-            if (basketResponse.IsValid() && basketResponse.Coupons != null && basketResponse.Coupons.Any())
+            if (_workContext == null || _workContext.CurrentCustomer == null)
+                return new List<DiscountForCaching>();
+
+            if (_storeContext == null || _storeContext.CurrentStore == null)
+                return new List<DiscountForCaching>();
+
+            var basketResponse = _workContext.CurrentCustomer.GetAttribute<BasketResponse>(PromoCustomerAttributeNames.PromoBasketResponse, _storeContext.CurrentStore.Id);
+            if (basketResponse == null || !basketResponse.IsValid())
+                return new List<DiscountForCaching>();
+
+            if (basketResponse.Coupons == null || !basketResponse.Coupons.Any())
+                return new List<DiscountForCaching>();
+
+            var discountsForCaching = new List<DiscountForCaching>();
+            var basketCoupons = basketResponse.Coupons.Where(c => !c.Issued && c.Utilizations.Any() && string.Compare(c.CouponCode, couponCode, StringComparison.InvariantCultureIgnoreCase) == 0).ToList();
+
+            if (basketCoupons != null && basketCoupons.Any())
             {
-                var basketCoupons = basketResponse.Coupons.Where(c => !c.Issued && c.Utilized && string.Compare(c.CouponCode, couponCode, StringComparison.InvariantCultureIgnoreCase) == 0).ToList();
-                if (basketCoupons != null && basketCoupons.Any())
-                {
-                    var c = basketCoupons.First();
-                    discountsForCaching.Add(MapCouponPromotionToDiscountForCaching(c));
-                }
+                var c = basketCoupons.First();
+                discountsForCaching.Add(MapCouponPromotionToDiscountForCaching(c));
             }
 
             return discountsForCaching;
@@ -300,9 +325,9 @@ namespace Qixol.Nop.Promo.Services.Discounts
             if (!_promoSettings.Enabled)
                 return base.LoadAllDiscountRequirementRules(customer);
 
-            return new List<global::Nop.Services.Discounts.IDiscountRequirementRule>(); // "NotSupportedException"
+            return new List<global::Nop.Services.Discounts.IDiscountRequirementRule>();
         }
-        
+
         #endregion
 
         #region Validation
@@ -378,33 +403,23 @@ namespace Qixol.Nop.Promo.Services.Discounts
 
             global::Nop.Services.Discounts.DiscountValidationResult discountValidationResult = new global::Nop.Services.Discounts.DiscountValidationResult()
             {
-                IsValid = true,
-                Errors = new List<string>()
+                IsValid = false
             };
 
-            BasketResponse basketResponse = _promoUtilities.GetBasketResponse(customer);
+            BasketResponse basketResponse = customer.GetAttribute<BasketResponse>(PromoCustomerAttributeNames.PromoBasketResponse, _storeContext.CurrentStore.Id);
 
-            if (basketResponse == null || basketResponse.Items == null || basketResponse.Summary == null)
+            if (basketResponse == null || !basketResponse.IsValid())
             {
-                discountValidationResult.IsValid = false;
-                return discountValidationResult;
-            }
-
-            if (!basketResponse.Summary.ProcessingResult)
-            {
-                discountValidationResult.IsValid = false;
                 return discountValidationResult;
             }
 
             if (basketResponse.Coupons == null)
             {
-                discountValidationResult.IsValid = false;
                 return discountValidationResult;
             }
 
-            if (!basketResponse.Coupons.Where(c => !c.Issued && c.Utilized).Any())
+            if (!basketResponse.Coupons.Where(c => !c.Issued && c.Utilizations.Any()).Any())
             {
-                discountValidationResult.IsValid = false;
                 return discountValidationResult;
             }
 
@@ -421,12 +436,15 @@ namespace Qixol.Nop.Promo.Services.Discounts
 
             coupons.ForEach(c =>
             {
-                discountValidationResult.IsValid = discountValidationResult.IsValid && c.Utilized;
-                if (!c.Utilized)
+                discountValidationResult.IsValid = discountValidationResult.IsValid && c.Utilizations.Any();
+                if (!c.Utilizations.Any())
                 {
                     discountValidationResult.Errors.Add(_localizationService.GetResource("ShoppingCart.DiscountCouponCode.WrongDiscount"));
                 }
             });
+
+            if (!discountValidationResult.Errors.Any())
+                discountValidationResult.IsValid = true;
 
             return discountValidationResult;
         }
@@ -448,19 +466,6 @@ namespace Qixol.Nop.Promo.Services.Discounts
             return base.GetAllDiscountUsageHistory(discountId, customerId, orderId, pageIndex, pageSize);
         }
 
-        //public override void InsertDiscountUsageHistory(DiscountUsageHistory discountUsageHistory)
-        //{
-        //    if (discountUsageHistory == null)
-        //        throw new ArgumentNullException("discountUsageHistory");
-
-        //    _discountUsageHistoryRepository.Insert(discountUsageHistory);
-
-        //    _cacheManager.RemoveByPattern(DISCOUNTS_PATTERN_KEY);
-
-        //    //event notification
-        //    _eventPublisher.EntityInserted(discountUsageHistory);
-        //}
-
         /// <summary>
         /// Update discount usage history record
         /// </summary>
@@ -468,9 +473,7 @@ namespace Qixol.Nop.Promo.Services.Discounts
         public override void UpdateDiscountUsageHistory(DiscountUsageHistory discountUsageHistory)
         {
             if (!_promoSettings.Enabled)
-            {
                 base.UpdateDiscountUsageHistory(discountUsageHistory);
-            }
 
             throw new NotImplementedException("UpdateDiscountUsageHistory");
         }

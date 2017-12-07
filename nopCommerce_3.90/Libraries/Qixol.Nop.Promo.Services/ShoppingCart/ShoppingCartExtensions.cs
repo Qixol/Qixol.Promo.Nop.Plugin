@@ -53,7 +53,6 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
             IStoreContext _storeContext = EngineContext.Current.Resolve<IStoreContext>();
             IGenericAttributeService _genericAttributeService = EngineContext.Current.Resolve<IGenericAttributeService>();
             PromoSettings _promoSettings = EngineContext.Current.Resolve<PromoSettings>();
-            IPromoUtilities _promoUtilities = EngineContext.Current.Resolve<IPromoUtilities>();
             IOrderTotalCalculationService _orderTotalCalculationService = EngineContext.Current.Resolve<IOrderTotalCalculationService>();
             ICurrencyService _currencyService = EngineContext.Current.Resolve<ICurrencyService>();
             IShoppingCartService _shoppingCartService = EngineContext.Current.Resolve<IShoppingCartService>();
@@ -73,21 +72,19 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
             if (customer == null)
                 return null;
 
-            var basketResponse = _promoUtilities.GetBasketResponse(customer);
-
-            // remove the previous response
-            _genericAttributeService.SaveAttribute<string>(customer, PromoCustomerAttributeNames.PromoBasketResponse, null, _storeContext.CurrentStore.Id);
-
             IList<BasketRequestItem> items = new List<BasketRequestItem>();
-
             Decimal orderTotal = Decimal.Zero;
 
-            #region remove any items added by promo engine
-            // remove any items added by promo engine that were NOT split from the original basket
+            #region remove any free-gift items added by promo engine and clear the previous basket response
+
+            var basketResponse = customer.GetAttribute<BasketResponse>(PromoCustomerAttributeNames.PromoBasketResponse, _storeContext.CurrentStore.Id);
+
+            // remove the previous response
+            _genericAttributeService.SaveAttribute<BasketResponse>(customer, PromoCustomerAttributeNames.PromoBasketResponse, null, _storeContext.CurrentStore.Id);
 
             if (basketResponse != null && basketResponse.Items != null)
             {
-                var generatedItems = (from bri in basketResponse.Items where bri.SplitFromLineId == 0 && bri.Generated && !bri.IsDelivery select bri).ToList();
+                var generatedItems = basketResponse.Items.Where(i => i.Generated && i.SplitFromLineId == 0 && !i.IsDelivery).ToList();
                 foreach (var generatedItem in generatedItems)
                 {
                     int productId = 0;
@@ -127,7 +124,7 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
                 }
             }
 
-            cart = customer.ShoppingCartItems.ToList();
+            cart = customer.ShoppingCartItems.Where(sci => sci.ShoppingCartType == ShoppingCartType.ShoppingCart).ToList();
 
             #endregion
 
@@ -442,8 +439,10 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
                 return linePromotions;
 
 
-            var promoUtilities = (IPromoUtilities) EngineContext.Current.Resolve<IPromoUtilities>();
-            var basketResponse = promoUtilities.GetBasketResponse(customer);
+            var storeContext = (IStoreContext) EngineContext.Current.Resolve<IStoreContext>();
+            var basketResponse = customer.GetAttribute<BasketResponse>(PromoCustomerAttributeNames.PromoBasketResponse, storeContext.CurrentStore.Id);
+            if (basketResponse == null || !basketResponse.IsValid())
+                return linePromotions;
 
             foreach (var item in basketResponseItems)
             {
@@ -501,10 +500,9 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
             if (!basketResponseItems.Any())
                 return decimal.Zero;
 
-            var promoUtilities = (IPromoUtilities) EngineContext.Current.Resolve<IPromoUtilities>();
-            var basketResponse = promoUtilities.GetBasketResponse(customer);
-
-            if (!basketResponse.IsValid())
+            var storeContext = (IStoreContext) EngineContext.Current.Resolve<IStoreContext>();
+            var basketResponse = customer.GetAttribute<BasketResponse>(PromoCustomerAttributeNames.PromoBasketResponse, storeContext.CurrentStore.Id);
+            if (basketResponse == null || !basketResponse.IsValid())
                 return decimal.Zero;
 
             decimal lineTotal = decimal.Zero;
@@ -545,10 +543,9 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
             if (!basketResponseItems.Any())
                 return decimal.Zero;
 
-            var promoUtilities = (IPromoUtilities) EngineContext.Current.Resolve<IPromoUtilities>();
-            var basketResponse = promoUtilities.GetBasketResponse(customer);
-
-            if (!basketResponse.IsValid())
+            var storeContext = (IStoreContext) EngineContext.Current.Resolve<IStoreContext>();
+            var basketResponse = customer.GetAttribute<BasketResponse>(PromoCustomerAttributeNames.PromoBasketResponse, storeContext.CurrentStore.Id);
+            if (basketResponse == null || !basketResponse.IsValid())
                 return decimal.Zero;
 
             decimal lineTotalDiscount = decimal.Zero;
@@ -580,7 +577,7 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
         public static Decimal SubTotal(this IList<ShoppingCartItem> shoppingCartItems)
         {
             decimal subTotal = decimal.Zero;
-            IPromoUtilities promoUtilities = EngineContext.Current.Resolve<IPromoUtilities>();
+            var storeContext = (IStoreContext) EngineContext.Current.Resolve<IStoreContext>();
 
             if (shoppingCartItems == null)
                 return subTotal;
@@ -599,8 +596,8 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
             });
 
             // include any checkout attributes
-            var basketResponse = promoUtilities.GetBasketResponse(customer);
-            if (basketResponse == null)
+            var basketResponse = customer.GetAttribute<BasketResponse>(PromoCustomerAttributeNames.PromoBasketResponse, storeContext.CurrentStore.Id);
+            if (basketResponse == null || !basketResponse.IsValid())
                 return subTotal;
 
             basketResponse.CheckoutAttributeItems().ToList().ForEach(cai =>
@@ -637,24 +634,31 @@ namespace Qixol.Nop.Promo.Services.ShoppingCart
             if (shoppingCartItem == null)
                 return basketResponseItems;
 
-            var promoUtilities = (IPromoUtilities) EngineContext.Current.Resolve<IPromoUtilities>();
+            var storeContext = (IStoreContext) EngineContext.Current.Resolve<IStoreContext>();
             var productMappingService = (IProductMappingService) EngineContext.Current.Resolve<IProductMappingService>();
-            var basketResponse = promoUtilities.GetBasketResponse(shoppingCartItem.CustomerId);
-
-            if (!basketResponse.IsValid())
+            var basketResponse = shoppingCartItem.Customer.GetAttribute<BasketResponse>(PromoCustomerAttributeNames.PromoBasketResponse, storeContext.CurrentStore.Id);
+            if (basketResponse == null || !basketResponse.IsValid())
                 return basketResponseItems;
 
+            // cart lines
+            basketResponseItems.AddRange(basketResponse.Items.Where(bri => bri.Id == shoppingCartItem.Id));
+
+            // split lines
+            basketResponseItems.AddRange(basketResponse.Items.Where(bri => bri.SplitFromLineId == shoppingCartItem.Id));
+
+            // generated lines
             ProductMappingItem productMappingItem = productMappingService.RetrieveFromShoppingCartItem(shoppingCartItem);
             if (productMappingItem != null)
             {
-                basketResponseItems = (from i in basketResponse.Items
-                                       where
+                basketResponseItems.AddRange(basketResponse.Items.Where(i =>
                                            i.ProductCode.Equals(productMappingItem.EntityId.ToString(), StringComparison.InvariantCultureIgnoreCase) &&
                                            ((productMappingItem.NoVariants ||
                                            (!productMappingItem.NoVariants &&
                                            !string.IsNullOrEmpty(productMappingItem.VariantCode) &&
-                                           i.VariantCode.Equals(productMappingItem.VariantCode, StringComparison.InvariantCultureIgnoreCase))))
-                                       select i).ToList();
+                                           i.VariantCode.Equals(productMappingItem.VariantCode, StringComparison.InvariantCultureIgnoreCase)))) &&
+                                           i.Generated &&
+                                           !i.IsDelivery &&
+                                           i.SplitFromLineId == 0));
             }
 
             return basketResponseItems;

@@ -175,28 +175,27 @@ namespace Qixol.Plugin.Misc.Promo.Factories
                 DiscountAmount = _priceFormatter.FormatShippingPrice(decimal.Zero, true)
             };
 
-            _promoService.ProcessShoppingCart(_workContext.CurrentCustomer, so);
+            _promoService.ProcessShoppingCart(_workContext.CurrentCustomer, _storeContext.CurrentStore.Id, so);
 
-            BasketResponse basketResponse = _promoUtilities.GetBasketResponse(_workContext.CurrentCustomer);
+            var basketResponse = _workContext.CurrentCustomer.GetAttribute<BasketResponse>(PromoCustomerAttributeNames.PromoBasketResponse, _storeContext.CurrentStore.Id);
+            if (basketResponse == null || !basketResponse.IsValid())
+                return psoModel;
 
-            if (basketResponse != null && basketResponse.IsValid())
+            var totalDiscount = 0M;
+            basketResponse.DeliveryPromos().ToList().ForEach(dp =>
             {
-                var totalDiscount = 0M;
-                basketResponse.DeliveryPromos().ToList().ForEach(dp =>
+                var discount = _currencyService.ConvertFromPrimaryStoreCurrency(dp.DiscountAmount, _workContext.WorkingCurrency);
+                totalDiscount += discount;
+                psoModel.Promotions.Add(new Models.Shared.PromotionModel()
                 {
-                    var discount = _currencyService.ConvertFromPrimaryStoreCurrency(dp.DiscountAmount, _workContext.WorkingCurrency);
-                    totalDiscount += discount;
-                    psoModel.Promotions.Add(new Models.Shared.PromotionModel()
-                    {
-                        PromotionName = dp.DisplayDetails(),
-                        PromotionId = dp.PromotionId.ToString(),
-                        DiscountAmount = _priceFormatter.FormatShippingPrice(discount, true)
-                    });
+                    PromotionName = dp.DisplayDetails(),
+                    PromotionId = dp.PromotionId.ToString(),
+                    DiscountAmount = _priceFormatter.FormatShippingPrice(discount, true)
                 });
-                psoModel.DiscountAmount = _priceFormatter.FormatShippingPrice(totalDiscount, true);
-                var price = _currencyService.ConvertFromPrimaryStoreCurrency(basketResponse.DeliveryPrice, _workContext.WorkingCurrency);
-                psoModel.Price = _priceFormatter.FormatShippingPrice(price, true);
-            }
+            });
+            psoModel.DiscountAmount = _priceFormatter.FormatShippingPrice(totalDiscount, true);
+            var price = _currencyService.ConvertFromPrimaryStoreCurrency(basketResponse.DeliveryPrice, _workContext.WorkingCurrency);
+            psoModel.Price = _priceFormatter.FormatShippingPrice(price, true);
 
             return psoModel;
         }
@@ -226,43 +225,43 @@ namespace Qixol.Plugin.Misc.Promo.Factories
             // Get the base to do most of the work...
             base.PrepareShoppingCartModel(model, cart, isEditable, validateCheckoutAttributes, prepareEstimateShippingIfEnabled, setEstimateShippingDefaultAddress, prepareAndDisplayOrderReviewData);
 
-            if (_promoSettings.Enabled)
-            {
-                var basketResponse = _promoUtilities.GetBasketResponse(_workContext.CurrentCustomer);
-                if (basketResponse.IsValid())
+            if (!_promoSettings.Enabled)
+                return model;
+
+            var basketResponse = _workContext.CurrentCustomer.GetAttribute<BasketResponse>(PromoCustomerAttributeNames.PromoBasketResponse, _storeContext.CurrentStore.Id);
+            if (basketResponse == null || !basketResponse.IsValid())
+                return model;
+
+            if (basketResponse.TotalDiscount == decimal.Zero)
+                return model;
+
+            cart.Where(sci => !sci.Product.CallForPrice)
+                .ToList()
+                .ForEach(sci =>
                 {
-                    if (basketResponse.TotalDiscount != decimal.Zero)
+                    var cartItemModel = model.Items.Where(mi => mi.Id == sci.Id).FirstOrDefault();
+
+                        //sub total
+                        List<DiscountForCaching> scDiscounts;
+                    decimal shoppingCartItemDiscountBase;
+                    decimal taxRate;
+                    int? maximumDiscountQty;
+                    decimal tempSubTotal = _priceCalculationService.GetSubTotal(sci, true, out shoppingCartItemDiscountBase, out scDiscounts, out maximumDiscountQty);
+                    decimal shoppingCartItemSubTotalWithDiscountBase = _taxService.GetProductPrice(sci.Product, tempSubTotal, out taxRate);
+                    decimal shoppingCartItemSubTotalWithDiscount = _currencyService.ConvertFromPrimaryStoreCurrency(shoppingCartItemSubTotalWithDiscountBase, _workContext.WorkingCurrency);
+                    cartItemModel.SubTotal = _priceFormatter.FormatPrice(shoppingCartItemSubTotalWithDiscount);
+
+                        //display an applied discount amount
+                        if (shoppingCartItemSubTotalWithDiscountBase > decimal.Zero)
                     {
-                        cart.Where(sci => !sci.Product.CallForPrice)
-                            .ToList()
-                            .ForEach(sci =>
-                            {
-                                var cartItemModel = model.Items.Where(mi => mi.Id == sci.Id).FirstOrDefault();
-
-                                //sub total
-                                List<DiscountForCaching> scDiscounts;
-                                decimal shoppingCartItemDiscountBase;
-                                decimal taxRate;
-                                int? maximumDiscountQty;
-                                decimal tempSubTotal = _priceCalculationService.GetSubTotal(sci, true, out shoppingCartItemDiscountBase, out scDiscounts, out maximumDiscountQty);
-                                decimal shoppingCartItemSubTotalWithDiscountBase = _taxService.GetProductPrice(sci.Product, tempSubTotal, out taxRate);
-                                decimal shoppingCartItemSubTotalWithDiscount = _currencyService.ConvertFromPrimaryStoreCurrency(shoppingCartItemSubTotalWithDiscountBase, _workContext.WorkingCurrency);
-                                cartItemModel.SubTotal = _priceFormatter.FormatPrice(shoppingCartItemSubTotalWithDiscount);
-
-                                //display an applied discount amount
-                                if (shoppingCartItemSubTotalWithDiscountBase > decimal.Zero)
-                                {
-                                    shoppingCartItemDiscountBase = _taxService.GetProductPrice(sci.Product, shoppingCartItemDiscountBase, out taxRate);
-                                    if (shoppingCartItemDiscountBase > decimal.Zero)
-                                    {
-                                        decimal shoppingCartItemDiscount = _currencyService.ConvertFromPrimaryStoreCurrency(shoppingCartItemDiscountBase, _workContext.WorkingCurrency);
-                                        cartItemModel.Discount = _priceFormatter.FormatPrice(shoppingCartItemDiscount);
-                                    }
-                                }
-                            });
+                        shoppingCartItemDiscountBase = _taxService.GetProductPrice(sci.Product, shoppingCartItemDiscountBase, out taxRate);
+                        if (shoppingCartItemDiscountBase > decimal.Zero)
+                        {
+                            decimal shoppingCartItemDiscount = _currencyService.ConvertFromPrimaryStoreCurrency(shoppingCartItemDiscountBase, _workContext.WorkingCurrency);
+                            cartItemModel.Discount = _priceFormatter.FormatPrice(shoppingCartItemDiscount);
+                        }
                     }
-                }
-            }
+                });
             return model;
         }
 

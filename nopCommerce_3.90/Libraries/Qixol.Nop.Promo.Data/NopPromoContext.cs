@@ -47,8 +47,6 @@ namespace Qixol.Nop.Promo.Data.Mapping
             //otherwise, you'll get something like "The model backing the 'your context name' context has changed since the database was created. Consider using Code First Migrations to update the database"
             Database.SetInitializer<NopPromoContext>(null);
 
-            // TODO:  Check to see whether the tables already exist, as this will make the install fail.
-            // TODO: need to work on an "update" mechanism
             //create the table
             var dbScript = ((IObjectContextAdapter)this).ObjectContext.CreateDatabaseScript();
             Database.ExecuteSqlCommand(dbScript);

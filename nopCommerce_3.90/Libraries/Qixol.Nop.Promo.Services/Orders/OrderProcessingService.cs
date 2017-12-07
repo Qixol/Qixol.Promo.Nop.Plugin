@@ -734,7 +734,6 @@ namespace Qixol.Nop.Promo.Services.Orders
                     details.Cart.ToList().ForEach(sci => _shoppingCartService.DeleteShoppingCartItem(sci, false));
 
                     //discount usage history
-                    // TODO: replace with Promo discount usage history?
 
                     //gift card usage history
                     if (details.AppliedGiftCards != null)

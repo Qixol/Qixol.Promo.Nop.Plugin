@@ -140,12 +140,11 @@ namespace Qixol.Nop.Promo.Services.Orders
             if (!_promoSettings.Enabled)
                 return base.GetOrderSubtotalDiscount(customer, orderSubTotal, out appliedDiscounts);
 
-            BasketResponse basketResponse = _promoUtilities.GetBasketResponse(customer);
-
             appliedDiscounts = new List<DiscountForCaching>();
             decimal discountAmount = decimal.Zero;
 
-            if (basketResponse == null)
+            BasketResponse basketResponse = customer.GetAttribute<BasketResponse>(PromoCustomerAttributeNames.PromoBasketResponse, _storeContext.CurrentStore.Id);
+            if (basketResponse == null || !basketResponse.IsValid())
                 return discountAmount;
 
             var currentDiscountAmount = decimal.Zero;
@@ -186,7 +185,10 @@ namespace Qixol.Nop.Promo.Services.Orders
 
             appliedDiscounts = new List<DiscountForCaching>();
 
-            BasketResponse basketResponse = _promoUtilities.GetBasketResponse(customer);
+            BasketResponse basketResponse = customer.GetAttribute<BasketResponse>(PromoCustomerAttributeNames.PromoBasketResponse, _storeContext.CurrentStore.Id);
+            if (basketResponse == null || !basketResponse.IsValid())
+                return Decimal.Zero;
+
             var deliveryPromos = basketResponse.DeliveryPromos();
             var currentAppliedDiscounts = new List<DiscountForCaching>();
             var currentDiscountAmount = decimal.Zero;
@@ -223,12 +225,11 @@ namespace Qixol.Nop.Promo.Services.Orders
             if (!_rewardPointsSettings.Enabled)
                 return base.GetOrderTotalDiscount(customer, orderTotal, out appliedDiscounts);
 
-            BasketResponse basketResponse = _promoUtilities.GetBasketResponse(customer);
-
             appliedDiscounts = new List<DiscountForCaching>();
             decimal discountAmount = decimal.Zero;
 
-            if (basketResponse == null)
+            BasketResponse basketResponse = customer.GetAttribute<BasketResponse>(PromoCustomerAttributeNames.PromoBasketResponse, _storeContext.CurrentStore.Id);
+            if (basketResponse == null || !basketResponse.IsValid())
                 return discountAmount;
 
             var currentDiscountAmount = decimal.Zero;
@@ -314,9 +315,8 @@ namespace Qixol.Nop.Promo.Services.Orders
                 return;
             }
 
-            BasketResponse basketResponse = _promoUtilities.GetBasketResponse(customer);
-
-            if (basketResponse == null)
+            BasketResponse basketResponse = customer.GetAttribute<BasketResponse>(PromoCustomerAttributeNames.PromoBasketResponse, _storeContext.CurrentStore.Id);
+            if (basketResponse == null || !basketResponse.IsValid())
             {
                 base.GetShoppingCartSubTotal(cart, includingTax, out discountAmount, out appliedDiscounts, out subTotalWithoutDiscount, out subTotalWithDiscount, out taxRates);
                 return;
@@ -511,8 +511,6 @@ namespace Qixol.Nop.Promo.Services.Orders
 
             appliedDiscounts = new List<DiscountForCaching>();
 
-            // TODO: this should set discounts in the appliedDiscounts "out" parameter
-
             decimal additionalShippingCharge = GetShoppingCartAdditionalShippingCharge(cart);
 
             return shippingRate + additionalShippingCharge;
@@ -578,14 +576,13 @@ namespace Qixol.Nop.Promo.Services.Orders
             if (customer == null)
                 return base.GetShoppingCartShippingTotal(cart, includingTax, out taxRate, out appliedDiscounts);
 
-            BasketResponse basketResponse = _promoUtilities.GetBasketResponse(customer);
-            decimal? shippingTotal = null;
-
-            if (basketResponse == null)
+            BasketResponse basketResponse = customer.GetAttribute<BasketResponse>(PromoCustomerAttributeNames.PromoBasketResponse, _storeContext.CurrentStore.Id);
+            if (basketResponse == null || !basketResponse.IsValid())
             {
                 return base.GetShoppingCartShippingTotal(cart, includingTax, out taxRate, out appliedDiscounts);
             }
 
+            decimal? shippingTotal = null;
             taxRate = Decimal.Zero;
             appliedDiscounts = new List<DiscountForCaching>();
 
@@ -707,12 +704,9 @@ namespace Qixol.Nop.Promo.Services.Orders
             if (customer == null)
                 return null;
 
-            BasketResponse basketResponse = _promoUtilities.GetBasketResponse(customer);
+            BasketResponse basketResponse = customer.GetAttribute<BasketResponse>(PromoCustomerAttributeNames.PromoBasketResponse, _storeContext.CurrentStore.Id);
 
-            if (basketResponse == null || basketResponse.Items == null || basketResponse.Summary == null)
-                return base.GetShoppingCartTotal(cart, useRewardPonts, usePaymentMethodAdditionalFee);
-
-            if (!basketResponse.Summary.ProcessingResult)
+            if (basketResponse == null || !basketResponse.IsValid())
                 return base.GetShoppingCartTotal(cart, useRewardPonts, usePaymentMethodAdditionalFee);
 
             decimal tax = GetTaxTotal(cart);
@@ -748,14 +742,8 @@ namespace Qixol.Nop.Promo.Services.Orders
             if (customer == null)
                 return base.GetShoppingCartTotal(cart, out discountAmount, out appliedDiscounts, out appliedGiftCards, out redeemedRewardPoints, out redeemedRewardPointsAmount, useRewardPoints, usePaymentMethodAdditionalFee);
 
-            BasketResponse basketResponse = _promoUtilities.GetBasketResponse(customer);
-
-            if (basketResponse == null || basketResponse.Items == null || basketResponse.Summary == null)
-            {
-                return base.GetShoppingCartTotal(cart, out discountAmount, out appliedDiscounts, out appliedGiftCards, out redeemedRewardPoints, out redeemedRewardPointsAmount, useRewardPoints, usePaymentMethodAdditionalFee);
-            }
-
-            if (!basketResponse.Summary.ProcessingResult)
+            BasketResponse basketResponse = customer.GetAttribute<BasketResponse>(PromoCustomerAttributeNames.PromoBasketResponse, _storeContext.CurrentStore.Id);
+            if (basketResponse == null || !basketResponse.IsValid())
             {
                 return base.GetShoppingCartTotal(cart, out discountAmount, out appliedDiscounts, out appliedGiftCards, out redeemedRewardPoints, out redeemedRewardPointsAmount, useRewardPoints, usePaymentMethodAdditionalFee);
             }
@@ -859,7 +847,10 @@ namespace Qixol.Nop.Promo.Services.Orders
             if (!_promoSettings.Enabled)
                 return base.CalculateRewardPoints(customer, amount);
 
-            BasketResponse basketResponse = _promoUtilities.GetBasketResponse(customer);
+            BasketResponse basketResponse = customer.GetAttribute<BasketResponse>(PromoCustomerAttributeNames.PromoBasketResponse, _storeContext.CurrentStore.Id);
+            if (basketResponse == null || !basketResponse.IsValid())
+                return 0;
+
             return basketResponse.IssuedPoints();
         }
 

@@ -1,7 +1,7 @@
 ﻿Group: Qixol Promo
 FriendlyName: Qixol Promo Widgets
 SystemName: Widgets.QixolPromo
-Version: 3.90.0.5
+Version: 3.90.2.1
 SupportedVersions: 3.90
 Author: Qixol web team
 DisplayOrder: 2

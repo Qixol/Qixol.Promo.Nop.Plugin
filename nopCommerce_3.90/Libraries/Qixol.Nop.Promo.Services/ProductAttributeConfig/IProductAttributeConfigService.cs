@@ -14,7 +14,7 @@ namespace Qixol.Nop.Promo.Services.ProductAttributeConfig
 
         void Update(ProductAttributeConfigItem item);
 
-        IQueryable<ProductAttributeConfigItem> RetrieveAll();
+        IList<ProductAttributeConfigItem> GetAllProductAttributeConfigItems();
 
     }
 }

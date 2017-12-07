@@ -57,13 +57,13 @@ namespace Qixol.Plugin.Widgets.Promo.Services
             this._promoPictureService = promoPictureService;
             this._themeContext = themeContext;
             this._pictureService = pictureService;
+            this._storeContext = storeContext;
         }
 
         #endregion
 
         #region utilities
 
-        // TODO: BasketCriteriaItems only made public because the banner code needs rewriting
         public List<KeyValuePair<string, string>> BasketCriteriaItems()
         {
             var basketCriteriaChecks = new List<KeyValuePair<string, string>>();

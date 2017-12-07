@@ -193,7 +193,6 @@ namespace Qixol.Plugin.Misc.Promo.Factories
 
             model.PickupPoints.ToList().ForEach(pp =>
             {
-                // TODO: find a better way to get the rate
                 decimal pickupFee = decimal.Zero;
                 decimal.TryParse(pp.PickupFee.Substring(1, pp.PickupFee.Length - 1), out pickupFee);
 
@@ -205,9 +204,7 @@ namespace Qixol.Plugin.Misc.Promo.Factories
                     ShippingRateComputationMethodSystemName = pp.ProviderSystemName
                 };
 
-                _promoService.ProcessShoppingCart(_workContext.CurrentCustomer, shippingOption);
-
-                var basketResponse = _promoUtilities.GetBasketResponse(_workContext.CurrentCustomer);
+                var basketResponse = _promoService.ProcessShoppingCart(_workContext.CurrentCustomer, _storeContext.CurrentStore.Id, shippingOption);
 
                 if (basketResponse != null)
                 {
@@ -272,9 +269,7 @@ namespace Qixol.Plugin.Misc.Promo.Factories
                     ShippingRateComputationMethodSystemName = sm.ShippingRateComputationMethodSystemName
                 };
 
-                _promoService.ProcessShoppingCart(_workContext.CurrentCustomer, sm.ShippingOption);
-
-                BasketResponse basketResponse = _promoUtilities.GetBasketResponse(_workContext.CurrentCustomer);
+                var basketResponse = _promoService.ProcessShoppingCart(_workContext.CurrentCustomer, _storeContext.CurrentStore.Id, sm.ShippingOption);
 
                 if (basketResponse != null && basketResponse.IsValid())
                 {

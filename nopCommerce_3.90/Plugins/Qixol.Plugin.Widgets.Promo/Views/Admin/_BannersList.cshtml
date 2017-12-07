@@ -193,12 +193,10 @@
         initializeBannersGrid();
 
         $('#addPromoBanner').click(function () {
-            @* TODO: serialize a form instead of using individual field names *@
             var name = $("#@Html.FieldIdFor(model => model.Name)").val();
             var isEnabled = document.getElementById("@Html.FieldIdFor(model => model.Enabled)").checked;
             var transitionType = $('#@Html.FieldIdFor(model => model.TransitionType)').val();
 
-            @* TODO: field validators...? *@
             if (name == "") {
                 alert('@T("Plugins.Widgets.QixolPromo.PromoBanner.Validation.Msg.1")');
                 return;

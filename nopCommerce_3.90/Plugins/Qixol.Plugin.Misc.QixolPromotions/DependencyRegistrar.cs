@@ -44,6 +44,7 @@ namespace Qixol.Plugin.Misc.Promo
             builder.RegisterType<PromoUtilities>().As<IPromoUtilities>().InstancePerLifetimeScope();
             builder.RegisterType<CouponService>().As<ICouponService>().InstancePerLifetimeScope();
             builder.RegisterType<PromoOrderService>().As<IPromoOrderService>().InstancePerLifetimeScope();
+            builder.RegisterType<ProductAttributeParser>().As<global::Nop.Services.Catalog.IProductAttributeParser>().InstancePerLifetimeScope();
 
             builder.RegisterType<CheckoutActionFilter>().As<IFilterProvider>().InstancePerLifetimeScope();
             builder.RegisterType<ShoppingCartActionFilter>().As<IFilterProvider>().InstancePerLifetimeScope();

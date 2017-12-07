@@ -102,7 +102,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                             if (form.AllKeys.Contains("applydiscountcouponcode"))
                             {
                                 workContext.CurrentCustomer.ApplyDiscountCouponCode(form["discountcouponcode"]);
-                                promoService.ProcessShoppingCart(workContext.CurrentCustomer);
+                                promoService.ProcessShoppingCart(workContext.CurrentCustomer, storeContext.CurrentStore.Id);
                             }
 
                             var removeDiscountKeys = (from k in form.AllKeys where k.StartsWith("removediscount-") select k).ToList();
@@ -124,7 +124,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                                         }
                                     }
                                 });
-                                promoService.ProcessShoppingCart(workContext.CurrentCustomer);
+                                promoService.ProcessShoppingCart(workContext.CurrentCustomer, storeContext.CurrentStore.Id);
                             }
 
                             if (form.AllKeys.Contains("updatecart"))
@@ -132,13 +132,13 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                                 // force an update of the cart, then call promo, then allow the nop code to continue (ie call UpdateCart and return the view)
                                 var promoShoppingCartController = EngineContext.Current.Resolve<Qixol.Plugin.Misc.Promo.Controllers.ShoppingCartController>();
                                 promoShoppingCartController.UpdateCart(form);
-                                promoService.ProcessShoppingCart(workContext.CurrentCustomer);
+                                promoService.ProcessShoppingCart(workContext.CurrentCustomer, storeContext.CurrentStore.Id);
                             }
                         }
                     }
                     else
                     {
-                        promoService.ProcessShoppingCart(workContext.CurrentCustomer);
+                        promoService.ProcessShoppingCart(workContext.CurrentCustomer, storeContext.CurrentStore.Id);
                     }
                     base.OnActionExecuting(filterContext);
                 }

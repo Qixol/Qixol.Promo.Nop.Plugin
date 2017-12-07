@@ -1,21 +1,22 @@
 ﻿using global::Nop.Core.Domain.Stores;
 using Nop.Core.Domain.Customers;
 using Nop.Core.Domain.Shipping;
+using Qixol.Promo.Integration.Lib.Basket;
 using System.Collections.Generic;
 
 namespace Qixol.Nop.Promo.Services.Promo
 {
     public interface IPromoService
     {
-        List<string> ProcessShoppingCart(Customer customer);
+        BasketResponse ProcessShoppingCart(Customer customer, int storeId);
 
-        List<string> ProcessShoppingCart(Customer customer, ShippingOption shippingOption);
+        BasketResponse ProcessShoppingCart(Customer customer, int storeId, ShippingOption shippingOption);
 
-        List<string> ProcessShoppingCart(Customer customer, bool getMissedPromotions);
+        BasketResponse ProcessShoppingCart(Customer customer, int storeId, bool getMissedPromotions);
 
-        List<string> ProcessShoppingCart(Customer customer, bool getMissedPromotions, ShippingOption shippingOption);
+        BasketResponse ProcessShoppingCart(Customer customer, int storeId, bool getMissedPromotions, ShippingOption shippingOption);
 
-        void SendConfirmedBasket(global::Nop.Core.Domain.Orders.Order placedOrder);
+        BasketResponse SendConfirmedBasket(global::Nop.Core.Domain.Orders.Order placedOrder);
 
     }
 }

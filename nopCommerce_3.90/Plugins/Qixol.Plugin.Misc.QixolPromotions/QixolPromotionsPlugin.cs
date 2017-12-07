@@ -140,7 +140,7 @@ namespace Qixol.Plugin.Misc.Promo
                 SynchronizeCurrencies = true,
 
                 VariantAttributeFormat = "{0}: {1}",
-                VariantAttributesSeperator = ", ",
+                VariantAttributesSeparator = ", ",
                 MaximumAttributesForVariants = 3,
                 ShowPromotionDetailsInBasket = 0,
                 ShowHelperMessages = true,
@@ -318,8 +318,6 @@ namespace Qixol.Plugin.Misc.Promo
             this.InsertStringResource("Plugins.Misc.QixolPromo.StoreGroup.Hint", "The Qixol Promos store group reference used by the engine to identify where requests originate");
             this.InsertStringResource("Plugins.Misc.QixolPromo.Channel", "Channel");
             this.InsertStringResource("Plugins.Misc.QixolPromo.Channel.Hint", "The Qixol Promos channel reference used by the engine to identify where requests originate");
-            this.InsertStringResource("Plugins.Misc.QixolPromo.Channel.Helper1", "The Channel and Store Group are used in the Store hierarchy submitted to Promo.");
-            this.InsertStringResource("Plugins.Misc.QixolPromo.Channel.Helper2", " All stores will be placed within a hierarchy generated using the Channel and Store Group specified.");
 
             this.InsertStringResource("ShoppingCart.Totals.ShippingDiscount", "Shipping discount");
 
@@ -378,6 +376,7 @@ namespace Qixol.Plugin.Misc.Promo
             this.InsertStringResource("Plugins.Misc.QixolPromo.AdvancedIntegrationSettings", "Advanced Integration Settings");
             this.InsertStringResource("Plugins.Misc.QixolPromo.CartOptions", "Shopping Cart Configuration");
             this.InsertStringResource("Plugins.Misc.QixolPromo.IntegrationCode.ValidationMsg", "The specified code is already in use.");
+            this.InsertStringResource("Plugins.Misc.QixolPromo.IntegrationCodes.CustomerRoles.Priority.Help", "If a customer has more than one role then the integration code for the role with the highest numeric priority value will be passed to Promo in the customer group attribute of basket requests.");
             this.InsertStringResource("Plugins.Misc.QixolPromo.ShowHelpMessages", "Show this help page next time?");
             this.InsertStringResource("Plugins.Misc.QixolPromo.ShowHelpMessages.Hint", "When going to the configuration page, if this box is checked then the Help tab will be shown, if unchecked then the Integration tab will be shown.");
             this.InsertStringResource("Plugins.Misc.QixolPromo.GoToPromo", "Go to Promo");
@@ -527,29 +526,21 @@ namespace Qixol.Plugin.Misc.Promo
                 promosNode.ChildNodes.Add(new SiteMapNode()
                 {
                     Title = _localizationService.GetResource("Plugins.Misc.QixolPromo.PromotionsMenu.Integration"),
+                    SystemName = "Misc.QixolPromo",
                     ControllerName = "Plugin",
                     ActionName = "ConfigureMiscPlugin",
+                    IconClass = "fa-dot-circle-o",
                     RouteValues = new RouteValueDictionary(new { systemName = "Misc.QixolPromo" }),
                     Visible = true
                 });
 
-                var installedPlugins = _pluginFinder.GetPluginDescriptors<IWidgetPlugin>(loadMode: LoadPluginsMode.InstalledOnly, group: "Qixol Promo");
-                if (installedPlugins != null && installedPlugins.Any(p => p.SystemName == "Widgets.QixolPromo"))
-                {
-                    promosNode.ChildNodes.Add(new SiteMapNode()
-                    {
-                        Title = _localizationService.GetResource("Plugins.Misc.QixolPromo.PromotionsMenu.Widgets"),
-                        ControllerName = "Widget",
-                        ActionName = "ConfigureWidget",
-                        RouteValues = new RouteValueDictionary(new { systemName = "Widgets.QixolPromo" }),
-                        Visible = true
-                    });
-                }
-
                 promosNode.ChildNodes.Add(new SiteMapNode()
                 {
                     Title = _localizationService.GetResource("Plugins.Misc.QixolPromo.PromotionsMenu.Promo"),
-                    Url = "http://admin.qixolpromo.com",
+                    SystemName = "QixolPromo.Web",
+                    IconClass = "fa-arrow-circle-o-right",
+                    OpenUrlInNewTab = true,
+                    Url = "https://admin.qixolpromo.com",
                     Visible = true
                 });
             }

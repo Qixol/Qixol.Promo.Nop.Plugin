@@ -159,7 +159,7 @@
             if (this.data) {
                 $('.order-subtotal-discount').html('');
                 var basketLevelDiscountsIncShipping = this.data;
-                $('.tax-value').before('<tr class="order-subtotal-discounts-inc-placeholder"></tr>'); // TODO: tax-value not shown => before order-total
+                $('.tax-value').before('<tr class="order-subtotal-discounts-inc-placeholder"></tr>');
                 for (var i in basketLevelDiscountsIncShipping) {
                     var promotionId = basketLevelDiscountsIncShipping[i].PromotionId;
                     var html = $('script[id="sub-total-template"]').html().replace('#=promotionId#', promotionId);

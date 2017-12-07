@@ -18,6 +18,7 @@ using Qixol.Nop.Promo.Core.Domain.Orders;
 using Nop.Services.Orders;
 using Qixol.Plugin.Misc.Promo.Factories;
 using Qixol.Nop.Promo.Services.Coupons;
+using Nop.Services.Common;
 
 namespace Qixol.Plugin.Misc.Promo.Controllers
 {
@@ -36,6 +37,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
         private readonly PromoSettings _promoSettings;
         private readonly IDateTimeHelper _dateTimeHelper;
         private readonly ICouponService _couponService;
+        private readonly IStoreContext _storeContext;
 
         #endregion
 
@@ -52,7 +54,8 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             PromoSettings promoSettings,
             IProductMappingService productMappingService,
             IDateTimeHelper dateTimeHelper,
-            ICouponService couponService)
+            ICouponService couponService,
+            IStoreContext storeContext)
         {
             this._issuedCouponsModelFactory = issuedCouponsModelFactory;
 
@@ -65,6 +68,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             this._dateTimeHelper = dateTimeHelper;
             this._couponService = couponService;
             this._promoSettings = promoSettings;
+            this._storeContext = storeContext;
         }
 
         #endregion
@@ -77,7 +81,9 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             if (!_promoSettings.Enabled)
                 return new EmptyResult();
 
-            var basketResponse = _promoUtilities.GetBasketResponse(_workContext.CurrentCustomer);
+            var basketResponse = _workContext.CurrentCustomer.GetAttribute<BasketResponse>(PromoCustomerAttributeNames.PromoBasketResponse, _storeContext.CurrentStore.Id);
+            if (basketResponse == null || !basketResponse.IsValid())
+                return new EmptyResult();
 
             var issuedCouponsModel = _issuedCouponsModelFactory.PrepareIssuedCouponsModel(basketResponse, shoppingCartModel.ShowSku);
 

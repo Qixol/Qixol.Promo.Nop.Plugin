@@ -7,29 +7,17 @@ namespace Qixol.Plugin.Misc.Promo.Models.Shared
     {
         #region fields
 
-        private IList<string> _shoppingCartWarnings;
         private IList<LineItemModel> _lineDiscountsModel;
         private IList<IssuedCouponModel> _issuedCouponsModel;
         private IList<PromotionModel> _basketLevelDiscountsExcShippingModel;
         private IList<PromotionModel> _basketLevelDiscountsIncShippingModel;
+        private IList<string> _seoListForFailedFreeGifts;
 
         #endregion
 
         #region public properties
 
         public string BasketTotalDiscount { get; set; }
-
-        public IList<string> ShoppingCartWarnings
-        {
-            get
-            {
-                return _shoppingCartWarnings ?? (_shoppingCartWarnings = new List<string>());
-            }
-            set
-            {
-                _shoppingCartWarnings = value;
-            }
-        }
 
         public IList<LineItemModel> LineDiscountsModel
         {
@@ -80,6 +68,18 @@ namespace Qixol.Plugin.Misc.Promo.Models.Shared
             set
             {
                 _basketLevelDiscountsIncShippingModel = value;
+            }
+        }
+
+        public IList<string> SeoListForFailedFreeGifts
+        {
+            get
+            {
+                return _seoListForFailedFreeGifts  ?? (_seoListForFailedFreeGifts = new List<string>());
+            }
+            set
+            {
+                _seoListForFailedFreeGifts = value;
             }
         }
 

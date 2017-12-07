@@ -25,7 +25,7 @@ namespace Qixol.Nop.Promo.Services.Tax
         #region fields
 
         private readonly PromoSettings _promoSettings;
-        private readonly IPromoUtilities _promoUtilities;
+        private readonly IStoreContext _storeContext;
         private readonly TaxSettings _taxSettings;
 
         #endregion
@@ -44,14 +44,13 @@ namespace Qixol.Nop.Promo.Services.Tax
             CustomerSettings customerSettings,
             ShippingSettings shippingSettings,
             AddressSettings addressSettings,
-            PromoSettings promoSettings,
-            IPromoUtilities promoUtilities)
+            PromoSettings promoSettings)
             : base(addressService, workContext, storeContext, taxSettings,
                                                     pluginFinder, geoLookupService, countryService, stateProvinceService,
                                                     logger, customerSettings, shippingSettings, addressSettings)
         {
             this._promoSettings = promoSettings;
-            this._promoUtilities = promoUtilities;
+            this._storeContext = storeContext;
             this._taxSettings = taxSettings;
         }
 
@@ -70,10 +69,12 @@ namespace Qixol.Nop.Promo.Services.Tax
             taxRate = decimal.Zero;
             decimal price = cav.PriceAdjustment;
 
-            BasketResponse basketResponse = _promoUtilities.GetBasketResponse(customer);
+            BasketResponse basketResponse = customer.GetAttribute<BasketResponse>(PromoCustomerAttributeNames.PromoBasketResponse, _storeContext.CurrentStore.Id);
+            if (basketResponse == null || !basketResponse.IsValid())
+                return price;
 
             // checkout attribute value promos
-            if (includeDiscounts && (basketResponse != null))
+            if (includeDiscounts)
             {
                 var checkoutAttributeItem = basketResponse.CheckoutAttributeItem(cav.CheckoutAttribute);
                 if (checkoutAttributeItem != null)

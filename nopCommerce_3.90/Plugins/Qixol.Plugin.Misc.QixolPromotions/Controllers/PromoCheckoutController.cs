@@ -218,36 +218,6 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
                     return RedirectToRoute("PromoCheckoutMissedPromotions");
                 }
             }
-
-            ////validation (cart)
-            //var checkoutAttributesXml = _workContext.CurrentCustomer.GetAttribute<string>(SystemCustomerAttributeNames.CheckoutAttributes, _genericAttributeService, _storeContext.CurrentStore.Id);
-            ////var scWarnings = _shoppingCartService.GetShoppingCartWarnings(cart, checkoutAttributesXml, true);
-            //var scPromoWarnings = _promoService.ProcessShoppingCart(true);
-            //if (scPromoWarnings.Count > 0)
-            //    return RedirectToRoute("ShoppingCart");
-
-            //// TODO: Native nop cart validation - is this still required?
-            //var scWarnings = _shoppingCartService.GetShoppingCartWarnings(cart, checkoutAttributesXml, true);
-            //if (scWarnings.Count > 0)
-            //    return RedirectToRoute("ShoppingCart");
-            ////validation (each shopping cart item)
-            //foreach (ShoppingCartItem sci in cart)
-            //{
-            //    var sciWarnings = _shoppingCartService.GetShoppingCartItemWarnings(_workContext.CurrentCustomer,
-            //        sci.ShoppingCartType,
-            //        sci.Product,
-            //        sci.StoreId,
-            //        sci.AttributesXml,
-            //        sci.CustomerEnteredPrice,
-            //        sci.RentalStartDateUtc,
-            //        sci.RentalEndDateUtc,
-            //        sci.Quantity,
-            //        false);
-            //    if (sciWarnings.Count > 0)
-            //        return RedirectToRoute("ShoppingCart");
-            //}
-
-            //return RedirectToRoute("PromoCheckoutMissedPromotions");
         }
 
         public ActionResult MissedPromotions()
@@ -269,9 +239,7 @@ namespace Qixol.Plugin.Misc.Promo.Controllers
             if ((_workContext.CurrentCustomer.IsGuest() && !_orderSettings.AnonymousCheckoutAllowed))
                 return new HttpUnauthorizedResult();
 
-            var scWarnings = _promoService.ProcessShoppingCart(_workContext.CurrentCustomer, true);
-            if (scWarnings.Count > 0)
-                return RedirectToRoute("ShoppingCart");
+            _promoService.ProcessShoppingCart(_workContext.CurrentCustomer, _storeContext.CurrentStore.Id, true);
 
             var model = _missedPromotionsModelFactory.PrepareMissedPromotionsModel();
 

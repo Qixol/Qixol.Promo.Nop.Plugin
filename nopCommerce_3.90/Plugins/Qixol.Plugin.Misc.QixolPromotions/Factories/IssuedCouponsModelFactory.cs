@@ -99,14 +99,18 @@ namespace Qixol.Plugin.Misc.Promo.Factories
             if (issuedCoupon == null)
                 return null;
 
+            // handle issued coupon when promo is not correctly configured to require basket confirmation
+            if (issuedCoupon.FromPreviousIteration && issuedCoupon.IssuedByPromotionId == 0)
+                return null;
+
             var issuedCouponModel = new IssuedCouponModel()
             {
                 Name = issuedCoupon.CouponName,
                 // Never show the coupon code until the transaction is complete
                 ValidTo = DateTime.MinValue,
                 Status = string.Empty,
-                IsConfirmed = issuedCoupon.IssuedConfirmed,
-                Code = issuedCoupon.IssuedConfirmed == true ? issuedCoupon.CouponCode : string.Empty,
+                IsConfirmed = false, // issuedCoupon.IssuedConfirmed,
+                Code = string.Empty, // issuedCoupon.IssuedConfirmed == true ? issuedCoupon.CouponCode : string.Empty,
                 DisplayText = string.IsNullOrWhiteSpace(issuedCoupon.DisplayText) ? string.Empty : issuedCoupon.DisplayText
             };
 
