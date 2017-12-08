@@ -46,7 +46,7 @@
                                     {
                                         displayFee = point.PickupFee;
 
-                                        if (point.CustomProperties != null)
+                                        if (point.CustomProperties != null && point.CustomProperties.Any())
                                         {
                                             string totalDiscount = point.CustomProperties["TotalDiscount"].ToString();
                                             if (!string.IsNullOrEmpty(totalDiscount))
