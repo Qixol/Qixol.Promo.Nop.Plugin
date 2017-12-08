@@ -269,10 +269,19 @@ namespace Qixol.Nop.Promo.Services.Messages
                     lineDiscounts.ToList().ForEach(lineDiscount =>
                     {
                         var localLinePromoAmount = _currencyService.ConvertCurrency(lineDiscount.DiscountAmount, order.CurrencyRate);
+                        var formattedDiscountAmount = _priceFormatter.FormatPrice(localLinePromoAmount, true, order.CustomerCurrencyCode, language, true);
+                        var youSaveTemplate = _localizationService.GetResource("ShoppingCart.ItemYouSave");
                         sb.Append("<br /><i>");
-                        sb.Append(_localizationService.GetResource("ShoppingCart.ItemYouSave"));
-                        sb.Append(": ");
-                        sb.Append(_priceFormatter.FormatPrice(localLinePromoAmount, true, order.CustomerCurrencyCode, language, true));
+                        if (youSaveTemplate.Contains("{0}"))
+                        {
+                            sb.Append(string.Format(youSaveTemplate, formattedDiscountAmount));
+                        }
+                        else
+                        {
+                            sb.Append(youSaveTemplate);
+                            sb.Append(": ");
+                            sb.Append(formattedDiscountAmount);
+                        }
                         sb.Append("</i>");
                     });
                 }
